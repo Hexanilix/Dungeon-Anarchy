@@ -1,0 +1,4 @@
+name: Dungeon Anarchy 1.20.2
+version: '0.1-pre_alpha'
+main: org.hexils.dnarch1202
+api-version: '1.20'
