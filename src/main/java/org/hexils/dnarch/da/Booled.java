@@ -1,6 +1,6 @@
 package org.hexils.dnarch.da;
 
-public interface Bool {
+public interface Booled {
 
     boolean isSatisfied();
 }
