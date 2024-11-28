@@ -1,8 +1,8 @@
 package org.hexils.dnarch.events.runnables;
 
-import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 
-public interface InventoryCloseRunnable {
+public interface InventoryClickRunnable {
 
-    void run(InventoryCloseEvent event);
+    boolean run(InventoryClickEvent event);
 }

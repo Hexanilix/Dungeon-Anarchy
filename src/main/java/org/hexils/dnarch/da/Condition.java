@@ -3,7 +3,7 @@ package org.hexils.dnarch.da;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Condition extends DA_item implements Booled, Triggable {
+public abstract class Condition extends DA_item implements Booled, Triggerable {
     public enum Type {
         DISTANCE
     }
@@ -16,7 +16,7 @@ public abstract class Condition extends DA_item implements Booled, Triggable {
         return type;
     }
 
-    public Triggerable(Type type) {
+    public Condition(Type type) {
         this.type = type;
     }
 

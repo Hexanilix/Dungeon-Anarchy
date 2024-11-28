@@ -2,10 +2,8 @@ package org.hexils.dnarch.da.objects;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.Directional;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.da.Action;
@@ -14,7 +12,6 @@ import org.hexils.dnarch.da.DM;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 
 public class Door extends Action {
     public enum Facing {
@@ -97,7 +94,6 @@ public class Door extends Action {
     }
 
     public void halt() {
-        if ()
     }
 
     @Override

@@ -7,9 +7,13 @@ import org.hexils.dnarch.da.DM;
 import org.jetbrains.annotations.NotNull;
 
 public class EntitySpawnCondition extends Condition {
+    public EntitySpawnCondition(Type type) {
+        super(type);
+    }
+
     @Override
     public boolean isSatisfied() {
-        return ;
+        return false;
     }
 
     @Override

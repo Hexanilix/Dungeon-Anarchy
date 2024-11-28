@@ -1,4 +1,12 @@
-name: Dungeon Anarchy 1.20.2
+name: Dungeon_Anarchy
 version: '0.1-pre_alpha'
-main: org.hexils.dnarch1202
+main: org.hexils.dnarch.Main
 api-version: '1.20'
+commands:
+  dungeon_anarchy:
+    description: The Dungeon Anarchy command
+  da:
+    description: The Dungeon Anarchy command, short for /dungeon_anarchy
+    usage: /<command> <args>
+  dc:
+    description: The Dungeon Anarchy creator command, a shortcut for /dungeon_anarchy creator
