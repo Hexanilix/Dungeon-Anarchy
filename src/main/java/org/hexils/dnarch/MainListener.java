@@ -1,6 +1,5 @@
 package org.hexils.dnarch;
 
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,7 +8,6 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.jgl17.Pair;
 import org.hexils.dnarch.da.DA_block;
 import org.hexils.dnarch.da.DA_item;
 import org.hexils.dnarch.da.DM;
@@ -26,12 +24,6 @@ import static org.hexils.dnarch.Main.*;
 import static org.hexils.dnarch.da.DA_item.ITEM_UUID;
 
 public final class MainListener implements org.bukkit.event.Listener {
-
-    private static final Map<Player, Pair<Location, Location>> selections = new HashMap<>();
-    public static @NotNull Pair<Location, Location> getSelection(Player p) {
-        selections.putIfAbsent(p, new Pair<>());
-        return selections.get(p);
-    }
     @EventHandler
     public void onSelct(@NotNull PlayerInteractEvent event) {
         Player p = event.getPlayer();
@@ -42,28 +34,27 @@ public final class MainListener implements org.bukkit.event.Listener {
             Block b = event.getClickedBlock();
             switch (event.getAction()) {
                 case RIGHT_CLICK_BLOCK -> {
-                    if (b == null) return;
                     if (p.isSneaking()) {
-                        selections.putIfAbsent(p, new Pair<>());
-                        selections.get(p).setValue(b.getLocation());
+                        if (b == null) return;
+                        if (!dm.setSelectionA(b.getLocation()))
+                            dm.clearSelectionA();
+                        event.setCancelled(true);
                     } else {
-                        if (dm.slb.contains(b)) {
-                            dm.slb.remove(b);
-                        } else {
-                            dm.slb.add(b);
-                        }
+                        if (!dm.selectBlock(b))
+                            dm.deselectBlock(b);
                     }
                 }
                 case LEFT_CLICK_BLOCK -> {
-                    if (b == null) return;
                     if (p.isSneaking()) {
-                        selections.putIfAbsent(p, new Pair<>());
-                        selections.get(p).setKey(b.getLocation());
+                        if (b == null) return;
+                        if (!dm.setSelectionB(b.getLocation()))
+                            dm.clearSelectionB();
+                        event.setCancelled(true);
                     }
                 }
             }
-        } else if (hasNSK(event.getItem(), GUI.MODIFIABLE, true)) {
-            String s = (String) getNSK(event.getItem(), ITEM_UUID);
+        } else if (NSK.hasNSK(event.getItem(), GUI.MODIFIABLE, true)) {
+            String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
             if (s != null) {
                 UUID id = UUID.fromString(s);
                 DA_item di = DA_item.get(id);
@@ -125,10 +116,10 @@ public final class MainListener implements org.bukkit.event.Listener {
                             DA_item da = DA_item.get(it);
                             if (da != null)
                                 da.manage(p, a);
-                        } else if (hasNSK(it, GUI.ITEM_RENAME)) {
+                        } else if (NSK.hasNSK(it, GUI.ITEM_RENAME)) {
                             a.promptRename(p);
-                        } else if (hasNSK(it, GUI.FIELD_VALUE))
-                            a.setField(DM.getOrNew(p), (String) getNSK(event.getCurrentItem(), GUI.FIELD_VALUE));
+                        } else if (NSK.hasNSK(it, GUI.FIELD_VALUE))
+                            a.setField(DM.getOrNew(p), (String) NSK.getNSK(event.getCurrentItem(), GUI.FIELD_VALUE));
                     }
                 }
         }
@@ -137,9 +128,9 @@ public final class MainListener implements org.bukkit.event.Listener {
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
         ItemStack item = event.getItemInHand();
-        if (hasNSK(item, DA_block.BLOCK, true)) {
-            if (hasNSK(item, GUI.MODIFIABLE, true)) {
-                String s = (String) getNSK(item, ITEM_UUID);
+        if (NSK.hasNSK(item, DA_block.BLOCK, true)) {
+            if (NSK.hasNSK(item, GUI.MODIFIABLE, true)) {
+                String s = (String) NSK.getNSK(item, ITEM_UUID);
                 if (s != null) {
                     UUID id = UUID.fromString(s);
                     DA_item dai = DA_item.get(id);

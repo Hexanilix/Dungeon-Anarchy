@@ -9,23 +9,35 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.sign.Side;
 import org.bukkit.block.sign.SignSide;
 import org.bukkit.command.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
+import org.hetils.jgl17.Pair;
+import org.hexils.dnarch.Main;
+import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.Dungeon;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static org.hexils.dnarch.Main.log;
 
 public final class da_cmd implements CommandExecutor {
+    public static boolean withinBounds(Pair<Location, Location> bound, Location l) {
+        return l != null && (Math.max(bound.key().getX(), bound.value().getX()) > l.getX() && l.getX() > Math.min(bound.key().getX(), bound.value().getX()))&&
+                (Math.max(bound.key().getY(), bound.value().getY()) > l.getY() && l.getY() > Math.min(bound.key().getY(), bound.value().getY()))&&
+                (Math.max(bound.key().getZ(), bound.value().getZ()) > l.getZ() && l.getZ() > Math.min(bound.key().getZ(), bound.value().getZ()));
+    }
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
             return true;
         }
@@ -34,6 +46,16 @@ public final class da_cmd implements CommandExecutor {
         }
         Player p = (Player) sender;
         switch (args[0]) {
+            case "inspect" -> {
+                ItemStack i = p.getInventory().getItemInMainHand();
+                p.sendMessage(i.toString());
+            }
+            case "parti" -> {
+                Main.displayAllParticles(p);
+            }
+            case "part" -> {
+                Main.dispao(p);
+            }
 //            case "test" -> {
 //                Sign s = new Sign() {
 //                    final org.bukkit.block.data.type.Sign sd = (org.bukkit.block.data.type.Sign) Bukkit.createBlockData(Material.SPRUCE_SIGN);

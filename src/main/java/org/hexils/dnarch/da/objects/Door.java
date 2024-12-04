@@ -8,6 +8,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.da.Action;
 import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.actions.Type;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +36,7 @@ public class Door extends Action {
 
     //TODO: Convert block list to matrix
     public Door(List<Block> blocks, Facing face) {
+        super(Type.DOOR);
         this.blocks = blocks;
         this.name = "Door";
         this.facing = face;

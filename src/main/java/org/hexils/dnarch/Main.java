@@ -2,6 +2,7 @@ package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -11,8 +12,10 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.hexils.dnarch.commands.da_cmd;
 import org.hexils.dnarch.commands.dc_cmd;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -34,13 +37,6 @@ public final class Main extends JavaPlugin {
      */
     public static void log(Level lv, Object msg) {
         Bukkit.getLogger().log(lv, "[DA] " + msg);
-    }
-
-    private static Collection<Thread> threads = new HashSet<>();
-
-    public static Thread addThread(Thread t) {
-        threads.add(t);
-        return t;
     }
 
     public static final ItemStack wand;
@@ -104,43 +100,49 @@ public final class Main extends JavaPlugin {
         return s.toString();
     }
 
-
-    public static @Nullable Object getNSK(ItemStack i, NSK nsk) {
-        return hasNSK(i, nsk) ? i.getItemMeta().getPersistentDataContainer().get(nsk.key(), nsk.type()) : null;
+    public static void displayAllParticles(@NotNull Player p) {
+        new PluginThread() {
+            @Override
+            public void run() {
+                Location l = p.getEyeLocation().add(5, 0, -20);
+                double sz = l.getZ();
+                Particle[] pl = Particle.values();
+                try {
+                    while (this.r) {
+                        int i = 0;
+                        int y;
+                        while (i < pl.length) {
+                            y = ((i * 2) / 40);
+                            try {
+                                p.getWorld().spawnParticle(pl[i], l.getX(), y + l.getY(), ((double) ((i * 2) % 40) + sz) + l.getZ(), 1, 0, 0, 0, 0);
+                            } catch (Exception ignore) { log("ex: " + ignore.getLocalizedMessage()); }
+                            i += 1;
+                        }
+                        Thread.sleep(100);
+                    }
+                } catch (InterruptedException e) {}
+            }
+        }.start();
     }
-
-    public static boolean sameType(PersistentDataType type, Object value) {
-        return (value instanceof String && type == PersistentDataType.STRING)
-                || (value instanceof Integer && type == PersistentDataType.INTEGER)
-                || (value instanceof Boolean && type == PersistentDataType.BOOLEAN)
-                || (value instanceof Double && type == PersistentDataType.DOUBLE)
-                || (value instanceof Long && type == PersistentDataType.LONG_ARRAY)
-                || (value instanceof Byte && type == PersistentDataType.BYTE)
-                || (value instanceof byte[] && type == PersistentDataType.BYTE_ARRAY)
-                || (value instanceof int[] && type == PersistentDataType.INTEGER_ARRAY);
-    }
-
-    public static void setNSK(ItemStack i, NSK nsk, Object value) {
-        if (i == null || !i.hasItemMeta()) return;
-        ItemMeta m = i.getItemMeta();
-        PersistentDataContainer pdc = m.getPersistentDataContainer();
-        if (sameType(nsk.type(), value) && !pdc.has(nsk.key(), nsk.type()))
-            pdc.set(nsk.key(), nsk.type(), value);
-        i.setItemMeta(m);
-    }
-
-    public static boolean hasNSK(ItemStack i, NSK nsk) {
-        return i != null && i.hasItemMeta() && i.getItemMeta().getPersistentDataContainer().has(nsk.key(), nsk.type());
-    }
-
-    public static boolean hasNSK(ItemStack i, NSK nsk, Object value) {
-        return Objects.equals(getNSK(i, nsk), value);
+    public static void dispao(Player p) {
+        Location l = p.getEyeLocation().add(5, 0, -20);
+        double sz = l.getZ();
+        Particle[] pl = Particle.values();
+        log(Arrays.toString(pl));
+        int i = 0;
+        int y;
+        while (i < pl.length) {
+            y = ((i * 2) / 40);
+            try {
+                p.getWorld().spawnParticle(pl[i], l.getX(), y + l.getY(), ((double) ((i * 2) % 40) + sz) + l.getZ(), 1, 0, 0, 0, 0);
+            } catch (Exception ignore) { log("ex: " + ignore.getLocalizedMessage()); }
+            i += 1;
+        }
     }
 
     @Override
     public void onDisable() {
-        for (Thread t : threads)
-            t.interrupt();
+        PluginThread.finish();
         super.onDisable();
     }
 }

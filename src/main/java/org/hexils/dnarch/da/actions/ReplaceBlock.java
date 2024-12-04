@@ -50,6 +50,7 @@ public class ReplaceBlock extends Action {
     }
 
     public ReplaceBlock(String name, List<Block> blocks, Material change_material) {
+        super(Type.REPLACE_BLOCK);
         this.name = name;
         this.change_material = change_material;
         if (blocks != null && !blocks.isEmpty()) {
@@ -113,12 +114,11 @@ public class ReplaceBlock extends Action {
                     this.change_material = m;
             }
             case "blocks" -> {
-                if (dm.slb.isEmpty())
+                if (dm.getSelectedBlocks().isEmpty())
                     dm.p.sendMessage( ChatColor.RED + "You have no blocks currently selected!");
                 else {
-                    this.blocks.clear();
-                    this.blocks.addAll(dm.slb);
-                    dm.slb.clear();
+                    this.blocks = dm.getSelectedBlocks();
+                    dm.deselectBlocks();
                 }
             }
         }

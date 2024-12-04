@@ -1,16 +1,13 @@
 package org.hexils.dnarch.da;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.hexils.dnarch.Main;
 import org.hexils.dnarch.MainListener;
 import org.hexils.dnarch.NSK;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +16,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 import static org.hetils.mpdl.Item.newItemStack;
-import static org.hexils.dnarch.Main.getNSK;
-import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.da.GUI.ITEM_RENAME;
 
 public abstract class DA_item {
@@ -89,7 +84,7 @@ public abstract class DA_item {
 
     private @NotNull ItemStack getNameSign() {
         ItemStack rename = newItemStack(Material.SPRUCE_SIGN, "Name: " + name, List.of(ChatColor.GRAY + "Click to rename"));
-        Main.setNSK(rename, ITEM_RENAME, true);
+        NSK.setNSK(rename, ITEM_RENAME, true);
         return rename;
     }
 
@@ -112,7 +107,7 @@ public abstract class DA_item {
     }
 
     public static @Nullable DA_item get(ItemStack it) {
-        String s = (String) getNSK(it, ITEM_UUID);
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
         return s == null ? null : DA_item.get(UUID.fromString(s));
     }
 
@@ -144,7 +139,7 @@ public abstract class DA_item {
     protected abstract ItemStack toItem();
     public final ItemStack getItem() {
         ItemStack i = this.toItem();
-        Main.setNSK(i, ITEM_UUID, id.toString());
+        NSK.setNSK(i, ITEM_UUID, id.toString());
         return i;
     }
 

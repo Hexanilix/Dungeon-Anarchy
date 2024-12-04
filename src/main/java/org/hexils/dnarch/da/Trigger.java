@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hexils.dnarch.Main;
+import org.hexils.dnarch.NSK;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -68,7 +69,7 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     private boolean addTriggerable(ItemStack it) {
-        String s = (String) Main.getNSK(it, ITEM_UUID);
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
         if (s != null && DA_item.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
             condition.runnables.put(this, this::trigger);
             return conditions.add(condition);
@@ -77,7 +78,7 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     private boolean addAction(ItemStack it) {
-        String s = (String) Main.getNSK(it, ITEM_UUID);
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
         if (s != null && DA_item.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action)) {
             return actions.add(action);
         }

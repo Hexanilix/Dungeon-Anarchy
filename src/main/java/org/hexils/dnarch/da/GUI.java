@@ -102,7 +102,7 @@ public final class GUI {
     }
 
     public static void setField(ItemStack i, String field, String value) {
-        setNSK(i, GUI.FIELD_VALUE, field + ":" + value);
+        NSK.setNSK(i, GUI.FIELD_VALUE, field + ":" + value);
     }
 
     public static void setInventory(Inventory gui, int start, int end) {
