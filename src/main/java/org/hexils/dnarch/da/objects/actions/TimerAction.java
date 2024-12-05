@@ -1,14 +1,12 @@
-package org.hexils.dnarch.da.objects;
+package org.hexils.dnarch.da.objects.actions;
 
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.da.Action;
 import org.hexils.dnarch.da.Booled;
-import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.hexils.dnarch.da.Triggerable;
-import org.hexils.dnarch.da.actions.Type;
 import org.jetbrains.annotations.NotNull;
 
 public class TimerAction extends Action implements Triggerable, Booled {
@@ -42,8 +40,7 @@ public class TimerAction extends Action implements Triggerable, Booled {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return null;
+    protected void createGUIInventory() {
     }
 
     @Override
@@ -57,12 +54,12 @@ public class TimerAction extends Action implements Triggerable, Booled {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 

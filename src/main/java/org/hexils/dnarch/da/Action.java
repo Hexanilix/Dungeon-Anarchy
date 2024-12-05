@@ -1,6 +1,6 @@
 package org.hexils.dnarch.da;
 
-import org.hexils.dnarch.da.actions.Type;
+import org.hexils.dnarch.da.objects.actions.Type;
 
 import java.util.Collection;
 import java.util.HashSet;

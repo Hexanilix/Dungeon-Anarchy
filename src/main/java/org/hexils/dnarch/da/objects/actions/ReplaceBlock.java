@@ -1,14 +1,13 @@
-package org.hexils.dnarch.da.actions;
+package org.hexils.dnarch.da.objects.actions;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.hexils.dnarch.da.GUI;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hetils.mpdl.Inventory.newInv;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class ReplaceBlock extends Action {
@@ -28,13 +28,12 @@ public class ReplaceBlock extends Action {
     private World world;
 
     @Override
-    protected Inventory createGUIInventory() {
-        this.gui = GUI.newInv(54, name);
+    protected void createGUIInventory() {
+        this.gui = newInv(54, name);
         ItemStack cm = newItemStack(hasMeta(change_material), "Change Material: " + change_material.name());
         GUI.setField(cm, "material", change_material.name());
         this.gui.setItem(13, cm);
         this.gui.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
-        return this.gui;
     }
 
     @Contract(pure = true)
@@ -91,7 +90,7 @@ public class ReplaceBlock extends Action {
     @Override
     public void updateGUI() {
         for (int i = 0; i < 27; i++)
-            this.gui.setItem(i+27, i < ogbd.size() ? GUI.b2i(blocks.get(i), ogbd.get(i)) : null);
+            this.gui.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.Block.b2i(blocks.get(i), ogbd.get(i)) : null);
     }
 
     @Override
@@ -106,7 +105,7 @@ public class ReplaceBlock extends Action {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
         switch (field) {
             case "material" -> {
                 Material m = Material.getMaterial(value);
@@ -125,7 +124,7 @@ public class ReplaceBlock extends Action {
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 }

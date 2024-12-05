@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch.da.dungeon;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -6,22 +6,19 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.hetils.jgl17.Pair;
-import org.hexils.dnarch.MainListener;
-import org.hexils.dnarch.PluginThread;
+import org.hetils.mpdl.PluginThread;
+import org.hexils.dnarch.da.DA_item;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static org.hexils.dnarch.Main.log;
-import static org.hexils.dnarch.da.DA_item.get;
-
-public class DM {
-    public static final Collection<DM> dms = new HashSet<>();
-    public static @NotNull DM getOrNew(Player p) {
-        for (DM m : dms)
+public class DungeonMaster {
+    public static final Collection<DungeonMaster> dms = new HashSet<>();
+    public static @NotNull DungeonMaster getOrNew(Player p) {
+        for (DungeonMaster m : dms)
             if (m.p == p)
                 return m;
-        return new DM(p);
+        return new DungeonMaster(p);
     }
 
 
@@ -30,13 +27,13 @@ public class DM {
     private double ppm = 5;
     private SelectThread selectThread = new SelectThread();
     private Dungeon current_dungeon = null;
+    private boolean build_mode = false;
     public final Player p;
 
-    public DM(Player p) {
+    public DungeonMaster(Player p) {
         this.p = p;
         dms.add(this);
         this.selectThread.start();
-        MainListener.runOnPlayerLeave(this, p, () -> this.selectThread.halt());
     }
 
     public boolean setSelectionA(Location key) {
@@ -59,6 +56,12 @@ public class DM {
             return true;
         }
     }
+    public Location getSelectionA() {
+        return selectedArea.key();
+    }
+    public Location getSelectionB() {
+        return selectedArea.value();
+    }
     public void clearSelectionA() {
         selectedArea.setKey(null);
     }
@@ -66,7 +69,7 @@ public class DM {
         selectedArea.setValue(null);
     }
     public Pair<Location, Location> getSelectedArea() {
-        return hasAreaSelected() ? selectedArea : null;
+        return selectedArea;
     }
     public void clearSelection() {
         this.selectedArea.setKey(null);
@@ -82,14 +85,20 @@ public class DM {
         return l;
     }
     public boolean selectBlock(Block b) {
-        if (slb.contains(b))
-            return false;
-        else {
-            if (!slb.isEmpty() && slb.get(0).getWorld() != b.getWorld())
-                slb.clear();
-            slb.add(b);
-            return true;
+        if (this.isEditing()) {
+            Dungeon d = this.current_dungeon;
+            if (!slb.contains(b)) {
+                if (!d.isWithinDungeon(b.getLocation())) {
+                    p.sendMessage("Yo bblocks out of bounds!");
+                } else {
+                    if (!slb.isEmpty() && slb.get(0).getWorld() != b.getWorld())
+                        slb.clear();
+                    slb.add(b);
+                    return true;
+                }
+            }
         }
+        return false;
     }
     public boolean deselectBlock(Block b) {
         return slb.remove(b);
@@ -100,21 +109,23 @@ public class DM {
 
     public List<Block> getSelectionBlocks() {
         List<Block> c = new ArrayList<>();
-        World w = selectedArea.key().getWorld();
-        int xm = (int) Math.max(selectedArea.key().getX(), selectedArea.value().getX());
-        int ym = (int) Math.max(selectedArea.key().getY(), selectedArea.value().getY());
-        int zm = (int) Math.max(selectedArea.key().getZ(), selectedArea.value().getZ());
-        int mx = (int) Math.min(selectedArea.key().getX(), selectedArea.value().getX());
-        int my = (int) Math.min(selectedArea.key().getY(), selectedArea.value().getY());
-        int mz = (int) Math.min(selectedArea.key().getZ(), selectedArea.value().getZ());
-        for (int x = mx; x < xm; x++)
-            for (int y = my; y < ym; y++)
-                for (int z = mz; z < zm; z++)
-                    c.add(w.getBlockAt(x, y, z));
+        if (selectedArea.key() != null && selectedArea.value() != null) {
+            World w = selectedArea.key().getWorld();
+            int xm = (int) Math.max(selectedArea.key().getX(), selectedArea.value().getX());
+            int ym = (int) Math.max(selectedArea.key().getY(), selectedArea.value().getY());
+            int zm = (int) Math.max(selectedArea.key().getZ(), selectedArea.value().getZ());
+            int mx = (int) Math.min(selectedArea.key().getX(), selectedArea.value().getX());
+            int my = (int) Math.min(selectedArea.key().getY(), selectedArea.value().getY());
+            int mz = (int) Math.min(selectedArea.key().getZ(), selectedArea.value().getZ());
+            for (int x = mx; x < xm; x++)
+                for (int y = my; y < ym; y++)
+                    for (int z = mz; z < zm; z++)
+                        c.add(w.getBlockAt(x, y, z));
+        }
         return c;
     }
 
-    public Dungeon getCurrent_dungeon() {
+    public Dungeon getCurrentDungeon() {
         return current_dungeon;
     }
     public void setCurrent_dungeon(Dungeon current_dungeon) {
@@ -126,6 +137,10 @@ public class DM {
 
     public void give(DA_item a) {
         if (a != null) this.p.getInventory().addItem(a.getItem());
+    }
+
+    public boolean isBuildMode() {
+        return build_mode && current_dungeon != null;
     }
 
     private final class SelectThread extends PluginThread {

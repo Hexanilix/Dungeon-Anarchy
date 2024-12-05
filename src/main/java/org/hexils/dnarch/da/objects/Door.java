@@ -2,13 +2,12 @@ package org.hexils.dnarch.da.objects;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.DM;
-import org.hexils.dnarch.da.actions.Type;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
+import org.hexils.dnarch.da.objects.actions.Type;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,8 +42,7 @@ public class Door extends Action {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return gui;
+    protected void createGUIInventory() {
     }
 
     @Override
@@ -58,12 +56,12 @@ public class Door extends Action {
     }
 
     @Override
-    protected void changeField(DM dm, String field, String value) {
+    protected void changeField(DungeonMaster dm, String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 

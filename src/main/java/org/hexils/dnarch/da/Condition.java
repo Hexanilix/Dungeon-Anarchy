@@ -1,6 +1,6 @@
 package org.hexils.dnarch.da;
 
-import org.hexils.dnarch.da.conditions.Type;
+import org.hexils.dnarch.da.objects.conditions.Type;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,4 +19,10 @@ public abstract class Condition extends DA_item implements Booled, Triggerable {
         this.type = type;
     }
 
+    public final void trigger() {
+        runnables.values().forEach(Runnable::run);
+        onTrigger();
+    }
+
+    protected abstract void onTrigger();
 }

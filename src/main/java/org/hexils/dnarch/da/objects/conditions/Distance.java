@@ -1,17 +1,16 @@
-package org.hexils.dnarch.da.conditions;
+package org.hexils.dnarch.da.objects.conditions;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.da.Condition;
-import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -28,9 +27,8 @@ public class Distance extends Condition {
         return false;
     }
 
-    public void trigger() {
+    public void onTrigger() {
         this.satisfied = true;
-        runnables.values().forEach(Runnable::run);
     }
 
     @Override
@@ -96,8 +94,8 @@ public class Distance extends Condition {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return this.gui;
+    protected void createGUIInventory() {
+
     }
 
     @Override
@@ -115,12 +113,12 @@ public class Distance extends Condition {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 }

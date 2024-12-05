@@ -1,34 +1,16 @@
 package org.hexils.dnarch.commands;
 
 import org.bukkit.*;
-import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.Furnace;
-import org.bukkit.block.Sign;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.sign.Side;
-import org.bukkit.block.sign.SignSide;
 import org.bukkit.command.*;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.material.MaterialData;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.plugin.Plugin;
 import org.hetils.jgl17.Pair;
 import org.hexils.dnarch.Main;
-import org.hexils.dnarch.da.DM;
-import org.hexils.dnarch.da.Dungeon;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Arrays;
 import java.util.List;
-
-import static org.hexils.dnarch.Main.log;
 
 public final class da_cmd implements CommandExecutor {
     public static boolean withinBounds(Pair<Location, Location> bound, Location l) {
@@ -46,15 +28,19 @@ public final class da_cmd implements CommandExecutor {
         }
         Player p = (Player) sender;
         switch (args[0]) {
+            case "dungeon_manager" -> {
+                String s = dc_cmd.execute(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                if (s != null) p.sendMessage(s);
+            }
             case "inspect" -> {
                 ItemStack i = p.getInventory().getItemInMainHand();
                 p.sendMessage(i.toString());
             }
             case "parti" -> {
-                Main.displayAllParticles(p);
+                org.hetils.mpdl.Particle.displayAllParticles(p);
             }
             case "part" -> {
-                Main.dispao(p);
+                org.hetils.mpdl.Particle.dispao(p);
             }
 //            case "test" -> {
 //                Sign s = new Sign() {
@@ -316,8 +302,15 @@ public final class da_cmd implements CommandExecutor {
     public static final class tab implements TabCompleter {
 
         @Override
-        public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+        public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
             List<String> s = new ArrayList<>();
+            if (args.length > 1) {
+                switch (args[0]) {
+                    case "dungeon_manager" -> {
+                        return dc_cmd.complete(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                    }
+                }
+            } else s.addAll(List.of("dungeon_manager"));
             return s;
         }
     }

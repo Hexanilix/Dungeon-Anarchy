@@ -1,16 +1,13 @@
-package org.hexils.dnarch.da.actions;
+package org.hexils.dnarch.da.objects.actions;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
-import org.bukkit.entity.Wolf;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.checkerframework.checker.units.qual.A;
 import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.DM;
-import org.hexils.dnarch.da.EntitySpawn;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
+import org.hexils.dnarch.da.objects.conditions.EntitySpawn;
 
 import java.util.*;
 
@@ -59,8 +56,8 @@ public class Spawn extends Action {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return null;
+    protected void createGUIInventory() {
+
     }
 
     @Override
@@ -82,12 +79,12 @@ public class Spawn extends Action {
     }
 
     @Override
-    protected void changeField(DM dm, String field, String value) {
+    protected void changeField(DungeonMaster dm, String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 }

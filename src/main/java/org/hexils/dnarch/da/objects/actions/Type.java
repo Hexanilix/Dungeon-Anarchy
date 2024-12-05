@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.actions;
+package org.hexils.dnarch.da.objects.actions;
 
 public enum Type {
     DESTROY_BLOCK,

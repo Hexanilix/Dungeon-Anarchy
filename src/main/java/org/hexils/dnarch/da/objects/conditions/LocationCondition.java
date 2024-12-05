@@ -1,11 +1,10 @@
-package org.hexils.dnarch.da.conditions;
+package org.hexils.dnarch.da.objects.conditions;
 
 import org.bukkit.Location;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.Pair;
 import org.hexils.dnarch.da.Condition;
-import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 public class LocationCondition extends Condition {
@@ -21,8 +20,8 @@ public class LocationCondition extends Condition {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return null;
+    protected void createGUIInventory() {
+
     }
 
     @Override
@@ -36,17 +35,17 @@ public class LocationCondition extends Condition {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
 
     }
 }

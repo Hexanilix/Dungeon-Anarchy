@@ -1,10 +1,9 @@
-package org.hexils.dnarch.da.actions;
+package org.hexils.dnarch.da.objects.actions;
 
 import org.bukkit.Material;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.DM;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.text.html.parser.*;
@@ -30,8 +29,8 @@ public class EntityModification extends Action {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        return null;
+    protected void createGUIInventory() {
+
     }
 
     @Override
@@ -46,12 +45,12 @@ public class EntityModification extends Action {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 }

@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch.da.objects.conditions;
 
 import org.bukkit.entity.EntityType;
 

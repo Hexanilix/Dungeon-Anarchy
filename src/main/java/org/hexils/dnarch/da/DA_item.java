@@ -4,27 +4,26 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.hexils.dnarch.MainListener;
-import org.hexils.dnarch.NSK;
+import org.hetils.mpdl.NSK;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.logging.Level;
 
+import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 import static org.hexils.dnarch.da.GUI.ITEM_RENAME;
 
-public abstract class DA_item {
+public abstract class DA_item extends Managable {
     public static final NSK ITEM_UUID = new NSK(new NamespacedKey("dungeon_anarchy", "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DA_item> instances = new ArrayList<>();
 
     protected String name;
     private final UUID id;
-    protected Inventory gui = null;
 
 //    private final class Renamer {
 //        private final DA_item da;
@@ -71,27 +70,19 @@ public abstract class DA_item {
 //        }
 //    }
 
-    //TODO FIX THIS MFFFFF
-    public final void promptRename(Player p) {
-//        new Renamer(this).rename(p);
-    }
+    protected abstract void createGUIInventory();
 
-    public final Inventory getGUI() {
-        return this.gui;
+    @Override
+    public void createGUI() {
+        this.createGUIInventory();
+        if (this.gui != null) this.gui.setItem(4, getNameSign());
+        else log(Level.WARNING + "Attempted to create GUI is null from item " + this.id.toString() +". This probably shouldn't happen!");
     }
-
-    protected abstract Inventory createGUIInventory();
 
     private @NotNull ItemStack getNameSign() {
         ItemStack rename = newItemStack(Material.SPRUCE_SIGN, "Name: " + name, List.of(ChatColor.GRAY + "Click to rename"));
         NSK.setNSK(rename, ITEM_RENAME, true);
         return rename;
-    }
-
-    private Inventory createGUI() {
-        this.gui = this.createGUIInventory();
-        this.gui.setItem(4, getNameSign());
-        return this.gui;
     }
 
     public DA_item() {
@@ -119,54 +110,10 @@ public abstract class DA_item {
         return id;
     }
 
-    public final void manage(Player p) {
-        if (this.gui == null)
-            this.createGUI();
-        this.updateGUI();
-        if (p != null) p.openInventory(this.gui);
-    }
-
-    //TODO this only works for one layer and doesnt properly return
-    public final void manage(Player p, DA_item da) {
-        this.manage(p);
-        MainListener.onClose.put(this.gui, (event) -> {
-            da.manage(p);
-        });
-    }
-
-    public abstract void updateGUI();
-
     protected abstract ItemStack toItem();
     public final ItemStack getItem() {
         ItemStack i = this.toItem();
         NSK.setNSK(i, ITEM_UUID, id.toString());
         return i;
-    }
-
-    protected abstract void changeField(DM dm, @NotNull String field, String value);
-
-    protected abstract void action(DM dm, String action, String[] args);
-
-    public boolean guiClickEvent(InventoryClickEvent event) {return true;}
-
-    public final void setField(DM dm, String value) {
-        if (value != null) {
-            String[] v = value.split(" ", 1);
-            if (v.length > 1)
-                changeField(dm, v[0], v[1]);
-        }
-    }
-
-    public final void doAction(DM dm, String command) {
-        if (command != null) {
-            String[] v = command.split(" ", 1);
-            if (v.length > 1)
-                action(dm, v[0], v[1].split(" "));
-        }
-    }
-
-    public final void rename(String name) {
-        this.name = name;
-        this.createGUI();
     }
 }

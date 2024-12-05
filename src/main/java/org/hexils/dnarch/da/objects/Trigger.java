@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch.da.objects;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -8,14 +8,15 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.hexils.dnarch.Main;
-import org.hexils.dnarch.NSK;
+import org.hetils.mpdl.NSK;
+import org.hexils.dnarch.da.*;
+import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static org.hetils.mpdl.Inventory.*;
 import static org.hetils.mpdl.Item.newItemStack;
-import static org.hexils.dnarch.da.GUI.BACKGROUND;
 
 public class Trigger extends DA_block implements Booled, Triggerable {
     public final List<Condition> conditions = new ArrayList<>();
@@ -30,13 +31,12 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     @Override
-    protected Inventory createGUIInventory() {
-        gui = GUI.newInv(54, this.name);
-        GUI.fillBox(gui, 18, 4, 4, null);
-        GUI.fillBox(gui, 23, 4, 4, null);
+    protected void createGUIInventory() {
+        gui = org.hetils.mpdl.Inventory.newInv(54, this.name);
+        fillBox(gui, 18, 4, 4, null);
+        fillBox(gui, 23, 4, 4, null);
         gui.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
         gui.setItem(15, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
-        return gui;
     }
 
     public Trigger() {
@@ -59,12 +59,12 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     @Override
-    protected void changeField(DM dm, @NotNull String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
     @Override
-    protected void action(DM dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args) {
 
     }
 
@@ -93,13 +93,13 @@ public class Trigger extends DA_block implements Booled, Triggerable {
             return false;
         Inventory cinv = event.getClickedInventory();
         DA_item da = DA_item.get(ci);
-        if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this.gui) {
+        if (cinv != null && (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this.gui) {
             if (da instanceof Condition) {
-                GUI.addToBox(gui, 18, 4, 4, ci);
+                addToBox(gui, 18, 4, 4, ci);
                 cinv.setItem(event.getSlot(), null);
                 updateAC();
             } else if (da instanceof Action) {
-                GUI.addToBox(gui, 23, 4, 4, ci);
+                addToBox(gui, 23, 4, 4, ci);
                 cinv.setItem(event.getSlot(), null);
                 updateAC();
             } else return true;
@@ -115,35 +115,6 @@ public class Trigger extends DA_block implements Booled, Triggerable {
                 updateAC(ci);
             }
         }
-//        if (event.getClickedInventory() instanceof PlayerInventory) {
-//            ItemStack ci = event.getCurrentItem();
-//            if (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) {
-//                DA_item da = DA_item.get(ci);
-//                if (da instanceof Condition)
-//                    GUI.addToBox(gui, 18, 4, 4, ci);
-//                else if (da instanceof Action)
-//                    GUI.addToBox(gui, 23, 4, 4, ci);
-//                else return true;
-//            } else event.setCancelled(false);
-//        } else {
-//
-//            int slot = event.getRawSlot();
-//            if (slot / 9 >= 2) {
-//                if (iih == null || iih.getType() == Material.AIR) {
-//                    event.setCancelled(false);
-//                } else if (slot % 9 < 4) {
-//                    conditions.clear();
-//                    for (ItemStack it : GUI.getBox(this.gui, 18, 4, 4))
-//                        addTriggerable(it);
-//                    event.setCancelled(!addTriggerable(iih));
-//                } else if (slot % 9 > 4) {
-//                    actions.clear();
-//                    for (ItemStack it : GUI.getBox(this.gui, 22, 4, 4))
-//                        addAction(it);
-//                    event.setCancelled(!addAction(iih));
-//                }
-//            }
-//        }
         return true;
     }
 
@@ -161,10 +132,10 @@ public class Trigger extends DA_block implements Booled, Triggerable {
 
     private void updateAC(InventoryClickEvent event, ItemStack ex) {
         conditions.clear();
-        for (ItemStack it : GUI.getBox(this.gui, 18, 4, 4))
+        for (ItemStack it : getBox(this.gui, 18, 4, 4))
             if (it != ex) addTriggerable(it);
         actions.clear();
-        for (ItemStack it : GUI.getBox(this.gui, 22, 4, 4))
+        for (ItemStack it : getBox(this.gui, 22, 4, 4))
             if (it != ex) addAction(it);
         if (event != null && !event.getClick().name().contains("SHIFT")) {
             addTriggerable(event.getCursor());
