@@ -65,4 +65,15 @@ public abstract class Managable extends Named {
     protected void action(DungeonMaster dm, String action, String[] args) {}
 
     public boolean guiClickEvent(InventoryClickEvent event) {return true;}
+
+    protected void guiSize(int size) {
+        if (gui == null)
+            this.gui = org.hetils.mpdl.Inventory.newInv(size, name);
+        else {
+            Inventory i = org.hetils.mpdl.Inventory.newInv(size, name);
+            for (int j = 0; j < Math.min(size, gui.getSize()); j++)
+                i.setItem(j, gui.getItem(j));
+            this.gui = i;
+        }
+    }
 }
