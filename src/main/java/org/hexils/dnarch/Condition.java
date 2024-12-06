@@ -1,6 +1,6 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch;
 
-import org.hexils.dnarch.da.objects.conditions.Type;
+import org.hexils.dnarch.objects.conditions.Type;
 
 import java.util.HashMap;
 import java.util.Map;

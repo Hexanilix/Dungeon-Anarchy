@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.objects.actions;
+package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -6,9 +6,9 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
-import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.GUI;
+import org.hexils.dnarch.Action;
+import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.GUI;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

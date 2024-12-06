@@ -1,13 +1,13 @@
-package org.hexils.dnarch.da.objects;
+package org.hexils.dnarch.objects;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
-import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.objects.actions.Type;
+import org.hexils.dnarch.Action;
+import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.objects.actions.Type;
 
 import java.util.ArrayList;
 import java.util.Collection;

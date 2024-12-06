@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.objects;
+package org.hexils.dnarch.objects;
 
 import org.bukkit.entity.Player;
 

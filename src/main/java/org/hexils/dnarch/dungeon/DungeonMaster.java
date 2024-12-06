@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.dungeon;
+package org.hexils.dnarch.dungeon;
 
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -7,7 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.hetils.jgl17.Pair;
 import org.hetils.mpdl.PluginThread;
-import org.hexils.dnarch.da.DA_item;
+import org.hexils.dnarch.DA_item;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

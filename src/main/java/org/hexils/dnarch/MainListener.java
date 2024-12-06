@@ -10,16 +10,15 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.da.*;
-import org.hexils.dnarch.da.dungeon.Dungeon;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
+import org.hexils.dnarch.dungeon.Dungeon;
+import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 import static org.hetils.mpdl.General.log;
 import static org.hexils.dnarch.Main.*;
-import static org.hexils.dnarch.da.DA_item.ITEM_UUID;
+import static org.hexils.dnarch.DA_item.ITEM_UUID;
 
 public final class MainListener implements org.bukkit.event.Listener {
     @EventHandler

@@ -1,12 +1,12 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.hetils.mpdl.listener.GeneralListener;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.objects.Named;
+import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.objects.Named;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.dungeon;
+package org.hexils.dnarch.dungeon;
 
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -7,12 +7,12 @@ import org.hetils.jgl17.General;
 import org.hetils.jgl17.Pair;
 import org.hetils.mpdl.Inventory;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.da.Condition;
-import org.hexils.dnarch.da.DA_item;
-import org.hexils.dnarch.da.GUI;
-import org.hexils.dnarch.da.Managable;
-import org.hexils.dnarch.da.objects.conditions.DungeonStart;
-import org.hexils.dnarch.da.objects.conditions.Type;
+import org.hexils.dnarch.Condition;
+import org.hexils.dnarch.DA_item;
+import org.hexils.dnarch.GUI;
+import org.hexils.dnarch.Managable;
+import org.hexils.dnarch.objects.conditions.DungeonStart;
+import org.hexils.dnarch.objects.conditions.Type;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

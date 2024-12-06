@@ -1,10 +1,10 @@
-package org.hexils.dnarch.da.objects.conditions;
+package org.hexils.dnarch.objects.conditions;
 
 import org.bukkit.Location;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.Pair;
-import org.hexils.dnarch.da.Condition;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
+import org.hexils.dnarch.Condition;
+import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 public class LocationCondition extends Condition {

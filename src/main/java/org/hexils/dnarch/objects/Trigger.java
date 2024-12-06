@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da.objects;
+package org.hexils.dnarch.objects;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -9,8 +9,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.da.*;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
+import org.hexils.dnarch.*;
+import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

@@ -1,13 +1,13 @@
-package org.hexils.dnarch.da.objects.actions;
+package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
-import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.objects.conditions.EntitySpawn;
+import org.hexils.dnarch.Action;
+import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.objects.conditions.EntitySpawn;
 
 import java.util.*;
 

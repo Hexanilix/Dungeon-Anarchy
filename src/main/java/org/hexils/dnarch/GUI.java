@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;

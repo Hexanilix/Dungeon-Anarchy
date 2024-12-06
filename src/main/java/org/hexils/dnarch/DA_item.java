@@ -1,4 +1,4 @@
-package org.hexils.dnarch.da;
+package org.hexils.dnarch;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,7 +15,7 @@ import java.util.logging.Level;
 
 import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
-import static org.hexils.dnarch.da.GUI.ITEM_RENAME;
+import static org.hexils.dnarch.GUI.ITEM_RENAME;
 
 public abstract class DA_item extends Managable {
     public static final NSK ITEM_UUID = new NSK(new NamespacedKey("dungeon_anarchy", "item-uuid"), PersistentDataType.STRING);

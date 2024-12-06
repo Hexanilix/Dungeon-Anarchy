@@ -1,12 +1,12 @@
-package org.hexils.dnarch.da.objects.actions;
+package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
-import org.hexils.dnarch.da.Action;
-import org.hexils.dnarch.da.Booled;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.Triggerable;
+import org.hexils.dnarch.Action;
+import org.hexils.dnarch.Booled;
+import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.Triggerable;
 import org.jetbrains.annotations.NotNull;
 
 public class TimerAction extends Action implements Triggerable, Booled {

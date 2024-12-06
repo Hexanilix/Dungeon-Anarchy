@@ -1,26 +1,31 @@
-package org.hexils.dnarch.da.objects.conditions;
+package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.hexils.dnarch.da.Condition;
-import org.hexils.dnarch.da.dungeon.DungeonMaster;
-import org.hexils.dnarch.da.dungeon.Dungeon;
+import org.hexils.dnarch.Action;
+import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
+import javax.swing.text.html.parser.*;
 import java.util.List;
 
 import static org.hetils.mpdl.Item.newItemStack;
 
-public class DungeonStart extends Condition {
-    private Dungeon d;
-     public DungeonStart(Dungeon d) {
-         super(Type.DUNGEON_START);
-         this.d = d;
-     }
+public class EntityModification extends Action {
+    private List<Entity> entities = null;
+
+    public EntityModification() {
+        super(Type.ENTITY_MOD);
+    }
 
     @Override
-    public boolean isSatisfied() {
-        return d.isRunning();
+    public void execute() {
+
+    }
+
+    @Override
+    protected void resetAction() {
+
     }
 
     @Override
@@ -35,8 +40,8 @@ public class DungeonStart extends Condition {
 
     @Override
     protected ItemStack toItem() {
-         ItemStack i = newItemStack(Material.HEAVY_WEIGHTED_PRESSURE_PLATE, "Dungeon start");
-         return i;
+        ItemStack i = newItemStack(Material.TRIPWIRE_HOOK, "Entity Modification");
+        return i;
     }
 
     @Override
@@ -46,11 +51,6 @@ public class DungeonStart extends Condition {
 
     @Override
     protected void action(DungeonMaster dm, String action, String[] args) {
-
-    }
-
-    @Override
-    public void onTrigger() {
 
     }
 }
