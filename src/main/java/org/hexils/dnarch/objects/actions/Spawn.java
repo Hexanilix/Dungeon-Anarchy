@@ -4,6 +4,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.mpdl.Inventory;
 import org.hexils.dnarch.Action;
@@ -19,10 +20,10 @@ import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class Spawn extends Action {
-    public class EntityCollenction extends DA_item {
+    public class EntityCollection extends DA_item {
         private List<Entity> entities;
 
-        public EntityCollenction(List<Entity> entities) {
+        public EntityCollection(List<Entity> entities) {
             this.entities = entities;
         }
 
@@ -49,9 +50,14 @@ public class Spawn extends Action {
             ItemStack i = newItemStack(Material.SPAWNER, "Entity Collection");
             return i;
         }
+
+        public void delete() {
+            entities.forEach(Entity::remove);
+        }
     }
 
     private Collection<EntitySpawn> entities = new ArrayList<>();
+    private EntityCollection s_ent_c = null;
     private List<Location> spawnp = new ArrayList<>();
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition(this);
 
@@ -73,9 +79,9 @@ public class Spawn extends Action {
         this.spawnp = spawnp;
     }
 
-    private Collection<Entity> spawnede = new HashSet<>();
     @Override
     public void execute() {
+        List<Entity> spawnede = new ArrayList<>();
         Random r = new Random();
         for (EntitySpawn e : entities) {
             Location l = spawnp.get(r.nextInt(spawnp.size()));
@@ -86,13 +92,14 @@ public class Spawn extends Action {
                 ent.setCustomName(e.name);
             } else log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.Location.toReadableFormat(l));
         }
+        this.s_ent_c = new EntityCollection(spawnede);
         this.triggered = true;
         ent_spaw_c.trigger();
     }
 
     @Override
     protected void resetAction() {
-        spawnede.forEach(Entity::remove);
+        this.s_ent_c.delete();
     }
 
     @Override
@@ -125,7 +132,10 @@ public class Spawn extends Action {
 
     @Override
     protected void action(DungeonMaster dm, String action, String[] args) {
-
+        switch (action) {
+            case "getEntColl" -> dm.give(s_ent_c);
+            case "getEntCond" -> dm.give(ent_spaw_c);
+        }
     }
 
     public EntitySpawnCondition getEntitySpawnCondition() {
@@ -138,7 +148,7 @@ public class Spawn extends Action {
                 "entities=" + entities +
                 ", spawnp=" + spawnp +
                 ", ent_spaw_c=" + ent_spaw_c +
-                ", spawnede=" + spawnede +
+                ", spawnede=" + s_ent_c +
                 ", triggered=" + triggered +
                 ", type=" + type +
                 ", name='" + name + '\'' +

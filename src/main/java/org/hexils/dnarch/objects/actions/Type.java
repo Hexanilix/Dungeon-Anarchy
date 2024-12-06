@@ -5,7 +5,7 @@ public enum Type {
     ENTITY_MOD,
     REPLACE_BLOCK,
     DOOR,
-    SPAWN, TIMER;
+    SPAWN, TIMER, MODIFY_BLOCK;
 
     public static Type get(String s) {
         if (s != null)

@@ -34,8 +34,8 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     @Override
     protected void createGUIInventory() {
         gui = org.hetils.mpdl.Inventory.newInv(54, this.name);
-        fillBox(gui, 18, 4, 4, null);
-        fillBox(gui, 23, 4, 4, null);
+        fillBox(gui, 18, 4, 4, (ItemStack) null);
+        fillBox(gui, 23, 4, 4, (ItemStack) null);
         gui.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
         gui.setItem(15, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
     }

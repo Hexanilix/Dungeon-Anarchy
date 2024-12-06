@@ -1,18 +1,21 @@
 package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.Material;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.hetils.mpdl.Inventory;
 import org.hexils.dnarch.Action;
+import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
-import javax.swing.text.html.parser.*;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class EntityModification extends Action {
-    private List<Entity> entities = null;
+    private List<Spawn.EntityCollection> entities = new ArrayList<>();
 
     public EntityModification() {
         super(Type.ENTITY_MOD);
@@ -30,7 +33,9 @@ public class EntityModification extends Action {
 
     @Override
     protected void createGUIInventory() {
-
+        this.guiSize(54);
+        Inventory.fillBox(gui, 18, 4, 4);
+        Inventory.fillBox(gui, 23, 4, 4);
     }
 
     @Override
@@ -42,6 +47,16 @@ public class EntityModification extends Action {
     protected ItemStack toItem() {
         ItemStack i = newItemStack(Material.TRIPWIRE_HOOK, "Entity Modification");
         return i;
+    }
+
+    @Override
+    public boolean guiClickEvent(InventoryClickEvent event) {
+        for (ItemStack i : gui.getContents()) {
+            DA_item da = DA_item.get(i);
+            if (da instanceof Spawn.EntityCollection ec)
+                entities.add(ec);
+        }
+        return true;
     }
 
     @Override

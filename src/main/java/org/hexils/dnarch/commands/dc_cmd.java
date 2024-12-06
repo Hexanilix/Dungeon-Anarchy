@@ -63,7 +63,7 @@ public final class dc_cmd implements CommandExecutor {
                 } else {
                     dm.setSelectionA(p.getLocation().getBlock().getLocation());
                 }
-                return OK + "Set 1st position to " + org.hetils.mpdl.Location.toReadableFormatFloor(dm.getSelectionA());
+                return OK + "Set 1st position to " + org.hetils.mpdl.Location.toReadableFormat(dm.getSelectionA());
             }
             case "pos2" -> {
                 if (args.length > 1) {
@@ -73,7 +73,7 @@ public final class dc_cmd implements CommandExecutor {
                 } else {
                     dm.setSelectionB(p.getLocation().getBlock().getLocation());
                 }
-                return OK + "Set 2nd position to " + org.hetils.mpdl.Location.toReadableFormatFloor(dm.getSelectionB());
+                return OK + "Set 2nd position to " + org.hetils.mpdl.Location.toReadableFormat(dm.getSelectionB());
             }
             case "create" -> {
                 if (args.length > 1) {
