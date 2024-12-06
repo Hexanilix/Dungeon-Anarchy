@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Inventory.*;
 import static org.hetils.mpdl.Item.newItemStack;
 
@@ -87,6 +88,8 @@ public class Trigger extends DA_block implements Booled, Triggerable {
 
     @Override
     public boolean guiClickEvent(@NotNull InventoryClickEvent event) {
+        log(Arrays.toString(actions.toArray()));
+        log(Arrays.toString(conditions.toArray()));
         ItemStack ci = event.getCurrentItem();
         ItemStack iih = event.getCursor();
         if ((ci == null || ci.isSimilar(BACKGROUND)) && iih == null)

@@ -7,6 +7,7 @@ import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.jetbrains.annotations.NotNull;
 
+import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class DungeonStart extends Condition {
@@ -48,7 +49,7 @@ public class DungeonStart extends Condition {
     }
 
     @Override
-    public void onTrigger() {
-
+    protected void onTrigger() {
+         log("tripped");
     }
 }

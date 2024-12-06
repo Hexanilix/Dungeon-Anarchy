@@ -7,10 +7,7 @@ import org.hetils.jgl17.General;
 import org.hetils.jgl17.Pair;
 import org.hetils.mpdl.Inventory;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.Condition;
-import org.hexils.dnarch.DA_item;
-import org.hexils.dnarch.GUI;
-import org.hexils.dnarch.Managable;
+import org.hexils.dnarch.*;
 import org.hexils.dnarch.objects.conditions.DungeonStart;
 import org.hexils.dnarch.objects.conditions.Type;
 import org.jetbrains.annotations.Contract;
@@ -45,7 +42,7 @@ public class Dungeon extends Managable {
         return null;
     }
 
-    private class Section extends org.hetils.mpdl.Location.Box {
+    private class Section extends org.hetils.mpdl.Location.Box implements Booled, Triggerable {
         private String name;
 
         public Section(Pair<Location, Location> selection) {
@@ -63,6 +60,18 @@ public class Dungeon extends Managable {
         public void setName(String name) {
             this.name = name;
         }
+
+        private boolean pin_dungeon = false;
+
+        @Override
+        public boolean isSatisfied() {
+            return false;
+        }
+
+        @Override
+        public void trigger() {
+
+        }
     }
 
     private org.hetils.mpdl.Location.Box bounding_box;
@@ -73,7 +82,7 @@ public class Dungeon extends Managable {
     private Section mains;
     private final UUID creator;
     private String creator_name;
-    private Condition dungeon_start;
+    private DungeonStart dungeon_start;
     private boolean running = false;
 
     public Dungeon(UUID creator, Pair<Location, Location> sec) {
@@ -108,12 +117,15 @@ public class Dungeon extends Managable {
     public boolean isRunning() { return running; }
 
     public void start() {
-        dungeon_start.trigger();
-        this.running = true;
+        if (!this.running) {
+            this.running = true;
+            dungeon_start.trigger();
+        }
     }
 
     public void stop() {
-        this.running = false;
+        if (this.running)
+            this.running = false;
     }
 
     public Section getMains() { return mains; }
@@ -124,7 +136,7 @@ public class Dungeon extends Managable {
 
     public String getCreatorName() { return creator_name; }
 
-    public Condition getEventBlock(Type type) {
+    public DungeonStart getEventBlock(Type type) {
         if (type == null) return null;
         return switch (type) {
             case DUNGEON_START -> dungeon_start;

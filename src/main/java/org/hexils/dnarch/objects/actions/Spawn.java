@@ -7,7 +7,8 @@ import org.bukkit.entity.Entity;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.objects.conditions.EntitySpawn;
+import org.hexils.dnarch.EntitySpawn;
+import org.hexils.dnarch.objects.conditions.EntitySpawnCondition;
 
 import java.util.*;
 
@@ -17,6 +18,8 @@ public class Spawn extends Action {
 
     private Collection<EntitySpawn> entities = new ArrayList<>();
     private List<Location> spawnp = new ArrayList<>();
+    private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition(this);
+
     public Spawn(EntitySpawn e, Location sp) {
         super(Type.SPAWN);
         this.entities.add(e);
@@ -86,5 +89,9 @@ public class Spawn extends Action {
     @Override
     protected void action(DungeonMaster dm, String action, String[] args) {
 
+    }
+
+    public EntitySpawnCondition getEnt_spaw_c() {
+        return ent_spaw_c;
     }
 }

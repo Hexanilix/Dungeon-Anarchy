@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 
+import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class Distance extends Condition {
@@ -27,9 +28,7 @@ public class Distance extends Condition {
         return false;
     }
 
-    public void onTrigger() {
-        this.satisfied = true;
-    }
+    protected void onTrigger() { this.satisfied = true; }
 
     @Override
     public boolean isSatisfied() {

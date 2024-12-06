@@ -45,7 +45,7 @@ public class LocationCondition extends Condition {
     }
 
     @Override
-    public void onTrigger() {
+    protected void onTrigger() {
 
     }
 }

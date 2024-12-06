@@ -20,8 +20,8 @@ public abstract class Condition extends DA_item implements Booled, Triggerable {
     }
 
     public final void trigger() {
-        runnables.values().forEach(Runnable::run);
         onTrigger();
+        runnables.values().forEach(Runnable::run);
     }
 
     protected abstract void onTrigger();
