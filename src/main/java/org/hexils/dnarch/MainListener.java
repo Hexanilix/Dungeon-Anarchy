@@ -48,7 +48,7 @@ public final class MainListener implements org.bukkit.event.Listener {
                             dm.deselectBlock(b);
                 }
             }
-        } else if (NSK.hasNSK(event.getItem(), GUI.MODIFIABLE, true)) {
+        } else if (NSK.hasNSK(event.getItem(), ITEM_UUID)) {
             String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
             if (s != null) {
                 UUID id = UUID.fromString(s);

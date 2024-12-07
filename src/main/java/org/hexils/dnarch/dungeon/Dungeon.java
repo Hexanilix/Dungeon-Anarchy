@@ -9,6 +9,7 @@ import org.hetils.mpdl.Inventory;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.objects.conditions.DungeonStart;
+import org.hexils.dnarch.objects.conditions.LocationCondition;
 import org.hexils.dnarch.objects.conditions.Type;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +22,22 @@ import static org.hetils.mpdl.Item.newItemStack;
 import static org.hetils.mpdl.Location.toMaxMin;
 
 public class Dungeon extends Managable {
+    public static @Nullable String commandNew(DungeonMaster dm, @NotNull String[] args) {
+        if (dm.hasAreaSelected()) {
+            Dungeon d;
+            if (args.length > 0) {
+                try {
+                    d = new Dungeon(dm.p.getUniqueId(), args[0], dm.getSelectedArea());
+                } catch (Dungeon.DuplicateNameException ignore) {
+                    return ChatColor.RED + "Dungeon " + args[0] + " already exists.";
+                }
+            } else d = new Dungeon(dm.p.getUniqueId(), dm.getSelectedArea());
+            dm.clearSelection();
+            dm.setCurrent_dungeon(d);
+            return ChatColor.GREEN + "Created new dungeon " + d.getName();
+        } else return ChatColor.RED + "You must select a section to create a dungeon";
+    }
+
     public static class DuplicateNameException extends Exception {
         public DuplicateNameException(String s) {
             super(s);
@@ -42,16 +59,36 @@ public class Dungeon extends Managable {
         return null;
     }
 
-    private class Section extends org.hetils.mpdl.Location.Box implements Booled, Triggerable {
+    public class Section extends Managable {
         private String name;
+        private final org.hetils.mpdl.Location.Box bounds;
+        private final LocationCondition sectionEnter;
 
         public Section(Pair<Location, Location> selection) {
             this(selection, "Section" + sections.size());
         }
 
         public Section(Pair<Location, Location> selection, String name) {
-            super(selection);
+            this.bounds = new org.hetils.mpdl.Location.Box(selection);
+            this.sectionEnter = new LocationCondition(this.bounds);
             this.name = name;
+        }
+
+        public static @NotNull String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
+            if (dm.hasAreaSelected()) {
+                if (dm.isEditing()) {
+                    Dungeon d = dm.getCurrentDungeon();
+                    if (args.length > 0) {
+                        d.newSection(dm.getSelectedArea(), args[0]);
+                        dm.clearSelection();
+                        return ChatColor.GREEN + "Created '" + d.getName() + "' section " + args[0];
+                    } else {
+                        d.newSection(dm.getSelectedArea());
+                        dm.clearSelection();
+                        return ChatColor.GREEN + "Created '" + d.getName() + "' section";
+                    }
+                } else return ChatColor.RED + "You must be currently editing a dungeon to create sections!";
+            } else return ChatColor.RED + "You need to first select an area to create a section!";
         }
 
         public String getName() {
@@ -61,16 +98,24 @@ public class Dungeon extends Managable {
             this.name = name;
         }
 
-        private boolean pin_dungeon = false;
+        public LocationCondition getSectionEnterCondition() { return sectionEnter; }
 
         @Override
-        public boolean isSatisfied() {
-            return false;
+        public void createGUI() {
+            this.guiSize(54);
+            this.gui.setItem(4, newItemStack(Material.BUCKET, "Get Location Condition", List.of(ChatColor.GRAY + "Click to get"), GUI.ITEM_ACTION, "getLocCond"));
         }
 
         @Override
-        public void trigger() {
+        public void updateGUI() {
 
+        }
+
+        @Override
+        protected void action(DungeonMaster dm, @NotNull String action, String[] args) {
+            switch (action) {
+                case "getLocCond" -> dm.give(this.sectionEnter);
+            }
         }
     }
 
@@ -156,9 +201,9 @@ public class Dungeon extends Managable {
     public Pair<Location, Location> getBoundingBox() { return this.bounding_box; }
 
     private void updateBoundingBox() {
-        List<Location> l = new ArrayList<>(sections.stream().map(Pair::key).toList());
-        l.addAll(sections.stream().map(Pair::value).toList());
-        l.addAll(List.of(mains.key(), mains.value()));
+        List<Location> l = new ArrayList<>(sections.stream().map(s -> s.bounds.key()).toList());
+        l.addAll(sections.stream().map(s -> s.bounds.value()).toList());
+        l.addAll(List.of(mains.bounds.key(), mains.bounds.value()));
         bounding_box = new org.hetils.mpdl.Location.Box(toMaxMin(l));
     }
 
@@ -171,9 +216,9 @@ public class Dungeon extends Managable {
     public void displayDungeon(Player p) {
         DungeonMaster dm = DungeonMaster.getOrNew(p);
         dm.select(bounding_box, Particle.GLOW);
-        dm.select(mains, Particle.END_ROD);
+        dm.select(mains.bounds, Particle.END_ROD);
         for (int i = 0; i < sections.size(); i++) {
-            dm.select(sections.get(i), selectParts[i%selectParts.length]);
+            dm.select(sections.get(i).bounds, selectParts[i%selectParts.length]);
         }
     }
 
@@ -182,10 +227,10 @@ public class Dungeon extends Managable {
         t.start();
         if (!bounding_box.contains(l)) return false;
         for (Section s : sections)
-            if (s.contains(l))
+            if (s.bounds.contains(l))
                 return true;
         log(t.getTime());
-        return mains.contains(l);
+        return mains.bounds.contains(l);
     }
 
     @Override

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import static org.hetils.mpdl.General.log;
+
 public abstract class Managable extends Named {
     public static Collection<Managable> instances = new ArrayList<>();
     protected Inventory gui = null;
@@ -67,6 +69,7 @@ public abstract class Managable extends Named {
     public boolean guiClickEvent(InventoryClickEvent event) {return true;}
 
     protected void guiSize(int size) {
+        log(name);
         if (gui == null)
             this.gui = org.hetils.mpdl.Inventory.newInv(size, name);
         else {

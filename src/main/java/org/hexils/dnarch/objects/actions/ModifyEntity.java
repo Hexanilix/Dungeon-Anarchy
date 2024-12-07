@@ -14,10 +14,10 @@ import java.util.List;
 
 import static org.hetils.mpdl.Item.newItemStack;
 
-public class EntityModification extends Action {
+public class ModifyEntity extends Action {
     private List<Spawn.EntityCollection> entities = new ArrayList<>();
 
-    public EntityModification() {
+    public ModifyEntity() {
         super(Type.ENTITY_MOD);
     }
 
@@ -67,5 +67,9 @@ public class EntityModification extends Action {
     @Override
     protected void action(DungeonMaster dm, String action, String[] args) {
 
+    }
+
+    public static String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
+        return "";
     }
 }

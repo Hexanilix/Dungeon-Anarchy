@@ -2,29 +2,39 @@ package org.hexils.dnarch.objects.actions;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class ModifyBlock extends Action {
     public interface Modify { void modify(Block b); }
     public enum ModType {
-        OPEN, CLOSE,
+        OPEN, CLOSE;
+
+        public static @Nullable ModType get(@NotNull String arg) {
+            for (ModType t : ModType.values())
+                if (t.name().equalsIgnoreCase(arg))
+                    return t;
+            return null;
+        }
     }
     public static final Map<ModType, Modify> mod = new HashMap<>();
 
     private List<Block> modify;
     private List<BlockData> og_data;
     private ModType type;
-    public ModifyBlock(List<Block> blocks, ModType type) {
+    public ModifyBlock(@NotNull List<Block> blocks, ModType type) {
         super(Type.MODIFY_BLOCK);
         this.modify = blocks;
         this.og_data = blocks.stream().map(Block::getBlockData).toList();
@@ -33,6 +43,7 @@ public class ModifyBlock extends Action {
 
     @Override
     public void execute() {
+        log(modify.size());
         modify.forEach(b -> mod.get(type).modify(b));
     }
 
@@ -45,7 +56,8 @@ public class ModifyBlock extends Action {
 
     @Override
     protected void createGUIInventory() {
-
+        this.guiSize(54);
+        updateGUI();
     }
 
     @Override
@@ -56,7 +68,8 @@ public class ModifyBlock extends Action {
 
     @Override
     public void updateGUI() {
-
+        for (int i = 0; i < 27; i++)
+            this.gui.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.Block.b2i(modify.get(i), og_data.get(i)) : null);
     }
 
 

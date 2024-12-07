@@ -21,7 +21,18 @@ public abstract class DA_item extends Managable {
     public static final NSK ITEM_UUID = new NSK(new NamespacedKey("dungeon_anarchy", "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DA_item> instances = new ArrayList<>();
 
-    protected String name;
+    public static @Nullable DA_item get(UUID id) {
+        for (DA_item d : instances)
+            if (d.getId().equals(id))
+                return d;
+        return null;
+    }
+
+    public static @Nullable DA_item get(ItemStack it) {
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
+        return s == null ? null : DA_item.get(UUID.fromString(s));
+    }
+
     private final UUID id;
 
 //    private final class Renamer {
@@ -89,30 +100,17 @@ public abstract class DA_item extends Managable {
         instances.add(this);
     }
 
-    public static @Nullable DA_item get(UUID id) {
-        for (DA_item d : instances)
-            if (d.getId().equals(id))
-                return d;
-        return null;
-    }
-
-    public static @Nullable DA_item get(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        return s == null ? null : DA_item.get(UUID.fromString(s));
-    }
-
-    public static @Nullable DA_item get(Player p) {
-        return p == null ? null : DA_item.get(p.getInventory().getItemInMainHand());
-    }
-
     public final UUID getId() {
         return id;
     }
+
+    private final List<ItemStack> items = new ArrayList<>();
 
     protected abstract ItemStack toItem();
     public final ItemStack getItem() {
         ItemStack i = this.toItem();
         NSK.setNSK(i, ITEM_UUID, id.toString());
+        items.add(i);
         return i;
     }
 }

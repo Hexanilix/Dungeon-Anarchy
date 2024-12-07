@@ -5,12 +5,16 @@ import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.Pair;
-import org.hexils.dnarch.Main;
+import org.hetils.mpdl.NSK;
+import org.hexils.dnarch.GUI;
+import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.hetils.mpdl.General.log;
 
 public final class da_cmd implements CommandExecutor {
     public static boolean withinBounds(Pair<Location, Location> bound, Location l) {
@@ -28,6 +32,16 @@ public final class da_cmd implements CommandExecutor {
         }
         Player p = (Player) sender;
         switch (args[0]) {
+            case "set" -> {
+                NSK.setNSK(p, GUI.ITEM_FIELD_VALUE, "nigga");
+            }
+            case "get" -> {
+                p.sendMessage((String) NSK.getNSK(p, GUI.ITEM_FIELD_VALUE));
+            }
+            case "selb" -> {
+
+                log(DungeonMaster.dms.size() + "," + DungeonMaster.getOrNew(p).getSelectionBlocks());
+            }
             case "dungeon_manager" -> {
                 String s = dc_cmd.execute(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
                 if (s != null) p.sendMessage(s);

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+import static org.hetils.mpdl.General.log;
+
 public class DungeonMaster {
     public static final Collection<DungeonMaster> dms = new HashSet<>();
     public static @NotNull DungeonMaster getOrNew(Player p) {
@@ -80,7 +82,8 @@ public class DungeonMaster {
     }
 
     public List<Block> getSelectedBlocks() {
-        List<Block> l = slb;
+        List<Block> l = new ArrayList<>();
+        l.addAll(slb);
         l.addAll(getSelectionBlocks());
         return l;
     }
@@ -105,10 +108,12 @@ public class DungeonMaster {
     }
     public void deselectBlocks() {
         this.slb.clear();
+        this.clearSelection();
     }
 
     public List<Block> getSelectionBlocks() {
         List<Block> c = new ArrayList<>();
+        log(selectedArea.key() != null && selectedArea.value() != null);
         if (selectedArea.key() != null && selectedArea.value() != null) {
             World w = selectedArea.key().getWorld();
             int xm = (int) Math.max(selectedArea.key().getX(), selectedArea.value().getX());
@@ -117,9 +122,9 @@ public class DungeonMaster {
             int mx = (int) Math.min(selectedArea.key().getX(), selectedArea.value().getX());
             int my = (int) Math.min(selectedArea.key().getY(), selectedArea.value().getY());
             int mz = (int) Math.min(selectedArea.key().getZ(), selectedArea.value().getZ());
-            for (int x = mx; x < xm; x++)
-                for (int y = my; y < ym; y++)
-                    for (int z = mz; z < zm; z++)
+            for (int x = mx; x <= xm; x++)
+                for (int y = my; y <= ym; y++)
+                    for (int z = mz; z <= zm; z++)
                         c.add(w.getBlockAt(x, y, z));
         }
         return c;
@@ -141,6 +146,10 @@ public class DungeonMaster {
 
     public boolean isBuildMode() {
         return build_mode && current_dungeon != null;
+    }
+
+    public boolean hasBlocksSelected() {
+        return !slb.isEmpty();
     }
 
     private final class SelectThread extends PluginThread {
