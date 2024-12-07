@@ -15,7 +15,7 @@ public class EntitySpawnCondition extends Condition {
 
     @Override
     public boolean isSatisfied() {
-        return false;
+        return this.spawn.isTriggered();
     }
 
     @Override
@@ -45,6 +45,6 @@ public class EntitySpawnCondition extends Condition {
 
     @Override
     protected void onTrigger() {
-        this.spawn.isTriggered();
+
     }
 }

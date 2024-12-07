@@ -15,10 +15,16 @@ import java.util.Map;
 import static org.hetils.mpdl.Item.newItemStack;
 
 public class ModifyBlock extends Action {
+    public interface Modify { void modify(Block b); }
+    public enum ModType {
+        OPEN, CLOSE,
+    }
+    public static final Map<ModType, Modify> mod = new HashMap<>();
+
     private List<Block> modify;
     private List<BlockData> og_data;
-    private BlockModification.ModType type;
-    public ModifyBlock(List<Block> blocks, BlockModification.ModType type) {
+    private ModType type;
+    public ModifyBlock(List<Block> blocks, ModType type) {
         super(Type.MODIFY_BLOCK);
         this.modify = blocks;
         this.og_data = blocks.stream().map(Block::getBlockData).toList();
@@ -27,7 +33,7 @@ public class ModifyBlock extends Action {
 
     @Override
     public void execute() {
-        modify.forEach(b -> BlockModification.mod.get(type).modify(b));
+        modify.forEach(b -> mod.get(type).modify(b));
     }
 
     @Override
@@ -54,22 +60,24 @@ public class ModifyBlock extends Action {
     }
 
 
-    private static final class BlockModification {
-        public interface Modify { void modify(Block b); }
-        public enum ModType {
-            OPEN,
-        }
-        public static final Map<ModType, Modify> mod = new HashMap<>();
-        static {
-            mod.put(ModType.OPEN, b -> {
-                if (b != null) {
-                    BlockData bd = b.getBlockData();
-                    if (bd instanceof Openable op) {
-                        op.setOpen(true);
-                        b.setBlockData(op);
-                    }
+    static {
+        mod.put(ModType.OPEN, b -> {
+            if (b != null) {
+                BlockData bd = b.getBlockData();
+                if (bd instanceof Openable op) {
+                    op.setOpen(true);
+                    b.setBlockData(op);
                 }
-            });
-        }
+            }
+        });
+        mod.put(ModType.CLOSE, b -> {
+            if (b != null) {
+                BlockData bd = b.getBlockData();
+                if (bd instanceof Openable op) {
+                    op.setOpen(false);
+                    b.setBlockData(op);
+                }
+            }
+        });
     }
 }

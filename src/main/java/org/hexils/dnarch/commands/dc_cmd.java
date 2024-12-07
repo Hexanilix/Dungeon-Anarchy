@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.hetils.mpdl.Block.block_materials;
@@ -101,13 +102,14 @@ public final class dc_cmd implements CommandExecutor {
                                             if (args.length > 2) {
                                                 d.newSection(dm.getSelectedArea(), args[2]);
                                                 dm.clearSelection();
-                                                return OK + "Created '"+ d.getName() +"' section " + args[2];
+                                                return OK + "Created '" + d.getName() + "' section " + args[2];
                                             } else {
                                                 d.newSection(dm.getSelectedArea());
                                                 dm.clearSelection();
-                                                return OK + "Created '"+ d.getName() +"' section";
+                                                return OK + "Created '" + d.getName() + "' section";
                                             }
-                                        } else return ER + "You must be currently editing a dungeon to create sections!";
+                                        } else
+                                            return ER + "You must be currently editing a dungeon to create sections!";
                                     } else return ER + "You need to first select an area to create a section!";
                                 }
                                 case "action" -> {
@@ -151,7 +153,8 @@ public final class dc_cmd implements CommandExecutor {
                     p.sendMessage(ER + "Please specify what to create!");
                 }
             }
-            case "remove" -> {}
+            case "remove" -> {
+            }
             case "run" -> {
                 if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to run elements");
                 if (DA_item.get(p.getInventory().getItemInMainHand()) instanceof Action a)
@@ -177,6 +180,7 @@ public final class dc_cmd implements CommandExecutor {
                 Dungeon d;
                 if (args.length == 2) {
                     d = Dungeon.get(args[1]);
+
                     if (d == null) {
                         return ER + "No dungeon named \"" + args[1] + "\"";
                     } else {
@@ -221,66 +225,39 @@ public final class dc_cmd implements CommandExecutor {
 
     public static @NotNull List<String> complete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         List<String> s = new ArrayList<>();
-        if (args.length == 0) {
-
-            return s;
-        }
         if (sender instanceof ConsoleCommandSender console) {
             return s;
         }
         Player p = (Player) sender;
         DungeonMaster dm = DungeonMaster.getOrNew(p);
-        if (args.length > 1) {
-            switch (args[0]) {
-                case "pos1", "pos2" -> {
-                    Block b = p.getTargetBlockExact(50);
-                    Location l;
-                    if (b == null) l = p.getLocation();
-                    else l = b.getLocation();
-                    s.add(String.valueOf(switch (args.length) {
-                        case 2 -> (int) l.getX();
-                        case 3 -> (int) l.getY();
-                        case 4 -> (int) l.getZ();
-                        default -> "";
-                    }));
-                }
-                case "create" -> {
-                    if (dm.isEditing()) {
-                        if (args.length > 2) {
-                            switch (args[1]) {
-                                case "action" -> {
-                                    if (args.length > 3) {
-                                        switch (args[2]) {
-                                            case "replace_block" -> {
-                                                return block_materials.stream().filter(m -> m.startsWith(args[3])).toList();
-                                            }
-                                        }
-                                    } else {
-                                        for (Type t : Type.values())
-                                            s.add(t.name().toLowerCase());
-                                    }
-                                }
-                                case "condition" -> {
-                                    for (org.hexils.dnarch.objects.conditions.Type t : org.hexils.dnarch.objects.conditions.Type.values())
-                                        s.add(t.name().toLowerCase());
-                                }
-                            }
-                        } else {
-                            s.addAll(List.of("section", "dungeon", "action", "trigger", "condition"));
-                        }
-                    } else {
-                        if (args.length == 2) {
-                            s.add("dungeon");
-                        }
-                    }
-                }
-                case "edit" -> Dungeon.dungeons.forEach(d -> {
-                    if (d.getName().startsWith(args[1])) s.add(d.getName());
-                });
-            }
-        } else {
+        if (args.length == 0) {
             s.addAll(List.of("pos1", "pos2", "hide", "show", "create", "edit"));
             if (dm.isEditing()) s.addAll(List.of("run", "reset", "rename", "save"));
+        } else switch (args[0].toLowerCase()) {
+            case "pos1", "pos2" -> {
+                Block b = p.getTargetBlockExact(50);
+                Location l;
+                if (b == null) l = p.getLocation();
+                else l = b.getLocation();
+                s.add(String.valueOf(switch (args.length) {
+                    case 2 -> (int) l.getX();
+                    case 3 -> (int) l.getY();
+                    case 4 -> (int) l.getZ();
+                    default -> "";
+                }));
+            }
+            case "create" -> {
+                if (args.length == 1) {
+                    s.add("dungeon");
+                    if (dm.isEditing()) s.addAll(List.of("section", "dungeon", "action", "trigger", "condition"));
+                } else {
+                    switch (args[1].toLowerCase()) {
+                        case "action" -> Arrays.stream(Type.values()).forEach(t -> s.add(t.name().toLowerCase()));
+                        case "condition" -> Arrays.stream(org.hexils.dnarch.objects.conditions.Type.values()).forEach(t -> s.add(t.name().toLowerCase()));
+                    }
+                }
+            }
+            case "edit" -> Dungeon.dungeons.stream().filter(d -> d.getName().startsWith(args[1])).forEach(d -> s.add(d.getName()));
         }
         return s;
     }
