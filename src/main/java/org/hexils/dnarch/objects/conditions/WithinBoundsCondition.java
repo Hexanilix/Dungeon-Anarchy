@@ -13,37 +13,32 @@ import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
-import java.util.List;
 
-public class LocationCondition extends Condition {
+public class WithinBoundsCondition extends Condition {
     private org.hetils.mpdl.Location.Box bounds;
     private BukkitRunnable runnable;
     private boolean satisfied = false;
-    public LocationCondition(Pair<Location, Location> bounds) {
-        super(Type.LOCATION);
+    public WithinBoundsCondition(Pair<Location, Location> bounds) {
+        super(Type.WITHIN_BOUNDS);
         this.bounds = new org.hetils.mpdl.Location.Box(bounds);
         this.runnable = new BukkitRunnable() {
             Collection<Entity> c;
-            final World w = LocationCondition.this.bounds.getWorld();
-            final Location loc = org.hetils.mpdl.Location.getCenter();
+            final World w = WithinBoundsCondition.this.bounds.getWorld();
+            final Location loc = org.hetils.mpdl.Location.getCenter(bounds.key(), bounds.value());
             final double rad = loc.distance(bounds.key());
             @Override
             public void run() {
                 c = w.getNearbyEntities(loc, rad, rad, rad);
-                hasPlayers(c);
+                satisfied = false;
+                for (Entity e : c)
+                    if (e instanceof Player p && WithinBoundsCondition.this.bounds.contains(p.getLocation())) {
+                        satisfied = true;
+                        trigger();
+                        break;
+                    }
             }
         };
         this.runnable.runTaskTimer(Main.plugin, 0, 2);
-    }
-
-    public void hasPlayers(@NotNull Collection<Entity> ents) {
-        satisfied = false;
-        for (Entity e : ents) {
-            if (e instanceof Player p && bounds.contains(p.getLocation())) {
-                satisfied = true;
-                break;
-            }
-        }
     }
 
     @Override
@@ -53,11 +48,6 @@ public class LocationCondition extends Condition {
 
     @Override
     protected void createGUIInventory() {
-
-    }
-
-    @Override
-    public void updateGUI() {
 
     }
 

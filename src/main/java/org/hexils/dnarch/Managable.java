@@ -52,7 +52,7 @@ public abstract class Managable extends Named {
 
     public abstract void createGUI();
 
-    public abstract void updateGUI();
+    public void updateGUI() {}
 
     public final void setField(DungeonMaster dm, String value) {
         if (value != null) {
@@ -69,7 +69,6 @@ public abstract class Managable extends Named {
     public boolean guiClickEvent(InventoryClickEvent event) {return true;}
 
     protected void guiSize(int size) {
-        log(name);
         if (gui == null)
             this.gui = org.hetils.mpdl.Inventory.newInv(size, name);
         else {

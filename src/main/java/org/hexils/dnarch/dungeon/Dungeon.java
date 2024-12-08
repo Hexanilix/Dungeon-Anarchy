@@ -9,7 +9,7 @@ import org.hetils.mpdl.Inventory;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.objects.conditions.DungeonStart;
-import org.hexils.dnarch.objects.conditions.LocationCondition;
+import org.hexils.dnarch.objects.conditions.WithinBoundsCondition;
 import org.hexils.dnarch.objects.conditions.Type;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -62,7 +62,7 @@ public class Dungeon extends Managable {
     public class Section extends Managable {
         private String name;
         private final org.hetils.mpdl.Location.Box bounds;
-        private final LocationCondition sectionEnter;
+        private final WithinBoundsCondition sectionEnter;
 
         public Section(Pair<Location, Location> selection) {
             this(selection, "Section" + sections.size());
@@ -70,7 +70,7 @@ public class Dungeon extends Managable {
 
         public Section(Pair<Location, Location> selection, String name) {
             this.bounds = new org.hetils.mpdl.Location.Box(selection);
-            this.sectionEnter = new LocationCondition(this.bounds);
+            this.sectionEnter = new WithinBoundsCondition(this.bounds);
             this.name = name;
         }
 
@@ -98,12 +98,12 @@ public class Dungeon extends Managable {
             this.name = name;
         }
 
-        public LocationCondition getSectionEnterCondition() { return sectionEnter; }
+        public WithinBoundsCondition getSectionEnterCondition() { return sectionEnter; }
 
         @Override
         public void createGUI() {
             this.guiSize(54);
-            this.gui.setItem(4, newItemStack(Material.BUCKET, "Get Location Condition", List.of(ChatColor.GRAY + "Click to get"), GUI.ITEM_ACTION, "getLocCond"));
+            this.gui.setItem(21, newItemStack(Material.BUCKET, "Get Location Condition", List.of(ChatColor.GRAY + "Click to get"), GUI.ITEM_ACTION, "getLocCond"));
         }
 
         @Override

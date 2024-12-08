@@ -10,7 +10,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public abstract class Condition extends DA_item implements Booled, Triggerable {
 
@@ -28,7 +27,7 @@ public abstract class Condition extends DA_item implements Booled, Triggerable {
                 if (l == null) l = dm.p.getLocation();
                 c = new Distance(l);
             }
-            case LOCATION -> {
+            case WITHIN_BOUNDS -> {
 
             }
         }
