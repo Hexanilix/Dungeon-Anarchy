@@ -2,26 +2,20 @@ package org.hexils.dnarch.commands;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.command.*;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.objects.Trigger;
 import org.hexils.dnarch.objects.actions.*;
-import org.hexils.dnarch.objects.conditions.Distance;
-import org.hexils.dnarch.EntitySpawn;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static org.hetils.mpdl.Block.block_materials;
 import static org.hetils.mpdl.General.log;
 
 public final class dc_cmd implements CommandExecutor {
@@ -55,27 +49,26 @@ public final class dc_cmd implements CommandExecutor {
             case "pos1" -> {
                 if (args.length > 1) {
                     if (args.length > 3) {
-                        dm.setSelectionA(p.getWorld().getBlockAt(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3])).getLocation());
+                        dm.setSelectionA(p.getWorld().getBlockAt(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3])));
                     } else return ER + "Please provide x, y, z coordinates!";
                 } else {
-                    dm.setSelectionA(p.getLocation().getBlock().getLocation());
+                    dm.setSelectionA(p.getLocation().getBlock());
                 }
                 return OK + "Set 1st position to " + org.hetils.mpdl.Location.toReadableFormat(dm.getSelectionA());
             }
             case "pos2" -> {
                 if (args.length > 1) {
                     if (args.length > 3) {
-                        dm.setSelectionB(p.getWorld().getBlockAt(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3])).getLocation());
+                        dm.setSelectionB(p.getWorld().getBlockAt(Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3])));
                     } else return ER + "Please provide x, y, z coordinates!";
                 } else {
-                    dm.setSelectionB(p.getLocation().getBlock().getLocation());
+                    dm.setSelectionB(p.getLocation().getBlock());
                 }
                 return OK + "Set 2nd position to " + org.hetils.mpdl.Location.toReadableFormat(dm.getSelectionB());
             }
             case "create" -> {
                 if (args.length > 1) {
                     if (args[1].equalsIgnoreCase("dungeon")) {
-                        return Dungeon.commandNew(dm, Arrays.copyOfRange(args, 2, args.length));
                     } else {
                         if (dm.isEditing()) {
                             switch (args[1].toLowerCase()) {
@@ -105,8 +98,8 @@ public final class dc_cmd implements CommandExecutor {
             }
             case "run" -> {
                 if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to run elements");
-                if (DA_item.get(p.getInventory().getItemInMainHand()) instanceof Action a)
-                    a.execute();
+                if (DA_item.get(p.getInventory().getItemInMainHand()) instanceof Triggerable t)
+                    t.trigger();
                 else p.sendMessage(ER + "Please hold a executable item");
             }
             case "reset" -> {
@@ -122,49 +115,9 @@ public final class dc_cmd implements CommandExecutor {
                 if (!dm.isEditing()) return ER + "You must be currently editing a dungeon to rename elements";
                 DA_item a = DA_item.get(p.getInventory().getItemInMainHand());
                 if (a != null)
-                    a.promptRename(p);
+                    a.rename(p);
             }
-            case "edit" -> {
-                if (!dm.isEditing()) {
-                    Dungeon d;
-                    if (args.length == 2) {
-                        d = Dungeon.get(args[1]);
 
-                        if (d == null) {
-                            return ER + "No dungeon named \"" + args[1] + "\"";
-                        } else {
-                            dm.setCurrent_dungeon(d);
-                        }
-                    } else {
-                        d = Dungeon.get(p.getLocation());
-                        if (d == null) {
-                            return ER + "You're currently not in a dungeon, please go into the desired dungeon or specify one.";
-                        } else {
-                            dm.setCurrent_dungeon(d);
-                            return OK + "Editing dungeon " + d.getName() + "...";
-                        }
-                    }
-                } else p.sendMessage(W + "You're already editing dungeon \"" + dm.getCurrentDungeon().getName() + "\"!");
-            }
-            case "save" -> {
-                if (!dm.isEditing()) return ER + "You must be currently editing a dungeon to save it";
-                r = OK + "Saved dungeon " + dm.getCurrentDungeon().getName();
-                dm.setCurrent_dungeon(null);
-            }
-            case "show" -> {
-                if (dm.isEditing()) {
-                    dm.getCurrentDungeon().displayDungeon(p);
-                } else {
-                    Dungeon d = Dungeon.get(p.getLocation());
-                    if (d != null) d.displayDungeon(p);
-                    else return W + "No dungeon to show.";
-                }
-            }
-            case "hide" -> dm.hideSelections();
-            case "manage" -> {
-                if (!dm.isEditing()) return ER + "You must be editing a dungeon to manage stuff!";
-                dm.getCurrentDungeon().manage(p);
-            }
             case "start" -> {
                 dm.getCurrentDungeon().start();
                 log("Started dungeon");
@@ -202,31 +155,6 @@ public final class dc_cmd implements CommandExecutor {
                     case 4 -> (int) l.getZ();
                     default -> "";
                 }));
-            }
-            case "create" -> {
-                if (args.length == 2) {
-                    s.add("dungeon");
-                    if (dm.isEditing()) s.addAll(List.of("section", "dungeon", "action", "trigger", "condition"));
-                } else switch (args[1].toLowerCase()) {
-                    case "action" -> {
-                        if (args.length == 3) return Arrays.stream(Type.values()).map(e -> e.name().toLowerCase()).toList();
-                        else {
-                            Type at = Type.get(args[2]);
-                            switch (at) {
-                                case MODIFY_BLOCK -> {
-                                    return Arrays.stream(ModifyBlock.ModType.values()).map(e -> e.name().toLowerCase()).toList();
-                                }
-                            }
-                        }
-                    }
-                    case "condition" -> {
-                        if (args.length == 3) return Arrays.stream(org.hexils.dnarch.objects.conditions.Type.values()).map(e -> e.name().toLowerCase()).toList();
-                        else {}
-                    }
-                }
-            }
-            case "edit" -> {
-                if (args.length == 2) Dungeon.dungeons.stream().filter(d -> d.getName().startsWith(args[1])).forEach(d -> s.add(d.getName()));
             }
         }
         return s;

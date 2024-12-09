@@ -9,7 +9,7 @@ import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.Triggerable;
 import org.jetbrains.annotations.NotNull;
 
-public class TimerAction extends Action implements Triggerable, Booled {
+public class TimerAction extends Action implements Booled {
     private int timer = 0;
     private int start = 0;
     private final BukkitRunnable cd = new BukkitRunnable() {
@@ -30,7 +30,7 @@ public class TimerAction extends Action implements Triggerable, Booled {
     }
 
     @Override
-    public void execute() {
+    public void trigger() {
         this.cd.runTaskTimer(Main.plugin, 0, 0);
     }
 
@@ -60,11 +60,6 @@ public class TimerAction extends Action implements Triggerable, Booled {
 
     @Override
     protected void action(DungeonMaster dm, String action, String[] args) {
-
-    }
-
-    @Override
-    public void trigger() {
 
     }
 

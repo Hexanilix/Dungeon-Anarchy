@@ -12,7 +12,7 @@ import java.util.HashSet;
 
 import static org.hetils.mpdl.General.log;
 
-public abstract class Action extends DA_item {
+public abstract class Action extends DA_item implements Triggerable {
 
     public final static Collection<Action> actions = new HashSet<>();
 
@@ -82,7 +82,6 @@ public abstract class Action extends DA_item {
         return null;
     }
 
-    public abstract void execute();
     protected abstract void resetAction();
 
     public final void reset() {

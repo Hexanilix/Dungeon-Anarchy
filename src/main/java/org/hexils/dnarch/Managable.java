@@ -1,13 +1,17 @@
 package org.hexils.dnarch;
 
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.mpdl.listener.GeneralListener;
+import org.hetils.mpdl.listener.PlayerChatRunnable;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.objects.Named;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -20,6 +24,14 @@ public abstract class Managable extends Named {
 
     public Managable() { instances.add(this); }
 
+    @Contract(pure = true)
+    public static @Nullable Managable get(Inventory inventory) {
+        for (Managable m : instances)
+            if (m.gui == inventory)
+                return m;
+        return null;
+    }
+
     public final Inventory getGUI() {
         return this.gui;
     }
@@ -31,10 +43,31 @@ public abstract class Managable extends Named {
         if (p != null) p.openInventory(this.gui);
     }
 
-    //TODO this only works for one layer and doesnt properly return
+    //TODO this only works for one layer
     public final void manage(Player p, Managable da) {
         this.manage(p);
-        GeneralListener.runOnEvent(GeneralListener.EventType.INVENTORY_CLOSE, this.gui, () -> da.manage(p), EventPriority.LOW);
+        GeneralListener.runOnEvent(GeneralListener.EventType.INVENTORY_CLOSE, this.gui, () -> new BukkitRunnable() { @Override public void run() { da.manage(p); } }.run(), EventPriority.LOW);
+    }
+
+    public void rename(@NotNull Player p) {
+        rename(p, null);
+    }
+
+    public void rename(@NotNull Player p, Runnable onRename) {
+        p.sendMessage(ChatColor.AQUA + "Please type in the new name for " + this.name);
+        GeneralListener.runOnEvent(GeneralListener.EventType.PLAYER_CHAT, p, new PlayerChatRunnable() {
+            @Override
+            public void run() {}
+
+            @Override
+            public boolean run(String s) {
+                name = s;
+                createGUI();
+                manage(p);
+                if (onRename != null) onRename.run();
+                return true;
+            }
+        }, EventPriority.LOW);
     }
 
     public final void doAction(DungeonMaster dm, String command) {
@@ -42,12 +75,6 @@ public abstract class Managable extends Named {
             String[] v = command.split(" ", 1);
             action(dm, v[0], v.length > 1 ? v[1].split(" ") : new String[]{});
         }
-    }
-
-    @Override
-    public final void rename(String name) {
-        this.name = name;
-        this.createGUI();
     }
 
     public abstract void createGUI();

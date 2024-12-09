@@ -38,31 +38,35 @@ public class DungeonMaster {
         this.selectThread.start();
     }
 
-    public boolean setSelectionA(Location key) {
+    public boolean setSelectionA(Block b) {
+        Location key = b != null ? b.getLocation() : null;
         if (key != null && key.equals(selectedArea.key()))
             return false;
         else {
             selectedArea.setKey(key);
+            selectedArea.set(org.hetils.mpdl.Location.toMaxMin(selectedArea));
             if (key != null && selectedArea.value() != null && key.getWorld() != selectedArea.value().getWorld())
                 selectedArea.setValue(null);
             return true;
         }
     }
-    public boolean setSelectionB(Location value) {
+    public boolean setSelectionB(Block b) {
+        Location value = b != null ? b.getLocation() : null;
         if (value != null && value.equals(selectedArea.value()))
             return false;
         else {
             selectedArea.setValue(value);
+            selectedArea.set(org.hetils.mpdl.Location.toMaxMin(selectedArea));
             if (value != null && selectedArea.key() != null && value.getWorld() != selectedArea.key().getWorld())
                 selectedArea.setKey(null);
             return true;
         }
     }
     public Location getSelectionA() {
-        return selectedArea.key();
+        return getSelectedArea().key();
     }
     public Location getSelectionB() {
-        return selectedArea.value();
+        return getSelectedArea().value();
     }
     public void clearSelectionA() {
         selectedArea.setKey(null);
@@ -71,7 +75,7 @@ public class DungeonMaster {
         selectedArea.setValue(null);
     }
     public Pair<Location, Location> getSelectedArea() {
-        return selectedArea;
+        return new Pair<>(selectedArea.key() != null ? selectedArea.key().clone().add(1, 1, 1) : null, selectedArea.value());
     }
     public void clearSelection() {
         this.selectedArea.setKey(null);
@@ -113,19 +117,22 @@ public class DungeonMaster {
 
     public List<Block> getSelectionBlocks() {
         List<Block> c = new ArrayList<>();
-        log(selectedArea.key() != null && selectedArea.value() != null);
-        if (selectedArea.key() != null && selectedArea.value() != null) {
-            World w = selectedArea.key().getWorld();
-            int xm = (int) Math.max(selectedArea.key().getX(), selectedArea.value().getX());
-            int ym = (int) Math.max(selectedArea.key().getY(), selectedArea.value().getY());
-            int zm = (int) Math.max(selectedArea.key().getZ(), selectedArea.value().getZ());
-            int mx = (int) Math.min(selectedArea.key().getX(), selectedArea.value().getX());
-            int my = (int) Math.min(selectedArea.key().getY(), selectedArea.value().getY());
-            int mz = (int) Math.min(selectedArea.key().getZ(), selectedArea.value().getZ());
+        Pair<Location, Location> area = getSelectedArea();
+        log(area.key() != null && area.value() != null);
+        if (area.key() != null && area.value() != null) {
+            World w = area.key().getWorld();
+            int xm = (int) Math.max(area.key().getX(), area.value().getX());
+            int ym = (int) Math.max(area.key().getY(), area.value().getY());
+            int zm = (int) Math.max(area.key().getZ(), area.value().getZ());
+            int mx = (int) Math.min(area.key().getX(), area.value().getX());
+            int my = (int) Math.min(area.key().getY(), area.value().getY());
+            int mz = (int) Math.min(area.key().getZ(), area.value().getZ());
             for (int x = mx; x <= xm; x++)
                 for (int y = my; y <= ym; y++)
-                    for (int z = mz; z <= zm; z++)
-                        c.add(w.getBlockAt(x, y, z));
+                    for (int z = mz; z <= zm; z++) {
+                        Block b = w.getBlockAt(x, y, z);
+                        if (current_dungeon.isWithinDungeon(b.getLocation())) c.add(b);
+                    }
         }
         return c;
     }
@@ -133,7 +140,7 @@ public class DungeonMaster {
     public Dungeon getCurrentDungeon() {
         return current_dungeon;
     }
-    public void setCurrent_dungeon(Dungeon current_dungeon) {
+    public void setCurrentDungeon(Dungeon current_dungeon) {
         this.current_dungeon = current_dungeon;
     }
     public boolean isEditing() {
@@ -144,12 +151,16 @@ public class DungeonMaster {
         if (a != null) this.p.getInventory().addItem(a.getItem());
     }
 
-    public boolean isBuildMode() {
+    public boolean inBuildMode() {
         return build_mode && current_dungeon != null;
     }
 
     public boolean hasBlocksSelected() {
         return !slb.isEmpty();
+    }
+
+    public void setBuildMode(boolean b) {
+        this.build_mode = b;
     }
 
     private final class SelectThread extends PluginThread {
@@ -163,9 +174,9 @@ public class DungeonMaster {
         }
 
         private Particle msp = Particle.COMPOSTER;
-        SectionSelect secs = new SectionSelect(selectedArea, msp);
-        Location lk = selectedArea.key();
-        Location lv = selectedArea.value();
+        SectionSelect secs = new SectionSelect(getSelectedArea(), msp);
+        Location lk = getSelectedArea().key();
+        Location lv = getSelectedArea().value();
         @Override
         public void run() {
             secs.start();
@@ -173,10 +184,11 @@ public class DungeonMaster {
                 while (r) {
                     slb.forEach(b -> selectBlock(b.getLocation(), 5));
                     Thread.sleep(100);
-                    if (selectedArea.key() != lk || selectedArea.value() != lv) {
-                        lk = selectedArea.key();
-                        lv = selectedArea.value();
-                        secs.setSec(selectedArea);
+                    Pair<Location, Location> area = getSelectedArea();
+                    if (area.key() != lk || area.value() != lv) {
+                        lk = area.key();
+                        lv = area.value();
+                        secs.setSec(area);
                     }
                 }
             } catch (InterruptedException ignore) {}
@@ -254,9 +266,9 @@ public class DungeonMaster {
 
         public void setSec(Pair<Location, Location> sec) {
             if (sec != null && sec.key() != null && sec.value() != null) {
-                xm = Math.max(sec.key().getX(), sec.value().getX()) + 1;
-                ym = Math.max(sec.key().getY(), sec.value().getY()) + 1;
-                zm = Math.max(sec.key().getZ(), sec.value().getZ()) + 1;
+                xm = Math.max(sec.key().getX(), sec.value().getX());
+                ym = Math.max(sec.key().getY(), sec.value().getY());
+                zm = Math.max(sec.key().getZ(), sec.value().getZ());
                 mx = Math.min(sec.key().getX(), sec.value().getX());
                 my = Math.min(sec.key().getY(), sec.value().getY());
                 mz = Math.min(sec.key().getZ(), sec.value().getZ());

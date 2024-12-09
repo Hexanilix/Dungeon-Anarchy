@@ -80,7 +80,7 @@ public class Spawn extends Action {
     }
 
     @Override
-    public void execute() {
+    public void trigger() {
         List<Entity> spawnede = new ArrayList<>();
         Random r = new Random();
         for (EntitySpawn e : entities) {

@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.hetils.mpdl.Item;
 import org.hetils.mpdl.NSK;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -93,6 +94,11 @@ public abstract class DA_item extends Managable {
         ItemStack rename = newItemStack(Material.SPRUCE_SIGN, "Name: " + name, List.of(ChatColor.GRAY + "Click to rename"));
         NSK.setNSK(rename, ITEM_RENAME, true);
         return rename;
+    }
+
+    @Override
+    public void rename(@NotNull Player p) {
+        super.rename(p, () -> items.forEach(i -> Item.setName(i, name)));
     }
 
     public DA_item() {

@@ -22,7 +22,7 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    public void execute() {
+    public void trigger() {
 
     }
 

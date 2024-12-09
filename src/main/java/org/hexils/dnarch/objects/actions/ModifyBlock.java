@@ -42,7 +42,7 @@ public class ModifyBlock extends Action {
     }
 
     @Override
-    public void execute() {
+    public void trigger() {
         log(modify.size());
         modify.forEach(b -> mod.get(type).modify(b));
     }

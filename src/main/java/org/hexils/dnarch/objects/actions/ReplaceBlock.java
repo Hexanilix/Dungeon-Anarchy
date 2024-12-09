@@ -69,7 +69,7 @@ public class ReplaceBlock extends Action {
 
 
     @Override
-    public void execute() {
+    public void trigger() {
         if (!triggered) {
             for (Block b : blocks) {
                 if (sound)

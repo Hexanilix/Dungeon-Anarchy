@@ -1,6 +1,7 @@
 package org.hexils.dnarch.dungeon;
 
 import org.bukkit.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.General;
@@ -21,21 +22,11 @@ import static org.hetils.mpdl.General.log;
 import static org.hetils.mpdl.Item.newItemStack;
 import static org.hetils.mpdl.Location.toMaxMin;
 
-public class Dungeon extends Managable {
-    public static @Nullable String commandNew(DungeonMaster dm, @NotNull String[] args) {
-        if (dm.hasAreaSelected()) {
-            Dungeon d;
-            if (args.length > 0) {
-                try {
-                    d = new Dungeon(dm.p.getUniqueId(), args[0], dm.getSelectedArea());
-                } catch (Dungeon.DuplicateNameException ignore) {
-                    return ChatColor.RED + "Dungeon " + args[0] + " already exists.";
-                }
-            } else d = new Dungeon(dm.p.getUniqueId(), dm.getSelectedArea());
-            dm.clearSelection();
-            dm.setCurrent_dungeon(d);
-            return ChatColor.GREEN + "Created new dungeon " + d.getName();
-        } else return ChatColor.RED + "You must select a section to create a dungeon";
+public class Dungeon extends Managable implements Savable {
+
+    @Override
+    public void save() {
+
     }
 
     public static class DuplicateNameException extends Exception {
@@ -43,6 +34,7 @@ public class Dungeon extends Managable {
             super(s);
         }
     }
+
     public static final Collection<Dungeon> dungeons = new ArrayList<>();
     @Contract(pure = true)
     public static @Nullable Dungeon get(String name) {
@@ -57,6 +49,11 @@ public class Dungeon extends Managable {
             if (d.isWithinDungeon(loc))
                 return d;
         return null;
+    }
+
+    @Contract(pure = true)
+    public static @Nullable Dungeon get(Entity e) {
+        return e != null ? get(e.getLocation()) : null;
     }
 
     public class Section extends Managable {
@@ -121,34 +118,35 @@ public class Dungeon extends Managable {
 
     private org.hetils.mpdl.Location.Box bounding_box;
     private String name;
-    private String display_name;
     private final List<DA_item> items = new ArrayList<>();
     private final List<Section> sections = new ArrayList<>();
     private Section mains;
-    private final UUID creator;
-    private String creator_name;
     private DungeonStart dungeon_start;
     private boolean running = false;
+    private final DungeonInfo dungeon_info = new DungeonInfo();
+
+    public static String getNewDGName() {
+        String name;
+        int i = 0;
+        do {
+            name = "Dungeon" + (dungeons.size()+i);
+            i++;
+        } while (get(name) != null);
+        return name;
+    }
 
     public Dungeon(UUID creator, Pair<Location, Location> sec) {
-        Player p = Bukkit.getPlayer(creator);
-        this.creator = creator;
-        this.creator_name = p == null ? "" : p.getName();
-        do {
-            this.name = "Dungeon" + dungeons.size();
-            this.display_name = this.name;
-        } while (get(name) != null);
-        this.mains = new Section(sec, "Main_Sector");
-        bounding_box = new org.hetils.mpdl.Location.Box(toMaxMin(sec));
-        dungeons.add(this);
+        this(creator, getNewDGName(), sec);
     }
-    public Dungeon(UUID creator, String name, Pair<Location, Location> sec) throws DuplicateNameException {
+
+    public Dungeon(UUID creator, String name, Pair<Location, Location> sec) {
+        //TODO dupne
+        if (get(name) != null) return;
         Player p = Bukkit.getPlayer(creator);
-        this.creator = creator;
-        this.creator_name = p == null ? "" : p.getName();
-        if (get(name) != null) throw new DuplicateNameException("");
+        this.dungeon_info.creator = creator;
+        this.dungeon_info.creator_name = p == null ? "" : p.getName();
         this.name = name;
-        this.display_name = this.name;
+        this.dungeon_info.name = name;
         this.mains = new Section(sec, "Main_Sector");
         bounding_box = new org.hetils.mpdl.Location.Box(toMaxMin(sec));
         this.dungeon_start = new DungeonStart(this);
@@ -156,8 +154,6 @@ public class Dungeon extends Managable {
     }
 
     public String getName() { return name; }
-
-    public String getDisplayName() { return display_name; }
 
     public boolean isRunning() { return running; }
 
@@ -175,11 +171,11 @@ public class Dungeon extends Managable {
 
     public Section getMains() { return mains; }
 
-    public UUID getCreator() { return creator; }
+    public UUID getCreator() { return dungeon_info.creator; }
 
     public List<DA_item> getItems() { return items; }
 
-    public String getCreatorName() { return creator_name; }
+    public String getCreatorName() { return dungeon_info.creator_name; }
 
     public DungeonStart getEventBlock(Type type) {
         if (type == null) return null;
@@ -223,22 +219,19 @@ public class Dungeon extends Managable {
     }
 
     public boolean isWithinDungeon(Location l) {
-        General.Stopwatch t = new General.Stopwatch();
-        t.start();
         if (!bounding_box.contains(l)) return false;
         for (Section s : sections)
             if (s.bounds.contains(l))
                 return true;
-        log(t.getTime());
         return mains.bounds.contains(l);
     }
 
     @Override
     public void createGUI() {
-        this.gui = Inventory.newInv(54, display_name);
+        this.gui = Inventory.newInv(54, dungeon_info.name);
         ItemStack getDS = newItemStack(Material.CLOCK, ChatColor.GREEN + "Get dungeon start block");
         NSK.setNSK(getDS, GUI.ITEM_ACTION, "giveDungeonStartBlock");
-        this.gui.setItem(5, getDS);
+        this.gui.setItem(20, getDS);
     }
     @Override
     public void updateGUI() {
@@ -249,10 +242,21 @@ public class Dungeon extends Managable {
 
     }
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
-        log("gdfjklhjk: " + action);
+    protected void action(DungeonMaster dm, @NotNull String action, String[] args) {
         switch (action) {
-            case "giveDungeonStartBlock" -> dm.give(this.dungeon_start);
+            case "giveDungeonStartBlock" -> {
+                dm.give(this.dungeon_start);
+            }
         }
+    }
+
+    public DungeonInfo getDungeonInfo() { return dungeon_info; }
+
+    public static class DungeonInfo {
+        public String name;
+        public UUID creator;
+        public String creator_name;
+        public String difficulty;
+        public String description;
     }
 }

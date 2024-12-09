@@ -33,7 +33,7 @@ public final class MainListener implements org.bukkit.event.Listener {
                 case LEFT_CLICK_BLOCK -> {
                     if (p.isSneaking()) {
                         if (b == null) return;
-                        if (!dm.setSelectionA(b.getLocation()))
+                        if (!dm.setSelectionA(b))
                             dm.clearSelectionA();
                         event.setCancelled(true);
                     }
@@ -41,7 +41,7 @@ public final class MainListener implements org.bukkit.event.Listener {
                 case RIGHT_CLICK_BLOCK -> {
                     if (p.isSneaking()) {
                         if (b == null) return;
-                        if (!dm.setSelectionB(b.getLocation()))
+                        if (!dm.setSelectionB(b))
                             dm.clearSelectionB();
                         event.setCancelled(true);
                     } else if (dm.isEditing() && !dm.selectBlock(b))
@@ -67,7 +67,7 @@ public final class MainListener implements org.bukkit.event.Listener {
 //        String command = event.getMessage().toLowerCase();
 //
 //        // Example: Run code before any command
-//        event.getPlayer().sendMessage("You are about to execute: " + command);
+//        event.getPlayer().sendMessage("You are about to trigger: " + command);
 //
 //        // Example: Cancel a specific command ("/example")
 //        if (command.startsWith("/da")) {
@@ -99,11 +99,10 @@ public final class MainListener implements org.bukkit.event.Listener {
                             if (da != null)
                                 da.manage(p, a);
                         } else if (NSK.hasNSK(it, GUI.ITEM_RENAME)) {
-                            a.promptRename(p);
+                            a.rename(p);
                         } else if (NSK.hasNSK(it, GUI.ITEM_FIELD_VALUE)) {
                             a.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), GUI.ITEM_FIELD_VALUE));
                         } else if (NSK.hasNSK(it, GUI.ITEM_ACTION)) {
-                            log("Doin act");
                             a.doAction(dm, (String) NSK.getNSK(it, GUI.ITEM_ACTION));
                         }
                     }
@@ -113,18 +112,24 @@ public final class MainListener implements org.bukkit.event.Listener {
 
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
-        ItemStack item = event.getItemInHand();
-        if (NSK.hasNSK(item, DA_block.BLOCK, true)) {
-            if (NSK.hasNSK(item, GUI.MODIFIABLE, true)) {
-                String s = (String) NSK.getNSK(item, ITEM_UUID);
-                if (s != null) {
-                    UUID id = UUID.fromString(s);
-                    DA_item dai = DA_item.get(id);
-                    if (dai != null)
-                        dai.manage(event.getPlayer());
-                }
-                event.getBlockPlaced().getBlockData();
-            }
+//        ItemStack item = event.getItemInHand();
+//        if (NSK.hasNSK(item, DA_block.BLOCK, true)) {
+//            if (NSK.hasNSK(item, GUI.MODIFIABLE, true)) {
+//                String s = (String) NSK.getNSK(item, ITEM_UUID);
+//                if (s != null) {
+//                    UUID id = UUID.fromString(s);
+//                    DA_item dai = DA_item.get(id);
+//                    if (dai != null)
+//                        dai.manage(event.getPlayer());
+//                }
+//                event.getBlockPlaced().getBlockData();
+//            }
+//        }
+        Dungeon d = Dungeon.get(event.getBlock().getLocation());
+        if (d != null) {
+            DungeonMaster dm = DungeonMaster.getOrNew(event.getPlayer());
+            if (!dm.inBuildMode() || d != dm.getCurrentDungeon())
+                event.setCancelled(true);
         }
     }
 
@@ -133,7 +138,7 @@ public final class MainListener implements org.bukkit.event.Listener {
         Dungeon d = Dungeon.get(event.getBlock().getLocation());
         if (d != null) {
             DungeonMaster dm = DungeonMaster.getOrNew(event.getPlayer());
-            if (!dm.isBuildMode() && d != dm.getCurrentDungeon())
+            if (!dm.inBuildMode() || d != dm.getCurrentDungeon())
                 event.setCancelled(true);
         }
     }

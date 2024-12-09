@@ -69,7 +69,7 @@ public class Trigger extends DA_block implements Booled, Triggerable {
 
     }
 
-    private boolean addTriggerable(ItemStack it) {
+    private boolean addCondition(ItemStack it) {
         String s = (String) NSK.getNSK(it, ITEM_UUID);
         if (s != null && DA_item.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
             condition.runnables.put(this, this::trigger);
@@ -88,8 +88,6 @@ public class Trigger extends DA_block implements Booled, Triggerable {
 
     @Override
     public boolean guiClickEvent(@NotNull InventoryClickEvent event) {
-        log(Arrays.toString(actions.toArray()));
-        log(Arrays.toString(conditions.toArray()));
         ItemStack ci = event.getCurrentItem();
         ItemStack iih = event.getCursor();
         if ((ci == null || ci.isSimilar(BACKGROUND)) && iih == null)
@@ -136,14 +134,16 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     private void updateAC(InventoryClickEvent event, ItemStack ex) {
         conditions.clear();
         for (ItemStack it : getBox(this.gui, 18, 4, 4))
-            if (it != ex) addTriggerable(it);
+            if (it != ex) addCondition(it);
         actions.clear();
-        for (ItemStack it : getBox(this.gui, 22, 4, 4))
+        for (ItemStack it : getBox(this.gui, 23, 4, 4))
             if (it != ex) addAction(it);
         if (event != null && !event.getClick().name().contains("SHIFT")) {
-            addTriggerable(event.getCursor());
+            addCondition(event.getCursor());
             addAction(event.getCursor());
         }
+        log(Arrays.toString(actions.toArray()));
+        log(Arrays.toString(conditions.toArray()));
     }
 
 
@@ -152,6 +152,6 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     public void trigger() {
         if (isSatisfied())
             for (Action a : actions)
-                a.execute();
+                a.trigger();
     }
 }

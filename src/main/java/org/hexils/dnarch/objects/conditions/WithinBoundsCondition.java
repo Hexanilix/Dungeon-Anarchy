@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
+import static org.hetils.mpdl.General.log;
+
 public class WithinBoundsCondition extends Condition {
     private org.hetils.mpdl.Location.Box bounds;
     private BukkitRunnable runnable;
@@ -28,17 +30,23 @@ public class WithinBoundsCondition extends Condition {
             final double rad = loc.distance(bounds.key());
             @Override
             public void run() {
-                c = w.getNearbyEntities(loc, rad, rad, rad);
-                satisfied = false;
-                for (Entity e : c)
-                    if (e instanceof Player p && WithinBoundsCondition.this.bounds.contains(p.getLocation())) {
+                c = w.getNearbyEntities(loc, rad, rad, rad).stream().filter(e -> e instanceof Player).toList();
+                if (!c.isEmpty()) {
+                    if (check(c)) {
+                        if (!satisfied) trigger();
                         satisfied = true;
-                        trigger();
-                        break;
-                    }
+                    } else satisfied = false;
+                } else satisfied = false;
             }
         };
         this.runnable.runTaskTimer(Main.plugin, 0, 2);
+    }
+
+    private boolean check(Collection<Entity> c) {
+        for (Entity e : c)
+            if (WithinBoundsCondition.this.bounds.contains(e.getLocation()))
+                return true;
+        return false;
     }
 
     @Override
@@ -68,6 +76,6 @@ public class WithinBoundsCondition extends Condition {
 
     @Override
     protected void onTrigger() {
-
+        log("TRigged");
     }
 }

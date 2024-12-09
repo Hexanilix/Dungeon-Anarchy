@@ -10,3 +10,5 @@ commands:
     usage: /<command> <args>
   dc:
     description: The Dungeon Anarchy creator command, a shortcut for /dungeon_anarchy creator
+  dungeon:
+    usage: /<command> <args>
