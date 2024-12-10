@@ -16,7 +16,7 @@ import java.util.List;
 
 import static org.hetils.mpdl.General.log;
 
-public class dungeon_cmd implements CommandExecutor {
+public class DungeonCommandExecutor implements CommandExecutor {
     public static ChatColor ER = ChatColor.RED;
     public static ChatColor OK = ChatColor.GREEN;
     public static ChatColor W = ChatColor.YELLOW;
@@ -64,7 +64,7 @@ public class dungeon_cmd implements CommandExecutor {
                             p.sendMessage(ER + "You're currently not in a dungeon, please go into the desired dungeon or specify one.");
                         } else {
                             dm.setCurrentDungeon(d);
-                            p.sendMessage(OK + "Editing dungeon " + d.getName() + "...");
+                            p.sendMessage(OK + "Editing dungeon " + d.getDungeonInfo().name);
                         }
                     }
                 } else {
@@ -79,12 +79,13 @@ public class dungeon_cmd implements CommandExecutor {
             }
             case "save" -> {
                 if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to save it");
-                dm.getCurrentDungeon().save();
-                dm.setCurrentDungeon(null);
-                p.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
+                else {
+                    dm.getCurrentDungeon().save();
+                    dm.setCurrentDungeon(null);
+                    p.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
+                }
             }
             case "show" -> {
-                log("?");
                 if (dm.isEditing()) {
                     dm.getCurrentDungeon().displayDungeon(p);
                     p.sendMessage(OK + "Showing dungeon " + dm.getCurrentDungeon().getDungeonInfo().name);
@@ -133,41 +134,47 @@ public class dungeon_cmd implements CommandExecutor {
             }
             Player p = (Player) sender;
             DungeonMaster dm = DungeonMaster.getOrNew(p);
-            if (args.length == 1) {
-                s.addAll(List.of("build", "create" , "edit"));
-                if (dm.isEditing()) s.addAll(List.of("manage", "hide", "show", "save"));
-            } else {
-                switch (args[0]) {
-                    case "create" -> {
-                        if (dm.isEditing()) {
-                            if (args.length == 2) {
-                                s.addAll(List.of("section", "dungeon", "action", "trigger", "condition"));
-                            } else switch (args[1].toLowerCase()) {
-                                case "action" -> {
-                                    if (args.length == 3)
-                                        return Arrays.stream(Type.values()).map(e -> e.name().toLowerCase()).toList();
-                                    else {
-                                        Type at = Type.get(args[2]);
-                                        switch (at) {
-                                            case MODIFY_BLOCK -> {
-                                                return Arrays.stream(ModifyBlock.ModType.values()).map(e -> e.name().toLowerCase()).toList();
+            if (sender.isOp()) {
+                if (args.length == 1) {
+                    s.addAll(List.of("show", "edit"));
+                    if (!dm.isEditing()) s.addAll(List.of("create"));
+                    else s.addAll(List.of("manage", "hide", "save"));
+                } else {
+                    switch (args[0]) {
+                        case "create" -> {
+                            if (dm.isEditing()) {
+                                if (args.length == 2) {
+                                    s.addAll(List.of("section", "action", "trigger", "condition"));
+                                } else switch (args[1].toLowerCase()) {
+                                    case "action" -> {
+                                        if (args.length == 3)
+                                            return Arrays.stream(Type.values()).map(e -> e.name().toLowerCase()).toList();
+                                        else {
+                                            Type at = Type.get(args[2]);
+                                            switch (at) {
+                                                case MODIFY_BLOCK -> {
+                                                    return Arrays.stream(ModifyBlock.ModType.values()).map(e -> e.name().toLowerCase()).toList();
+                                                }
                                             }
                                         }
                                     }
-                                }
-                                case "condition" -> {
-                                    if (args.length == 3)
-                                        return Arrays.stream(org.hexils.dnarch.objects.conditions.Type.values()).map(e -> e.name().toLowerCase()).toList();
-                                    else {
+                                    case "condition" -> {
+                                        if (args.length == 3)
+                                            return Arrays.stream(org.hexils.dnarch.objects.conditions.Type.values()).map(e -> e.name().toLowerCase()).toList();
+                                        else {
+                                        }
                                     }
                                 }
-                            }
+                            } else s.add("dungeon");
+                        }
+                        case "edit" -> {
+                            if (!dm.isEditing() && args.length == 2)
+                                Dungeon.dungeons.stream().filter(d -> d.getName().startsWith(args[1])).forEach(d -> s.add(d.getName()));
                         }
                     }
-                    case "edit" -> {
-                        if (!dm.isEditing() && args.length == 2) Dungeon.dungeons.stream().filter(d -> d.getName().startsWith(args[1])).forEach(d -> s.add(d.getName()));
-                    }
                 }
+            } else {
+
             }
             return s;
         }

@@ -18,7 +18,7 @@ import java.util.*;
 
 import static org.hetils.mpdl.General.log;
 
-public final class dc_cmd implements CommandExecutor {
+public final class DungeonCreatorCommandExecutor implements CommandExecutor {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
@@ -79,7 +79,7 @@ public final class dc_cmd implements CommandExecutor {
                                     log(Arrays.toString(Arrays.copyOfRange(args, 3, args.length)));
                                     if (args.length == 2) {
                                         return ER + "Please specify the action type!";
-                                    } else dm.give(Action.create(Type.get(args[2]), dm, Arrays.copyOfRange(args, 3, args.length)));
+                                    } else dm.give(Action.commandCreate(Type.get(args[2]), dm, Arrays.copyOfRange(args, 3, args.length)));
                                 }
                                 case "condition" -> {
                                     if (args.length == 2) {

@@ -38,7 +38,7 @@ public abstract class Action extends DA_item implements Triggerable {
         actions.add(this);
     }
 
-    public static Action create(Type type, DungeonMaster dm, @NotNull String[] args) {
+    public static Action commandCreate(Type type, DungeonMaster dm, @NotNull String[] args) {
         Action a = null;
         switch (type) {
             case REPLACE_BLOCK -> {
@@ -71,6 +71,7 @@ public abstract class Action extends DA_item implements Triggerable {
 
             }
         }
+        dm.getCurrentDungeon().addItem(a);
         return a;
     }
 

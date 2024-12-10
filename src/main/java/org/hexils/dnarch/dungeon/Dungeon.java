@@ -175,6 +175,15 @@ public class Dungeon extends Managable implements Savable {
 
     public List<DA_item> getItems() { return items; }
 
+    public void addItem(@NotNull DA_item i) { items.add(i); }
+
+    public boolean removeItem(DA_item i) {
+        if (items.remove(i)) {
+            i.delete();
+            return true;
+        } else return false;
+    }
+
     public String getCreatorName() { return dungeon_info.creator_name; }
 
     public DungeonStart getEventBlock(Type type) {

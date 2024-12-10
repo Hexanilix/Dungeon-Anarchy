@@ -105,4 +105,10 @@ public abstract class Managable extends Named {
             this.gui = i;
         }
     }
+
+    protected void delete() {
+        instances.remove(this);
+        this.gui = null;
+        System.gc();
+    }
 }

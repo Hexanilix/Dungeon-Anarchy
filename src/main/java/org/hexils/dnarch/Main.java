@@ -9,9 +9,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.hetils.mpdl.General;
 import org.hetils.mpdl.PluginThread;
 import org.hetils.mpdl.listener.GeneralListener;
-import org.hexils.dnarch.commands.da_cmd;
-import org.hexils.dnarch.commands.dc_cmd;
-import org.hexils.dnarch.commands.dungeon_cmd;
+import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
+import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
+import org.hexils.dnarch.commands.DungeonCommandExecutor;
 
 import java.util.logging.Level;
 
@@ -34,22 +34,22 @@ public final class Main extends JavaPlugin {
 
     private void loadCommands() {
         if (Bukkit.getPluginCommand("dungeon_anarchy") != null) {
-            Bukkit.getPluginCommand("dungeon_anarchy").setExecutor(new da_cmd());
-            Bukkit.getPluginCommand("dungeon_anarchy").setTabCompleter(new da_cmd.tab());
+            Bukkit.getPluginCommand("dungeon_anarchy").setExecutor(new DungeonAnarchyCommandExecutor());
+            Bukkit.getPluginCommand("dungeon_anarchy").setTabCompleter(new DungeonAnarchyCommandExecutor.tab());
         } else {
             log(Level.SEVERE, "THE PLUGIN COMMAND \"/dungeon_anarchy\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
         }
         if (Bukkit.getPluginCommand("dc") != null) {
-            Bukkit.getPluginCommand("dc").setExecutor(new dc_cmd());
-            Bukkit.getPluginCommand("dc").setTabCompleter(new dc_cmd.tab());
+            Bukkit.getPluginCommand("dc").setExecutor(new DungeonCreatorCommandExecutor());
+            Bukkit.getPluginCommand("dc").setTabCompleter(new DungeonCreatorCommandExecutor.tab());
         } else log(Level.SEVERE, "THE PLUGIN COMMAND \"/dc\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
         if (Bukkit.getPluginCommand("da") != null) {
-            Bukkit.getPluginCommand("da").setExecutor(new da_cmd());
-            Bukkit.getPluginCommand("da").setTabCompleter(new da_cmd.tab());
+            Bukkit.getPluginCommand("da").setExecutor(new DungeonAnarchyCommandExecutor());
+            Bukkit.getPluginCommand("da").setTabCompleter(new DungeonAnarchyCommandExecutor.tab());
         } else log(Level.SEVERE, "THE PLUGIN COMMAND \"/da\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
         if (Bukkit.getPluginCommand("dungeon") != null) {
-            Bukkit.getPluginCommand("dungeon").setExecutor(new dungeon_cmd());
-            Bukkit.getPluginCommand("dungeon").setTabCompleter(new dungeon_cmd.Tab());
+            Bukkit.getPluginCommand("dungeon").setExecutor(new DungeonCommandExecutor());
+            Bukkit.getPluginCommand("dungeon").setTabCompleter(new DungeonCommandExecutor.Tab());
         } else log(Level.SEVERE, "THE PLUGIN COMMAND \"/dungeon\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
 
     }
