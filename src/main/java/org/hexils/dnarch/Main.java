@@ -6,7 +6,6 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.hetils.mpdl.General;
 import org.hetils.mpdl.PluginThread;
 import org.hetils.mpdl.listener.GeneralListener;
 import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
@@ -15,7 +14,7 @@ import org.hexils.dnarch.commands.DungeonCommandExecutor;
 
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
 
 public final class Main extends JavaPlugin {
     public static JavaPlugin plugin;
@@ -28,7 +27,6 @@ public final class Main extends JavaPlugin {
         m.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         m.addEnchant(Enchantment.CHANNELING, 1, true);
         m.setDisplayName(ChatColor.DARK_PURPLE + "Dungeon Master's Wand");
-
         wand.setItemMeta(m);
     }
 
@@ -51,16 +49,19 @@ public final class Main extends JavaPlugin {
             Bukkit.getPluginCommand("dungeon").setExecutor(new DungeonCommandExecutor());
             Bukkit.getPluginCommand("dungeon").setTabCompleter(new DungeonCommandExecutor.Tab());
         } else log(Level.SEVERE, "THE PLUGIN COMMAND \"/dungeon\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
-
+        if (Bukkit.getPluginCommand("dg") != null) {
+            Bukkit.getPluginCommand("dg").setExecutor(new DungeonCommandExecutor());
+            Bukkit.getPluginCommand("dg").setTabCompleter(new DungeonCommandExecutor.Tab());
+        } else log(Level.SEVERE, "THE PLUGIN COMMAND \"/dg\" WASN'T LOADED!!! This won't impact existing dungeons and only impacts dungeon creating and management. Please restart the server or contact the developer.");
     }
 
     @Override
     public void onEnable() {
-        General.setPluginName(this.getName());
         plugin = this;
         super.onEnable();
         Bukkit.getPluginManager().registerEvents(new MainListener(), this);
         Bukkit.getPluginManager().registerEvents(new GeneralListener(), this);
+        Bukkit.getPluginManager().registerEvents(new Managable.ManagableListener(), this);
         loadCommands();
     }
 

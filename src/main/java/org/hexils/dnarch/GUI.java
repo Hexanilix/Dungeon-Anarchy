@@ -15,4 +15,8 @@ public final class GUI {
     public static void setField(ItemStack i, String field, String value) {
         NSK.setNSK(i, GUI.ITEM_FIELD_VALUE, field + ":" + value);
     }
+
+    public static void setGuiAction(ItemStack i, String action) {
+        NSK.setNSK(i, ITEM_ACTION, action);
+    }
 }

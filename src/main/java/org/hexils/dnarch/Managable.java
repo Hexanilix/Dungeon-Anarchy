@@ -2,8 +2,11 @@ package org.hexils.dnarch;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.mpdl.listener.GeneralListener;
@@ -16,11 +19,32 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
 
-public abstract class Managable extends Named {
+public abstract class Managable extends Named implements Deletable {
     public static Collection<Managable> instances = new ArrayList<>();
+
+
+    public static class ManagableListener implements Listener {
+        @EventHandler
+        public void onInvClose(@NotNull InventoryCloseEvent event) {
+            Inventory inv = event.getInventory();
+            for (Managable m : instances)
+                if (m.gui == inv) {
+                    if (m.underManagable == null && m.aboveManagable != null) {
+                        m.aboveManagable.underManagable = null;
+                        Managable am = m.aboveManagable;
+                        m.aboveManagable = null;
+                        new BukkitRunnable() { @Override public void run() { am.manage((Player) event.getPlayer()); } }.runTaskLater(Main.plugin, 1);
+                    }
+                    break;
+                }
+        }
+    }
+
     protected Inventory gui = null;
+    protected Managable aboveManagable = null;
+    protected Managable underManagable = null;
 
     public Managable() { instances.add(this); }
 
@@ -44,9 +68,13 @@ public abstract class Managable extends Named {
     }
 
     //TODO this only works for one layer
-    public final void manage(Player p, Managable da) {
+    public final void manage(@NotNull DungeonMaster dm, Managable da) {
+        manage(dm.p, da);
+    }
+    public final void manage(Player p, @NotNull Managable da) {
+        da.underManagable = this;
+        aboveManagable = da;
         this.manage(p);
-        GeneralListener.runOnEvent(GeneralListener.EventType.INVENTORY_CLOSE, this.gui, () -> new BukkitRunnable() { @Override public void run() { da.manage(p); } }.run(), EventPriority.LOW);
     }
 
     public void rename(@NotNull Player p) {
@@ -54,20 +82,14 @@ public abstract class Managable extends Named {
     }
 
     public void rename(@NotNull Player p, Runnable onRename) {
-        p.sendMessage(ChatColor.AQUA + "Please type in the new name for " + this.name);
-        GeneralListener.runOnEvent(GeneralListener.EventType.PLAYER_CHAT, p, new PlayerChatRunnable() {
-            @Override
-            public void run() {}
-
-            @Override
-            public boolean run(String s) {
-                name = s;
-                createGUI();
-                manage(p);
-                if (onRename != null) onRename.run();
-                return true;
-            }
-        }, EventPriority.LOW);
+        GeneralListener.confirmWithPlayer(p, ChatColor.AQUA + "Please type in the new name for" + this.name, s -> {
+            name = s;
+            createGUI();
+            updateGUI();
+            manage(p);
+            if (onRename != null) onRename.run();
+            return true;
+        });
     }
 
     public final void doAction(DungeonMaster dm, String command) {
@@ -77,7 +99,7 @@ public abstract class Managable extends Named {
         }
     }
 
-    public abstract void createGUI();
+    protected abstract void createGUI();
 
     public void updateGUI() {}
 
@@ -95,18 +117,20 @@ public abstract class Managable extends Named {
 
     public boolean guiClickEvent(InventoryClickEvent event) {return true;}
 
-    protected void guiSize(int size) {
+    private int ls = 0;
+    protected void setSize(int size) {
         if (gui == null)
-            this.gui = org.hetils.mpdl.Inventory.newInv(size, name);
-        else {
-            Inventory i = org.hetils.mpdl.Inventory.newInv(size, name);
+            this.gui = org.hetils.mpdl.InventoryUtil.newInv(size, name);
+        else if (ls != size) {
+            Inventory i = org.hetils.mpdl.InventoryUtil.newInv(size, name);
             for (int j = 0; j < Math.min(size, gui.getSize()); j++)
                 i.setItem(j, gui.getItem(j));
             this.gui = i;
         }
+        ls = size;
     }
 
-    protected void delete() {
+    public void delete() {
         instances.remove(this);
         this.gui = null;
         System.gc();

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
 import static org.hexils.dnarch.Main.*;
 import static org.hexils.dnarch.DA_item.ITEM_UUID;
 

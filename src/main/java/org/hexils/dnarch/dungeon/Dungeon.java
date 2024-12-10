@@ -4,29 +4,39 @@ import org.bukkit.*;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.jgl17.General;
+import org.bukkit.util.BoundingBox;
+import org.bukkit.util.Vector;
 import org.hetils.jgl17.Pair;
-import org.hetils.mpdl.Inventory;
+import org.hetils.mpdl.InventoryUtil;
+import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.NSK;
+import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.objects.conditions.DungeonStart;
 import org.hexils.dnarch.objects.conditions.WithinBoundsCondition;
-import org.hexils.dnarch.objects.conditions.Type;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
-import static org.hetils.mpdl.Location.toMaxMin;
+import static org.hetils.mpdl.GeneralUtil.log;
+
+import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hexils.dnarch.GUI.ITEM_ACTION;
 
 public class Dungeon extends Managable implements Savable {
 
     @Override
     public void save() {
 
+    }
+
+    public Section getSection(Player p) {
+        for (Section s : sections)
+            if (s.bounds.contains(p))
+                return s;
+        return null;
     }
 
     public static class DuplicateNameException extends Exception {
@@ -57,8 +67,9 @@ public class Dungeon extends Managable implements Savable {
     }
 
     public class Section extends Managable {
+        private UUID id;
         private String name;
-        private final org.hetils.mpdl.Location.Box bounds;
+        private final LocationUtil.BoundingBox bounds;
         private final WithinBoundsCondition sectionEnter;
 
         public Section(Pair<Location, Location> selection) {
@@ -66,9 +77,15 @@ public class Dungeon extends Managable implements Savable {
         }
 
         public Section(Pair<Location, Location> selection, String name) {
-            this.bounds = new org.hetils.mpdl.Location.Box(selection);
+            int i = 0;
+            do {
+                id = UUID.randomUUID();
+                i++;
+            } while (i < 256);
+            this.bounds = new LocationUtil.BoundingBox(selection);
             this.sectionEnter = new WithinBoundsCondition(this.bounds);
             this.name = name;
+            sections.add(this);
         }
 
         public static @NotNull String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
@@ -88,6 +105,10 @@ public class Dungeon extends Managable implements Savable {
             } else return ChatColor.RED + "You need to first select an area to create a section!";
         }
 
+        public UUID getId() {
+            return id;
+        }
+
         public String getName() {
             return name;
         }
@@ -98,9 +119,9 @@ public class Dungeon extends Managable implements Savable {
         public WithinBoundsCondition getSectionEnterCondition() { return sectionEnter; }
 
         @Override
-        public void createGUI() {
-            this.guiSize(54);
-            this.gui.setItem(21, newItemStack(Material.BUCKET, "Get Location Condition", List.of(ChatColor.GRAY + "Click to get"), GUI.ITEM_ACTION, "getLocCond"));
+        protected void createGUI() {
+            this.setSize(54);
+            this.gui.setItem(21, newItemStack(Material.BUCKET, "Get Location Condition", List.of(ChatColor.GRAY + "Click to get"), ITEM_ACTION, "getLocCond"));
         }
 
         @Override
@@ -114,14 +135,25 @@ public class Dungeon extends Managable implements Savable {
                 case "getLocCond" -> dm.give(this.sectionEnter);
             }
         }
+
+        private Material displ_mat = Material.GREEN_CONCRETE;
+
+        public ItemStack toItem() {
+            ItemStack i = newItemStack(displ_mat, name);
+            log(id);
+            NSK.setNSK(i, ITEM_ACTION, id.toString());
+            log(NSK.hasNSK(i, ITEM_ACTION));
+            return i;
+        }
     }
 
-    private org.hetils.mpdl.Location.Box bounding_box;
+    private LocationUtil.BoundingBox bounding_box;
     private String name;
+    private World world;
     private final List<DA_item> items = new ArrayList<>();
     private final List<Section> sections = new ArrayList<>();
     private Section mains;
-    private DungeonStart dungeon_start;
+    public final DungeonItems dungeon_items = new DungeonItems();
     private boolean running = false;
     private final DungeonInfo dungeon_info = new DungeonInfo();
 
@@ -139,17 +171,18 @@ public class Dungeon extends Managable implements Savable {
         this(creator, getNewDGName(), sec);
     }
 
-    public Dungeon(UUID creator, String name, Pair<Location, Location> sec) {
+    public Dungeon(UUID creator, String name, @NotNull Pair<Location, Location> sec) {
         //TODO dupne
-        if (get(name) != null) return;
+//        if (get(name) != null) return;
         Player p = Bukkit.getPlayer(creator);
         this.dungeon_info.creator = creator;
         this.dungeon_info.creator_name = p == null ? "" : p.getName();
         this.name = name;
+        this.world = sec.key().getWorld();
         this.dungeon_info.name = name;
+        log(dungeon_info.name);
         this.mains = new Section(sec, "Main_Sector");
-        bounding_box = new org.hetils.mpdl.Location.Box(toMaxMin(sec));
-        this.dungeon_start = new DungeonStart(this);
+        bounding_box = new LocationUtil.BoundingBox(sec);
         dungeons.add(this);
     }
 
@@ -160,7 +193,7 @@ public class Dungeon extends Managable implements Savable {
     public void start() {
         if (!this.running) {
             this.running = true;
-            dungeon_start.trigger();
+            dungeon_items.start.trigger();
         }
     }
 
@@ -186,30 +219,23 @@ public class Dungeon extends Managable implements Savable {
 
     public String getCreatorName() { return dungeon_info.creator_name; }
 
-    public DungeonStart getEventBlock(Type type) {
-        if (type == null) return null;
-        return switch (type) {
-            case DUNGEON_START -> dungeon_start;
-            default -> null;
-        };
-    }
-
     public void newSection(Pair<Location, Location> sec) {
-        sections.add(new Section(sec));
+        new Section(sec);
         updateBoundingBox();
     }
     public void newSection(Pair<Location, Location> sec, String name) {
-        sections.add(new Section(sec, name));
+        new Section(sec, name);
         updateBoundingBox();
     }
 
-    public Pair<Location, Location> getBoundingBox() { return this.bounding_box; }
+    public BoundingBox getBoundingBox() { return this.bounding_box; }
 
     private void updateBoundingBox() {
-        List<Location> l = new ArrayList<>(sections.stream().map(s -> s.bounds.key()).toList());
-        l.addAll(sections.stream().map(s -> s.bounds.value()).toList());
-        l.addAll(List.of(mains.bounds.key(), mains.bounds.value()));
-        bounding_box = new org.hetils.mpdl.Location.Box(toMaxMin(l));
+        List<Vector> l = new ArrayList<>(sections.stream().map(s -> s.bounds.getMax()).toList());
+        l.addAll(sections.stream().map(s -> s.bounds.getMin()).toList());
+        l.add(mains.bounds.getMax());
+        l.add(mains.bounds.getMin());
+        bounding_box.resize(VectorUtil.toMaxMin(l));
     }
 
 
@@ -220,10 +246,10 @@ public class Dungeon extends Managable implements Savable {
 
     public void displayDungeon(Player p) {
         DungeonMaster dm = DungeonMaster.getOrNew(p);
-        dm.select(bounding_box, Particle.GLOW);
-        dm.select(mains.bounds, Particle.END_ROD);
+        dm.select(bounding_box.toLocationPair(world), Particle.GLOW);
+        dm.select(mains.bounds.toLocationPair(world), Particle.END_ROD);
         for (int i = 0; i < sections.size(); i++) {
-            dm.select(sections.get(i).bounds, selectParts[i%selectParts.length]);
+            dm.select(sections.get(i).bounds.toLocationPair(world), selectParts[i%selectParts.length]);
         }
     }
 
@@ -234,13 +260,45 @@ public class Dungeon extends Managable implements Savable {
                 return true;
         return mains.bounds.contains(l);
     }
+    
+    private class SectorGUIList extends Managable {
+        public SectorGUIList() {}
+
+        @Override
+        protected void createGUI() {
+            this.name = Dungeon.this.dungeon_info.name + " sections";
+            this.setSize(54);
+            updateGUI();
+        }
+
+        @Override
+        public void updateGUI() {
+            InventoryUtil.fillBox(gui, 0, 9, 6, sections.stream().map(Section::toItem).toList());
+        }
+
+        @Override
+        protected void action(DungeonMaster dm, String action, String[] args) {
+            log(action);
+            Section s = null;
+            UUID id = UUID.fromString(action);
+            for (Section sc : sections)
+                if (sc.getId().equals(id)) {
+                    s = sc;
+                    break;
+                }
+            if (s != null) {
+                s.manage(dm, this);
+            }
+        }
+    }
+    
+    private final SectorGUIList sector_gui_list = new SectorGUIList();
 
     @Override
-    public void createGUI() {
-        this.gui = Inventory.newInv(54, dungeon_info.name);
-        ItemStack getDS = newItemStack(Material.CLOCK, ChatColor.GREEN + "Get dungeon start block");
-        NSK.setNSK(getDS, GUI.ITEM_ACTION, "giveDungeonStartBlock");
-        this.gui.setItem(20, getDS);
+    protected void createGUI() {
+        this.gui = InventoryUtil.newInv(54, dungeon_info.name);
+        this.gui.setItem(20, newItemStack(Material.CLOCK, ChatColor.GREEN + "Get dungeon start block", ITEM_ACTION, "giveDungeonStartBlock"));
+        this.gui.setItem(21, newItemStack(Material.WRITABLE_BOOK, ChatColor.GREEN + "Sections", sections.stream().map(s -> ChatColor.GRAY + s.getName()).toList(), ITEM_ACTION, "dungeonSectorList"));
     }
     @Override
     public void updateGUI() {
@@ -254,7 +312,10 @@ public class Dungeon extends Managable implements Savable {
     protected void action(DungeonMaster dm, @NotNull String action, String[] args) {
         switch (action) {
             case "giveDungeonStartBlock" -> {
-                dm.give(this.dungeon_start);
+                dm.give(this.dungeon_items.start);
+            }
+            case "dungeonSectorList" -> {
+                sector_gui_list.manage(dm, this);
             }
         }
     }
@@ -262,10 +323,22 @@ public class Dungeon extends Managable implements Savable {
     public DungeonInfo getDungeonInfo() { return dungeon_info; }
 
     public static class DungeonInfo {
+
         public String name;
         public UUID creator;
         public String creator_name;
         public String difficulty;
         public String description;
+
+    }
+    
+    public class DungeonItems {
+        public final DungeonStart start = new DungeonStart(Dungeon.this);
+    }
+
+    @Override
+    public void delete() {
+        dungeons.remove(this);
+        super.delete();
     }
 }

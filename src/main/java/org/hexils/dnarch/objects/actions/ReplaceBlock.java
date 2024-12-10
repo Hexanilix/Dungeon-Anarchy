@@ -16,9 +16,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Inventory.newInv;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.InventoryUtil.newInv;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ReplaceBlock extends Action {
     private boolean sound = true;
@@ -91,7 +91,7 @@ public class ReplaceBlock extends Action {
     @Override
     public void updateGUI() {
         for (int i = 0; i < 27; i++)
-            this.gui.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.Block.b2i(blocks.get(i), ogbd.get(i)) : null);
+            this.gui.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.BlockUtil.b2i(blocks.get(i), ogbd.get(i)) : null);
     }
 
     @Override

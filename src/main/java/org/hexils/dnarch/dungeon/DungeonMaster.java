@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
 
 public class DungeonMaster {
     public static final Collection<DungeonMaster> dms = new HashSet<>();
@@ -44,7 +44,7 @@ public class DungeonMaster {
             return false;
         else {
             selectedArea.setKey(key);
-            selectedArea.set(org.hetils.mpdl.Location.toMaxMin(selectedArea));
+            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(selectedArea));
             if (key != null && selectedArea.value() != null && key.getWorld() != selectedArea.value().getWorld())
                 selectedArea.setValue(null);
             return true;
@@ -56,7 +56,7 @@ public class DungeonMaster {
             return false;
         else {
             selectedArea.setValue(value);
-            selectedArea.set(org.hetils.mpdl.Location.toMaxMin(selectedArea));
+            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(selectedArea));
             if (value != null && selectedArea.key() != null && value.getWorld() != selectedArea.key().getWorld())
                 selectedArea.setKey(null);
             return true;

@@ -3,7 +3,7 @@ package org.hexils.dnarch.objects.actions;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.mpdl.Inventory;
+import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ModifyEntity extends Action {
     private List<Spawn.EntityCollection> entities = new ArrayList<>();
@@ -33,9 +33,9 @@ public class ModifyEntity extends Action {
 
     @Override
     protected void createGUIInventory() {
-        this.guiSize(54);
-        Inventory.fillBox(gui, 18, 4, 4);
-        Inventory.fillBox(gui, 23, 4, 4);
+        this.setSize(54);
+        InventoryUtil.fillBox(gui, 18, 4, 4);
+        InventoryUtil.fillBox(gui, 23, 4, 4);
     }
 
     @Override

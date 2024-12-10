@@ -1,7 +1,7 @@
 package org.hexils.dnarch.objects.conditions;
 
 import org.bukkit.inventory.ItemStack;
-import org.hetils.mpdl.Inventory;
+import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Condition;
 
 import java.util.ArrayList;
@@ -28,8 +28,8 @@ public class NOTCondition extends Condition {
 
     @Override
     protected void createGUIInventory() {
-        this.guiSize(54);
-        Inventory.fillBox(gui, 10, 7, 4, (ItemStack) null);
+        this.setSize(54);
+        InventoryUtil.fillBox(gui, 10, 7, 4, (ItemStack) null);
     }
 
     @Override

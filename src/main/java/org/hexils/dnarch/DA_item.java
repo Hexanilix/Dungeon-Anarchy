@@ -6,16 +6,17 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import org.hetils.mpdl.Item;
+import org.hetils.mpdl.ItemUtil;
 import org.hetils.mpdl.NSK;
+import org.hexils.dnarch.dungeon.Dungeon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.GUI.ITEM_RENAME;
 
 public abstract class DA_item extends Managable {
@@ -84,7 +85,7 @@ public abstract class DA_item extends Managable {
     protected abstract void createGUIInventory();
 
     @Override
-    public void createGUI() {
+    protected void createGUI() {
         this.createGUIInventory();
         if (this.gui != null) this.gui.setItem(4, getNameSign());
         else log(Level.WARNING + "Attempted to create GUI is null from item " + this.id.toString() +". This probably shouldn't happen!");
@@ -98,7 +99,7 @@ public abstract class DA_item extends Managable {
 
     @Override
     public void rename(@NotNull Player p) {
-        super.rename(p, () -> items.forEach(i -> Item.setName(i, name)));
+        super.rename(p, () -> items.forEach(i -> ItemUtil.setName(i, name)));
     }
 
     public DA_item() {

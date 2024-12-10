@@ -4,9 +4,8 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.mpdl.Inventory;
+import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
@@ -16,8 +15,8 @@ import org.hexils.dnarch.objects.conditions.EntitySpawnCondition;
 import java.util.*;
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class Spawn extends Action {
     public class EntityCollection extends DA_item {
@@ -29,14 +28,14 @@ public class Spawn extends Action {
 
         @Override
         protected void createGUIInventory() {
-            this.guiSize(54);
+            this.setSize(54);
             updateGUI();
         }
 
         @Override
         public void updateGUI() {
-            Inventory.fillBox(gui, 9, 9, 5);
-            Inventory.fillBox(gui, 9, 9, 5, entities.stream().map(org.hetils.mpdl.Entity::toItem).toList());
+            InventoryUtil.fillBox(gui, 9, 9, 5);
+            InventoryUtil.fillBox(gui, 9, 9, 5, entities.stream().map(org.hetils.mpdl.EntityUtil::toItem).toList());
             if (entities.size() > 45) {
                 List<String> ents = new ArrayList<>();
                 for (int i = 44; i < entities.size(); i++)
@@ -53,6 +52,7 @@ public class Spawn extends Action {
 
         public void delete() {
             entities.forEach(Entity::remove);
+            super.delete();
         }
     }
 
@@ -90,7 +90,7 @@ public class Spawn extends Action {
             if (e.name != null) {
                 ent.setCustomNameVisible(true);
                 ent.setCustomName(e.name);
-            } else log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.Location.toReadableFormat(l));
+            } else log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.LocationUtil.toReadableFormat(l));
         }
         this.s_ent_c = new EntityCollection(spawnede);
         this.triggered = true;

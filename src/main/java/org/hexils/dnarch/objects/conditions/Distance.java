@@ -16,8 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class Distance extends Condition {
     public static boolean hasPlayers(Collection<Entity> c) {

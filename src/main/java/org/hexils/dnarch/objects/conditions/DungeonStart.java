@@ -7,8 +7,8 @@ import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.jetbrains.annotations.NotNull;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class DungeonStart extends Condition {
     private Dungeon d;

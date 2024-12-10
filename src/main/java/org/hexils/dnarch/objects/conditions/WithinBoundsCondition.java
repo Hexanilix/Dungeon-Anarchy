@@ -1,12 +1,14 @@
 package org.hexils.dnarch.objects.conditions;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.hetils.jgl17.Pair;
+import org.hetils.mpdl.LocationUtil;
+import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.dungeon.DungeonMaster;
@@ -14,27 +16,29 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class WithinBoundsCondition extends Condition {
-    private org.hetils.mpdl.Location.Box bounds;
+    private LocationUtil.BoundingBox bounds;
     private BukkitRunnable runnable;
     private boolean satisfied = false;
-    public WithinBoundsCondition(Pair<Location, Location> bounds) {
+    public WithinBoundsCondition(LocationUtil.@NotNull BoundingBox bounds) {
         super(Type.WITHIN_BOUNDS);
-        this.bounds = new org.hetils.mpdl.Location.Box(bounds);
+        this.bounds = bounds.clone();
         this.runnable = new BukkitRunnable() {
             Collection<Entity> c;
             final World w = WithinBoundsCondition.this.bounds.getWorld();
-            final Location loc = org.hetils.mpdl.Location.getCenter(bounds.key(), bounds.value());
-            final double rad = loc.distance(bounds.key());
+            final @NotNull Location loc = LocationUtil.join(w, bounds.getCenter());
+            final double rad = bounds.getMax().distance(VectorUtil.from(loc));
             @Override
             public void run() {
                 c = w.getNearbyEntities(loc, rad, rad, rad).stream().filter(e -> e instanceof Player).toList();
                 if (!c.isEmpty()) {
                     if (check(c)) {
-                        if (!satisfied) trigger();
+                        boolean h = satisfied;
                         satisfied = true;
+                        if (!h) trigger();
                     } else satisfied = false;
                 } else satisfied = false;
             }
@@ -42,7 +46,7 @@ public class WithinBoundsCondition extends Condition {
         this.runnable.runTaskTimer(Main.plugin, 0, 2);
     }
 
-    private boolean check(Collection<Entity> c) {
+    private boolean check(@NotNull Collection<Entity> c) {
         for (Entity e : c)
             if (WithinBoundsCondition.this.bounds.contains(e.getLocation()))
                 return true;
@@ -61,7 +65,7 @@ public class WithinBoundsCondition extends Condition {
 
     @Override
     protected ItemStack toItem() {
-        return null;
+        return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, name);
     }
 
     @Override
@@ -76,6 +80,6 @@ public class WithinBoundsCondition extends Condition {
 
     @Override
     protected void onTrigger() {
-        log("TRigged");
+        log("trigged");
     }
 }

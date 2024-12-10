@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.HashSet;
 
-import static org.hetils.mpdl.General.log;
+import static org.hetils.mpdl.GeneralUtil.log;
 
 public abstract class Action extends DA_item implements Triggerable {
 
@@ -56,7 +56,7 @@ public abstract class Action extends DA_item implements Triggerable {
             case SPAWN -> {
                 EntityType et = args.length >= 1 ? getEnum(EntityType.class, args[0]) : null;
                 if (et != null) {
-                    a = new Spawn(new EntitySpawn(et), org.hetils.mpdl.Block.toLocations(dm.getSelectedBlocks()));
+                    a = new Spawn(new EntitySpawn(et), org.hetils.mpdl.BlockUtil.toLocations(dm.getSelectedBlocks()));
                     dm.deselectBlocks();
                 } else dm.p.sendMessage(ChatColor.RED + "Please select a valid entity type");
             }

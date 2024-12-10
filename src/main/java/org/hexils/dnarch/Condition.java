@@ -23,7 +23,7 @@ public abstract class Condition extends DA_item implements Booled, Triggerable {
             case DISTANCE -> {
                 Location l = null;
                 if (dm.hasBlocksSelected())
-                    l = org.hetils.mpdl.Location.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
+                    l = org.hetils.mpdl.LocationUtil.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
                 if (l == null) l = dm.p.getLocation();
                 c = new Distance(l);
             }

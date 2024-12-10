@@ -9,13 +9,12 @@ import org.hexils.dnarch.Action;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hetils.mpdl.General.log;
-import static org.hetils.mpdl.Item.newItemStack;
+import static org.hetils.mpdl.GeneralUtil.log;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ModifyBlock extends Action {
     public interface Modify { void modify(Block b); }
@@ -56,7 +55,7 @@ public class ModifyBlock extends Action {
 
     @Override
     protected void createGUIInventory() {
-        this.guiSize(54);
+        this.setSize(54);
         updateGUI();
     }
 
@@ -69,7 +68,7 @@ public class ModifyBlock extends Action {
     @Override
     public void updateGUI() {
         for (int i = 0; i < 27; i++)
-            this.gui.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.Block.b2i(modify.get(i), og_data.get(i)) : null);
+            this.gui.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
     }
 
 
