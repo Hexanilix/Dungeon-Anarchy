@@ -112,74 +112,107 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                 }
             }
             case "save" -> {
-                if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to save it");
+                if (!dm.isEditing()) p.sendMessage(W + "You must be currently editing a dungeon to save it");
                 else {
                     dm.getCurrentDungeon().save();
-                    dm.setCurrentDungeon(null);
                     p.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
                 }
             }
-            //TODO do this
             case "delete" -> {
+                Dungeon d = dm.getCurrentDungeon();
                 if (args.length == 1) {
-                    delDungeon(args, p);
+                    if (d != null) d.attemptRemove(p);
                 } else switch (args[1]) {
-                    case "dungeon" -> delDungeon(args, p);
+                    case "dungeon" -> {
+                        if (args.length >= 3) {
+                            d = Dungeon.get(args[2]);
+                            if (d == null) return ER + "No dungeon named \"" + args[2] + "\"";
+                        } else d.attemptRemove(p);
+                    }
+                    case "section" -> {
+                        Dungeon.Section s = d.getSection(p);
+                        if (args.length >= 3) {
+                            s = d.getSection(args[2]);
+                            if (s == null) return ER + "No section named \"" + args[2] + "\"";
+                        } else if (s == null) return W + "You're currently not in a section.";
+                        String name = s.getName();
+                        Dungeon.Section finalS = s;
+                        GeneralListener.confirmWithPlayer(p, W + "Are you sure you want to delete section \"" + name + W + "\"? (yes/no)", text -> {
+                            if (text.equalsIgnoreCase("yes")) {
+                                finalS.delete();
+                                p.sendMessage(IF + "Deleted section \"" + name + "\"!.");
+                            } else p.sendMessage(IF + "Cancelled.");
+                            return true;
+                        });
+                    }
                 }
             }
             case "run" -> {
-                if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to run elements");
+                if (!dm.isEditing()) return W + "You must be currently editing a dungeon to run elements";
                 DA_item da = DA_item.get(p.getInventory().getItemInMainHand());
                 if (da instanceof Action a)
                     a.trigger();
                 else if (da instanceof Trigger t) {
                   t.actions.forEach(Action::trigger);
-                } else p.sendMessage(ER + "Please hold a executable item");
+                } else p.sendMessage(W + "Please hold a executable item");
             }
             case "reset" -> {
-                if (!dm.isEditing()) p.sendMessage(ER + "You must be currently editing a dungeon to reset elements");
+                if (!dm.isEditing()) return W + "You must be currently editing a dungeon to reset elements";
                 DA_item da = DA_item.get(p.getInventory().getItemInMainHand());
                 if (da instanceof Action a)
                     a.reset();
                 else if (da instanceof Trigger t)
                     t.actions.forEach(Action::reset);
-                else p.sendMessage(ER + "Please hold a resetable item");
+                else p.sendMessage(W + "Please hold a resetable item");
             }
             case "rename" -> {
-                if (!dm.isEditing()) return ER + "You must be currently editing a dungeon to rename elements";
+                if (!dm.isEditing()) return ER + "You must be editing a dungeon to rename elements";
                 else {
                     Dungeon d = dm.getCurrentDungeon();
                     if (args.length == 1) d.rename(p);
                     else switch (args[1]) {
                         case "dungeon" -> d.rename(p);
-                        case "section" -> d.getSection(p).rename(p);
+                        case "section" -> {
+                            Dungeon.Section s = d.getSection(p);
+                            if (args.length >= 3) {
+                                s = d.getSection(args[2]);
+                                if (s == null) return ER + "No section named \"" + args[2] + "\"";
+                            } else if (s == null) return W + "You're currently not in a section.";
+                            s.rename(p);
+                        }
                         case "item" -> {
                             DA_item a = DA_item.get(p.getInventory().getItemInMainHand());
                             if (a != null) a.rename(p);
-                            else p.sendMessage(ER + "Please hold a renameable item");
+                            else p.sendMessage(W + "Please hold a renameable item");
                         }
                         default -> p.sendMessage(ER + "Unknown type " + args[1]);
                     }
                 }
             }
             case "manage" -> {
-                if (!dm.isEditing()) p.sendMessage(ER + "You must be editing a dungeon to manage stuff!");
-                else {
-                    Dungeon d = dm.getCurrentDungeon();
-                    if (args.length == 1) d.manage(p);
-                    else switch (args[1]) {
-                        case "dungeon" -> d.manage(p);
-                        case "section" -> d.getSection(p).manage(p);
-                        case "item" -> {
-                            DA_item da = DA_item.get(p.getInventory().getItemInMainHand());
-                            if (da != null) da.manage(p);
-                            else p.sendMessage(ER + "Please hold a managable item!");
-                        }
-                        default -> p.sendMessage(ER + "Unknown type " + args[1]);
+                if (!dm.isEditing()) return W + "You must be editing a dungeon to manage elements!";
+                Dungeon d = dm.getCurrentDungeon();
+                if (args.length == 1) d.manage(p);
+                else switch (args[1]) {
+                    case "dungeon" -> d.manage(p);
+                    case "section" -> {
+                        Dungeon.Section s = d.getSection(p);
+                        if (args.length >= 3) {
+                            s = d.getSection(args[2]);
+                            if (s == null) return ER + "No section named \"" + args[2] + "\"";
+                        } else if (s == null) return W + "You're currently not in a section.";
+                        s.manage(p);
                     }
+                    case "item" -> {
+                        DA_item da = DA_item.get(p.getInventory().getItemInMainHand());
+                        if (da != null) da.manage(p);
+                        else p.sendMessage(W + "Please hold a managable item!");
+                    }
+                    default -> p.sendMessage(ER + "Unknown type " + args[1]);
                 }
             }
             case "build" -> {
+                if (!dm.isEditing()) return W + "You must be editing a dungeon to enable build mode";
                 dm.setBuildMode(!dm.inBuildMode());
                 if (!dm.inBuildMode()) {
                     dm.getCurrentDungeon().save();
@@ -190,20 +223,6 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
             default -> p.sendMessage(ER + "Unknown argument " + args[1]);
         }
         return r;
-    }
-
-    private static void delDungeon(@NotNull String @NotNull [] args, Player p) {
-        Dungeon d = Dungeon.get(args[1]);
-        if (d != null) {
-            String name = d.getDungeonInfo().name;
-            GeneralListener.confirmWithPlayer(p, W + "Are you sure you want to delete dungeon \"" + name + "\"? (yes/no)", text -> {
-                if (text.equalsIgnoreCase("yes")) {
-                    d.delete();
-                    p.sendMessage(IF + "Deleted dungeon \"" + name + "\"!");
-                }
-                return true;
-            });
-        }
     }
 
     public interface TabCompleteRunnable { List<String> complete(); }
@@ -261,6 +280,21 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                         }
                     }
                 } else s.add("dungeon");
+            }
+            case "manage" -> {
+                if (!dm.isEditing()) return s;
+                if (args.length == 2) {
+                    s.addAll(List.of("dungeon", "section", "item"));
+                } else switch (args[2]) {
+                    case "section" -> {
+                        return dm.getCurrentDungeon().getSections().stream().map(Dungeon.Section::getName).toList();
+                    }
+                    case "item" -> {
+                        DA_item da = DA_item.get(p.getInventory().getItemInMainHand());
+                        if (da != null) da.manage(p);
+                        else p.sendMessage(W + "Please hold a managable item");
+                    }
+                }
             }
 
         }

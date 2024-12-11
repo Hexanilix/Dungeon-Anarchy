@@ -1,6 +1,7 @@
 package org.hexils.dnarch.dungeon;
 
 import org.bukkit.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -11,6 +12,7 @@ import org.hetils.mpdl.InventoryUtil;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.NSK;
 import org.hetils.mpdl.VectorUtil;
+import org.hetils.mpdl.listener.GeneralListener;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.objects.conditions.DungeonStart;
 import org.hexils.dnarch.objects.conditions.WithinBoundsCondition;
@@ -24,6 +26,8 @@ import static org.hetils.mpdl.GeneralUtil.log;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.GUI.ITEM_ACTION;
+import static org.hexils.dnarch.commands.DungeonCommandExecutor.IF;
+import static org.hexils.dnarch.commands.DungeonCreatorCommandExecutor.W;
 
 public class Dungeon extends Managable implements Savable {
 
@@ -32,12 +36,34 @@ public class Dungeon extends Managable implements Savable {
 
     }
 
+    public void attemptRemove(Player p) {
+        String name = this.getDungeonInfo().name;
+        GeneralListener.confirmWithPlayer(p, W + "Are you sure you want to delete dungeon \"" + name + "\"? (yes/no)", text -> {
+            if (text.equalsIgnoreCase("yes")) {
+                this.delete();
+                p.sendMessage(IF + "Deleted dungeon \"" + name + "\"!");
+            }
+            return true;
+        });
+    }
+
     public Section getSection(Player p) {
         for (Section s : sections)
             if (s.bounds.contains(p))
                 return s;
         return null;
     }
+    public Section getSection(String s) {
+        for (Section sc : sections)
+            if (sc.name.equals(s))
+                return sc;
+        return null;
+    }
+
+    public @NotNull List<Section> getSections() {
+        return sections;
+    }
+
 
     public static class DuplicateNameException extends Exception {
         public DuplicateNameException(String s) {
