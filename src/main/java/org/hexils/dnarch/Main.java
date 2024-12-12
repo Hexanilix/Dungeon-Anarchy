@@ -6,18 +6,23 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.hetils.mpdl.Logger;
 import org.hetils.mpdl.PluginThread;
-import org.hetils.mpdl.listener.GeneralListener;
+import org.hetils.mpdl.GeneralListener;
 import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCommandExecutor;
 
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.GeneralUtil.log;
-
 public final class Main extends JavaPlugin {
+    public static Logger logger;
     public static JavaPlugin plugin;
+
+    public static void log(String s) {logger.log(s); }
+    public static void log(Object o) { logger.log(o); }
+    public static void log(Level level, String s) { logger.log(level, s); }
+    public static void log(Level level, Object o) { logger.log(level, o); }
 
     public static final ItemStack wand;
     static {
@@ -57,6 +62,7 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        logger = new Logger(this.getName());
         plugin = this;
         super.onEnable();
         Bukkit.getPluginManager().registerEvents(new MainListener(), this);

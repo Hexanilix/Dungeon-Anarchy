@@ -6,6 +6,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
+import org.hexils.dnarch.BlockAction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,10 +14,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class ModifyBlock extends Action {
+public class ModifyBlock extends BlockAction {
     public interface Modify { void modify(Block b); }
     public enum ModType {
         OPEN, CLOSE;
@@ -42,7 +43,6 @@ public class ModifyBlock extends Action {
 
     @Override
     public void trigger() {
-        log(modify.size());
         modify.forEach(b -> mod.get(type).modify(b));
     }
 
@@ -54,14 +54,14 @@ public class ModifyBlock extends Action {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
         this.setSize(54);
         updateGUI();
     }
 
     @Override
     protected ItemStack toItem() {
-        ItemStack i = newItemStack(Material.GOLDEN_SHOVEL, name);
+        ItemStack i = newItemStack(Material.GOLDEN_SHOVEL, getName());
         return i;
     }
 

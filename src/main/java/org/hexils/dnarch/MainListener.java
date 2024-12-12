@@ -16,9 +16,10 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hexils.dnarch.Main.*;
 import static org.hexils.dnarch.DA_item.ITEM_UUID;
+import static org.hexils.dnarch.Managable.*;
 
 public final class MainListener implements org.bukkit.event.Listener {
     @EventHandler
@@ -98,12 +99,15 @@ public final class MainListener implements org.bukkit.event.Listener {
                             DA_item da = DA_item.get(it);
                             if (da != null)
                                 da.manage(p, a);
-                        } else if (NSK.hasNSK(it, GUI.ITEM_RENAME)) {
-                            a.rename(p);
-                        } else if (NSK.hasNSK(it, GUI.ITEM_FIELD_VALUE)) {
-                            a.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), GUI.ITEM_FIELD_VALUE));
-                        } else if (NSK.hasNSK(it, GUI.ITEM_ACTION)) {
-                            a.doAction(dm, (String) NSK.getNSK(it, GUI.ITEM_ACTION));
+                        } else if (NSK.hasNSK(it, ITEM_RENAME)) {
+                            Managable m = Managable.get(opi);
+                            p.closeInventory();
+                            if (m == null) a.rename(p, () -> p.openInventory(opi));
+                            else a.rename(p, () -> a.manage(p));
+                        } else if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) {
+                            a.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
+                        } else if (NSK.hasNSK(it, ITEM_ACTION)) {
+                            a.doAction(dm, (String) NSK.getNSK(it, ITEM_ACTION), event);
                         }
                     }
                 }
@@ -114,7 +118,7 @@ public final class MainListener implements org.bukkit.event.Listener {
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
 //        ItemStack item = event.getItemInHand();
 //        if (NSK.hasNSK(item, DA_block.BLOCK, true)) {
-//            if (NSK.hasNSK(item, GUI.MODIFIABLE, true)) {
+//            if (NSK.hasNSK(item, MODIFIABLE, true)) {
 //                String s = (String) NSK.getNSK(item, ITEM_UUID);
 //                if (s != null) {
 //                    UUID id = UUID.fromString(s);

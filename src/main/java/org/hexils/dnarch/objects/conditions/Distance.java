@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.List;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class Distance extends Condition {
@@ -49,7 +50,6 @@ public class Distance extends Condition {
 
     public Distance(@NotNull Location loc) {
         super(Type.DISTANCE);
-        this.name = "Distance condition";
         this.loc = loc;
         this.rad = 1;
         this.shape = TriggerShape.SPHERE;
@@ -93,31 +93,16 @@ public class Distance extends Condition {
     }
 
     @Override
-    protected void createGUIInventory() {
-
-    }
-
-    @Override
-    public void updateGUI() {
+    protected void createGUI() {
 
     }
 
     @Override
     public ItemStack toItem() {
-        ItemStack i = newItemStack(Material.SCULK_SENSOR, ChatColor.RESET +  name);
+        ItemStack i = newItemStack(Material.SCULK_SENSOR, ChatColor.RESET + getName());
         ItemMeta m = i.getItemMeta();
         m.setLore(List.of(ChatColor.LIGHT_PURPLE + "Type: " + this.type.name()));
         i.setItemMeta(m);
         return i;
-    }
-
-    @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
-
-    }
-
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
-
     }
 }

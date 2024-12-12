@@ -12,8 +12,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static org.hetils.mpdl.GeneralUtil.log;
-
 public class DungeonMaster {
     public static final Collection<DungeonMaster> dms = new HashSet<>();
     public static @NotNull DungeonMaster getOrNew(Player p) {
@@ -25,6 +23,7 @@ public class DungeonMaster {
 
 
     private final Pair<Location, Location> selectedArea = new Pair<>();
+    private final Pair<Location, Location> rawSelectedArea = new Pair<>();
     private final List<Block> slb = new ArrayList<>();
     private double ppm = 5;
     private SelectThread selectThread = new SelectThread();
@@ -40,25 +39,25 @@ public class DungeonMaster {
 
     public boolean setSelectionA(Block b) {
         Location key = b != null ? b.getLocation() : null;
-        if (key != null && key.equals(selectedArea.key()))
+        if (key != null && key.equals(rawSelectedArea.key()))
             return false;
         else {
-            selectedArea.setKey(key);
-            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(selectedArea));
-            if (key != null && selectedArea.value() != null && key.getWorld() != selectedArea.value().getWorld())
-                selectedArea.setValue(null);
+            rawSelectedArea.setKey(key);
+            if (key != null && rawSelectedArea.value() != null && key.getWorld() != rawSelectedArea.value().getWorld())
+                rawSelectedArea.setValue(null);
+            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(rawSelectedArea));
             return true;
         }
     }
     public boolean setSelectionB(Block b) {
         Location value = b != null ? b.getLocation() : null;
-        if (value != null && value.equals(selectedArea.value()))
+        if (value != null && value.equals(rawSelectedArea.value()))
             return false;
         else {
-            selectedArea.setValue(value);
-            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(selectedArea));
-            if (value != null && selectedArea.key() != null && value.getWorld() != selectedArea.key().getWorld())
-                selectedArea.setKey(null);
+            rawSelectedArea.setValue(value);
+            if (value != null && rawSelectedArea.key() != null && value.getWorld() != rawSelectedArea.key().getWorld())
+                rawSelectedArea.setKey(null);
+            selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(rawSelectedArea));
             return true;
         }
     }
@@ -69,15 +68,19 @@ public class DungeonMaster {
         return getSelectedArea().value();
     }
     public void clearSelectionA() {
-        selectedArea.setKey(null);
+        rawSelectedArea.setKey(null);
+        selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(rawSelectedArea));
     }
     public void clearSelectionB() {
-        selectedArea.setValue(null);
+        rawSelectedArea.setValue(null);
+        selectedArea.set(org.hetils.mpdl.LocationUtil.toMaxMin(rawSelectedArea));
     }
     public Pair<Location, Location> getSelectedArea() {
         return new Pair<>(selectedArea.key() != null ? selectedArea.key().clone().add(1, 1, 1) : null, selectedArea.value());
     }
     public void clearSelection() {
+        this.rawSelectedArea.setKey(null);
+        this.rawSelectedArea.setValue(null);
         this.selectedArea.setKey(null);
         this.selectedArea.setValue(null);
     }
@@ -118,7 +121,6 @@ public class DungeonMaster {
     public List<Block> getSelectionBlocks() {
         List<Block> c = new ArrayList<>();
         Pair<Location, Location> area = getSelectedArea();
-        log(area.key() != null && area.value() != null);
         if (area.key() != null && area.value() != null) {
             World w = area.key().getWorld();
             int xm = (int) Math.max(area.key().getX(), area.value().getX());
@@ -164,13 +166,25 @@ public class DungeonMaster {
     }
 
     private final class SelectThread extends PluginThread {
-        private final List<SectionSelect> selects = new ArrayList<>();
-        public void addSelect(SectionSelect select) {
-            selects.add(select);
+        private final Map<Object, SectionSelect> selects = new HashMap<>();
+        public void addSelect(Object o, SectionSelect select) {
+            SectionSelect sl = selects.get(o);
+            if (sl != null) sl.halt();
+            selects.put(o, select);
             select.start();
         }
+        public boolean clearSelection(Object o) {
+            SectionSelect sl = selects.get(o);
+            if (sl != null)
+                if (sl.isRunning()) {
+                    sl.halt();
+                    return true;
+                }
+            return false;
+        }
         public void clearSelected() {
-            selects.forEach(PluginThread::halt);
+            selects.values().forEach(PluginThread::halt);
+            selects.clear();
         }
 
         private Particle msp = Particle.COMPOSTER;
@@ -292,14 +306,12 @@ public class DungeonMaster {
             this.par = par;
         }
     }
-    public void select(Pair<Location, Location> sec) {
-        this.selectThread.addSelect(new SectionSelect(sec));
+    public void select(Object o, Pair<Location, Location> sec) {
+        this.selectThread.addSelect(o, new SectionSelect(sec));
     }
-    public void select(Pair<Location, Location> sec, Particle p) {
-        this.selectThread.addSelect(new SectionSelect(sec, p));
+    public void select(Object o, Pair<Location, Location> sec, Particle p) {
+        this.selectThread.addSelect(o, new SectionSelect(sec, p));
     }
-    public void hideSelections() {
-        selectThread.selects.forEach(PluginThread::halt);
-        selectThread.selects.clear();
-    }
+    public boolean hideSelection(Object o) { return selectThread.clearSelection(o); }
+    public void hideSelections() { selectThread.clearSelected(); }
 }

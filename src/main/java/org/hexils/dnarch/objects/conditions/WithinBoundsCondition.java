@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.mpdl.LocationUtil;
@@ -16,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class WithinBoundsCondition extends Condition {
@@ -59,13 +60,13 @@ public class WithinBoundsCondition extends Condition {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
 
     }
 
     @Override
     protected ItemStack toItem() {
-        return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, name);
+        return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, getName());
     }
 
     @Override
@@ -74,12 +75,11 @@ public class WithinBoundsCondition extends Condition {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 
     @Override
     protected void onTrigger() {
-        log("trigged");
     }
 }

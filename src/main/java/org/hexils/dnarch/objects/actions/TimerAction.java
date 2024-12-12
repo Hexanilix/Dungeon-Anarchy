@@ -1,5 +1,6 @@
 package org.hexils.dnarch.objects.actions;
 
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
@@ -40,7 +41,7 @@ public class TimerAction extends Action implements Booled {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
     }
 
     @Override
@@ -59,7 +60,7 @@ public class TimerAction extends Action implements Booled {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 

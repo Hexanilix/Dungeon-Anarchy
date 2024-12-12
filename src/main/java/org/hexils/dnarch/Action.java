@@ -2,15 +2,16 @@ package org.hexils.dnarch;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
+import org.hetils.mpdl.BlockUtil;
+import org.hexils.dnarch.dungeon.Dungeon;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.objects.actions.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.*;
 
-import static org.hetils.mpdl.GeneralUtil.log;
 
 public abstract class Action extends DA_item implements Triggerable {
 
@@ -31,10 +32,8 @@ public abstract class Action extends DA_item implements Triggerable {
     public final Type type;
 
     public Action(Type type) {
+        super(toRedableFormat(type.name()));
         this.type = type;
-        this.name = toRedableFormat(type.name());
-        log(toRedableFormat(type.name()));
-        log(this.name);
         actions.add(this);
     }
 
@@ -46,10 +45,10 @@ public abstract class Action extends DA_item implements Triggerable {
                 if (mat != null) {
                     a = new ReplaceBlock(dm.getSelectedBlocks(), mat);
                     dm.deselectBlocks();
+
                 } else dm.p.sendMessage(ChatColor.RED + "Please select a valid material!");
             }
             case DESTROY_BLOCK -> {
-                log(dm.getSelectedBlocks());
                 a = new DestroyBlock(dm.getSelectedBlocks());
                 dm.deselectBlocks();
             }
@@ -71,7 +70,38 @@ public abstract class Action extends DA_item implements Triggerable {
 
             }
         }
-        dm.getCurrentDungeon().addItem(a);
+        if (a == null) return null;
+        Dungeon.Section s;
+        Dungeon d = dm.getCurrentDungeon();
+        if (a instanceof BlockAction b) {
+            List<Dungeon.Section> list = new ArrayList<>();
+            for (Block bl : b.getAffectedBlocks())
+                list.add(d.getSection(bl));
+            Map<Dungeon.Section, Integer> m = new HashMap<>();
+            list.forEach(sc -> m.putIfAbsent(sc, 0));
+            list.forEach(sc -> m.replace(sc, m.get(sc)+1));
+            Map.Entry<Dungeon.Section, Integer> e = new Map.Entry<>() {
+                @Override
+                public Dungeon.Section getKey() {
+                    return list.get(0);
+                }
+
+                @Override
+                public Integer getValue() {
+                    return 0;
+                }
+
+                @Override
+                public Integer setValue(Integer value) {
+                    return 0;
+                }
+            };
+            for (Map.Entry<Dungeon.Section, Integer> en : m.entrySet())
+                if (en.getValue() > e.getValue())
+                    e = en;
+            s = e.getKey();
+        } else s = d.getSection(dm.p);
+        s.addItem(a);
         return a;
     }
 

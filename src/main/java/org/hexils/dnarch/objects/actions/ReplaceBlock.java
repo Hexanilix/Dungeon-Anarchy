@@ -3,12 +3,13 @@ package org.hexils.dnarch.objects.actions;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hexils.dnarch.Action;
+import org.hexils.dnarch.BlockAction;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.GUI;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,11 +17,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.InventoryUtil.newInv;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class ReplaceBlock extends Action {
+public class ReplaceBlock extends BlockAction {
     private boolean sound = true;
     private boolean particles = true;
     private List<BlockData> ogbd = new ArrayList<>();
@@ -29,10 +30,10 @@ public class ReplaceBlock extends Action {
     private World world;
 
     @Override
-    protected void createGUIInventory() {
-        this.gui = newInv(54, name);
+    protected void createGUI() {
+        this.gui = newInv(54, getName());
         ItemStack cm = newItemStack(hasMeta(change_material), "Change Material: " + change_material.name());
-        GUI.setField(cm, "material", change_material.name());
+        setField(cm, "material", change_material.name());
         this.gui.setItem(13, cm);
         this.gui.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
     }
@@ -51,7 +52,6 @@ public class ReplaceBlock extends Action {
 
     public ReplaceBlock(String name, List<Block> blocks, Material change_material) {
         super(Type.REPLACE_BLOCK);
-        this.name = name;
         this.change_material = change_material;
         if (blocks != null && !blocks.isEmpty()) {
             world = blocks.get(0).getWorld();
@@ -99,8 +99,8 @@ public class ReplaceBlock extends Action {
         ItemStack i = new ItemStack(Material.DIAMOND_PICKAXE);
         ItemMeta m = i.getItemMeta();
         assert m != null;
-        m.setDisplayName(name);
-        m.getPersistentDataContainer().set(GUI.MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
+        m.setDisplayName(getName());
+        m.getPersistentDataContainer().set(MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
         i.setItemMeta(m);
         return i;
     }
@@ -125,7 +125,7 @@ public class ReplaceBlock extends Action {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 }

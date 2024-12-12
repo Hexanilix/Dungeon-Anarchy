@@ -27,7 +27,7 @@ public class NOTCondition extends Condition {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
         this.setSize(54);
         InventoryUtil.fillBox(gui, 10, 7, 4, (ItemStack) null);
     }

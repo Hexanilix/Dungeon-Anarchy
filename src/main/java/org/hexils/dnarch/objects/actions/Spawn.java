@@ -4,6 +4,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Action;
@@ -15,8 +16,9 @@ import org.hexils.dnarch.objects.conditions.EntitySpawnCondition;
 import java.util.*;
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hexils.dnarch.Main.log;
 
 public class Spawn extends Action {
     public class EntityCollection extends DA_item {
@@ -27,7 +29,7 @@ public class Spawn extends Action {
         }
 
         @Override
-        protected void createGUIInventory() {
+        protected void createGUI() {
             this.setSize(54);
             updateGUI();
         }
@@ -103,7 +105,7 @@ public class Spawn extends Action {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
 
     }
 
@@ -121,7 +123,7 @@ public class Spawn extends Action {
 
     @Override
     protected ItemStack toItem() {
-        ItemStack i = newItemStack(Material.SPAWNER, name, entsToString());
+        ItemStack i = newItemStack(Material.SPAWNER, getName(), entsToString());
         return i;
     }
 
@@ -131,7 +133,7 @@ public class Spawn extends Action {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
         switch (action) {
             case "getEntColl" -> dm.give(s_ent_c);
             case "getEntCond" -> dm.give(ent_spaw_c);
@@ -151,9 +153,8 @@ public class Spawn extends Action {
                 ", spawnede=" + s_ent_c +
                 ", triggered=" + triggered +
                 ", type=" + type +
-                ", name='" + name + '\'' +
+                ", name='" + getName() + '\'' +
                 ", gui=" + gui +
-                ", name='" + name + '\'' +
                 '}';
     }
 }

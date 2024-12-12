@@ -15,11 +15,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.InventoryUtil.*;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class Trigger extends DA_block implements Booled, Triggerable {
+public class Trigger extends DA_item implements Booled, Triggerable {
     public final List<Condition> conditions = new ArrayList<>();
     public final List<Action> actions = new ArrayList<>();
 
@@ -32,8 +32,8 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     @Override
-    protected void createGUIInventory() {
-        gui = org.hetils.mpdl.InventoryUtil.newInv(54, this.name);
+    protected void createGUI() {
+        gui = org.hetils.mpdl.InventoryUtil.newInv(54, getName());
         fillBox(gui, 18, 4, 4, (ItemStack) null);
         fillBox(gui, 23, 4, 4, (ItemStack) null);
         gui.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
@@ -41,7 +41,7 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     public Trigger() {
-        this.name = "Trigger";
+        super();
     }
 
     @Override
@@ -52,9 +52,9 @@ public class Trigger extends DA_block implements Booled, Triggerable {
         ItemStack i = new ItemStack(Material.COMPARATOR);
         ItemMeta m = i.getItemMeta();
         assert m != null;
-        m.setDisplayName(name);
+        m.setDisplayName(getName());
 
-        m.getPersistentDataContainer().set(GUI.MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
+        m.getPersistentDataContainer().set(MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
         i.setItemMeta(m);
         return i;
     }
@@ -65,25 +65,8 @@ public class Trigger extends DA_block implements Booled, Triggerable {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
-    }
-
-    private boolean addCondition(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
-            condition.runnables.put(this, this::trigger);
-            return conditions.add(condition);
-        }
-        return false;
-    }
-
-    private boolean addAction(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action)) {
-            return actions.add(action);
-        }
-        return false;
     }
 
     @Override
@@ -94,43 +77,36 @@ public class Trigger extends DA_block implements Booled, Triggerable {
             return false;
         Inventory cinv = event.getClickedInventory();
         DA_item da = DA_item.get(ci);
-        if (cinv != null && (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this.gui) {
-            if (da instanceof Condition) {
-                addToBox(gui, 18, 4, 4, ci);
-                cinv.setItem(event.getSlot(), null);
-                updateAC();
-            } else if (da instanceof Action) {
-                addToBox(gui, 23, 4, 4, ci);
-                cinv.setItem(event.getSlot(), null);
-                updateAC();
-            } else return true;
-        } else {
-            if (da == null) {
-                da = DA_item.get(event.getCursor());
-                if ((da instanceof Action || da instanceof Condition) && ci == null) {
-                    event.setCancelled(false);
-                    updateAC(event);
-                }
+        if (cinv != null) {
+            if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this.gui) {
+                if (da instanceof Condition) {
+                    addToBox(gui, 18, 4, 4, ci);
+                    cinv.setItem(event.getSlot(), null);
+                    updateAC();
+                } else if (da instanceof Action) {
+                    addToBox(gui, 23, 4, 4, ci);
+                    cinv.setItem(event.getSlot(), null);
+                    updateAC();
+                } else return true;
             } else {
-                event.setCancelled(false);
-                updateAC(ci);
+                if (da == null) {
+                    da = DA_item.get(event.getCursor());
+                    if ((da instanceof Action || da instanceof Condition) && ci == null) {
+                        event.setCancelled(false);
+                        updateAC(event);
+                    }
+                } else {
+                    event.setCancelled(false);
+                    updateAC(ci);
+                }
             }
         }
         return true;
     }
 
-    private void updateAC() {
-        updateAC(null, null);
-    }
-
-    private void updateAC(ItemStack ex) {
-        updateAC(null, ex);
-    }
-
-    private void updateAC(InventoryClickEvent event) {
-        updateAC(event, null);
-    }
-
+    private void updateAC() { updateAC(null, null); }
+    private void updateAC(ItemStack ex) { updateAC(null, ex); }
+    private void updateAC(InventoryClickEvent event) { updateAC(event, null); }
     private void updateAC(InventoryClickEvent event, ItemStack ex) {
         conditions.clear();
         for (ItemStack it : getBox(this.gui, 18, 4, 4))
@@ -142,8 +118,21 @@ public class Trigger extends DA_block implements Booled, Triggerable {
             addCondition(event.getCursor());
             addAction(event.getCursor());
         }
-        log(Arrays.toString(actions.toArray()));
-        log(Arrays.toString(conditions.toArray()));
+    }
+    private boolean addCondition(ItemStack it) {
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
+        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
+            condition.runnables.put(this, this::trigger);
+            return conditions.add(condition);
+        }
+        return false;
+    }
+
+    private boolean addAction(ItemStack it) {
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
+        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action))
+            return actions.add(action);
+        return false;
     }
 
 

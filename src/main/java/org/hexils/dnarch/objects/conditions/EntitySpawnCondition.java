@@ -1,5 +1,6 @@
 package org.hexils.dnarch.objects.conditions;
 
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.dungeon.DungeonMaster;
@@ -19,7 +20,7 @@ public class EntitySpawnCondition extends Condition {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
 
     }
 
@@ -39,7 +40,7 @@ public class EntitySpawnCondition extends Condition {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 

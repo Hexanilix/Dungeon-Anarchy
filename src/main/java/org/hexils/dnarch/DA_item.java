@@ -15,9 +15,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.GUI.ITEM_RENAME;
+import static org.hexils.dnarch.Main.log;
 
 public abstract class DA_item extends Managable {
     public static final NSK ITEM_UUID = new NSK(new NamespacedKey("dungeon_anarchy", "item-uuid"), PersistentDataType.STRING);
@@ -82,27 +82,24 @@ public abstract class DA_item extends Managable {
 //        }
 //    }
 
-    protected abstract void createGUIInventory();
-
-    @Override
-    protected void createGUI() {
-        this.createGUIInventory();
-        if (this.gui != null) this.gui.setItem(4, getNameSign());
-        else log(Level.WARNING + "Attempted to create GUI is null from item " + this.id.toString() +". This probably shouldn't happen!");
-    }
-
     private @NotNull ItemStack getNameSign() {
-        ItemStack rename = newItemStack(Material.SPRUCE_SIGN, "Name: " + name, List.of(ChatColor.GRAY + "Click to rename"));
+        ItemStack rename = newItemStack(Material.SPRUCE_SIGN, "Name: " + this.getName(), List.of(ChatColor.GRAY + "Click to rename"));
         NSK.setNSK(rename, ITEM_RENAME, true);
         return rename;
     }
 
     @Override
     public void rename(@NotNull Player p) {
-        super.rename(p, () -> items.forEach(i -> ItemUtil.setName(i, name)));
+        super.rename(p, () -> items.forEach(i -> ItemUtil.setName(i, getName())));
     }
 
     public DA_item() {
+        this.id = UUID.randomUUID();
+        instances.add(this);
+    }
+
+    public DA_item(String name) {
+        super(name);
         this.id = UUID.randomUUID();
         instances.add(this);
     }

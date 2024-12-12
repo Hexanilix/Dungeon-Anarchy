@@ -32,7 +32,7 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
         this.setSize(54);
         InventoryUtil.fillBox(gui, 18, 4, 4);
         InventoryUtil.fillBox(gui, 23, 4, 4);
@@ -65,7 +65,7 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 

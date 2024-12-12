@@ -1,13 +1,14 @@
 package org.hexils.dnarch.objects.conditions;
 
 import org.bukkit.Material;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.jetbrains.annotations.NotNull;
 
-import static org.hetils.mpdl.GeneralUtil.log;
+
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class DungeonStart extends Condition {
@@ -23,7 +24,7 @@ public class DungeonStart extends Condition {
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
 
     }
 
@@ -44,12 +45,11 @@ public class DungeonStart extends Condition {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 
     @Override
     protected void onTrigger() {
-         log("tripped");
     }
 }

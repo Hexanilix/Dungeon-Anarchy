@@ -2,6 +2,7 @@ package org.hexils.dnarch.objects;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
@@ -37,12 +38,11 @@ public class Door extends Action {
     public Door(List<Block> blocks, Facing face) {
         super(Type.DOOR);
         this.blocks = blocks;
-        this.name = "Door";
         this.facing = face;
     }
 
     @Override
-    protected void createGUIInventory() {
+    protected void createGUI() {
     }
 
     @Override
@@ -61,7 +61,7 @@ public class Door extends Action {
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 
