@@ -1,17 +1,16 @@
-package org.hexils.dnarch.objects.conditions;
+package org.hexils.dnarch.items.conditions;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Condition;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
@@ -20,7 +19,7 @@ import java.util.List;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class Distance extends Condition {
+public class WithinDistance extends Condition {
     public static boolean hasPlayers(Collection<Entity> c) {
         if (c == null) return false;
         for (Entity e : c)
@@ -48,8 +47,8 @@ public class Distance extends Condition {
     private BukkitRunnable runnable;
     private boolean satisfied = false;
 
-    public Distance(@NotNull Location loc) {
-        super(Type.DISTANCE);
+    public WithinDistance(@NotNull Location loc) {
+        super(Type.WITHIN_DISTANCE);
         this.loc = loc;
         this.rad = 1;
         this.shape = TriggerShape.SPHERE;
@@ -59,9 +58,8 @@ public class Distance extends Condition {
             public void run() {
                 c = loc.getWorld().getNearbyEntities(loc, rad, rad, rad);
                 if (hasPlayers(c)) {
-                    if (!satisfied) {
+                    if (!satisfied)
                         trigger();
-                    }
                 } else satisfied = false;
             }
         };

@@ -1,12 +1,12 @@
-package org.hexils.dnarch.objects.actions;
+package org.hexils.dnarch.items.actions;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.inventory.ItemStack;
-import org.hexils.dnarch.Action;
 import org.hexils.dnarch.BlockAction;
+import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public class ModifyBlock extends BlockAction {
     private List<BlockData> og_data;
     private ModType type;
     public ModifyBlock(@NotNull List<Block> blocks, ModType type) {
-        super(Type.MODIFY_BLOCK);
+        super(Type.MODIFY_BLOCK, blocks);
         this.modify = blocks;
         this.og_data = blocks.stream().map(Block::getBlockData).toList();
         this.type = type;
@@ -68,7 +68,7 @@ public class ModifyBlock extends BlockAction {
     @Override
     public void updateGUI() {
         for (int i = 0; i < 27; i++)
-            this.gui.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
+            this.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
     }
 
 

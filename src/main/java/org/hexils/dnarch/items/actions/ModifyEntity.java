@@ -1,12 +1,12 @@
-package org.hexils.dnarch.objects.actions;
+package org.hexils.dnarch.items.actions;
 
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -34,8 +34,8 @@ public class ModifyEntity extends Action {
     @Override
     protected void createGUI() {
         this.setSize(54);
-        InventoryUtil.fillBox(gui, 18, 4, 4);
-        InventoryUtil.fillBox(gui, 23, 4, 4);
+        this.fillBox(18, 4, 4);
+        this.fillBox(23, 4, 4);
     }
 
     @Override
@@ -51,7 +51,7 @@ public class ModifyEntity extends Action {
 
     @Override
     public boolean guiClickEvent(InventoryClickEvent event) {
-        for (ItemStack i : gui.getContents()) {
+        for (ItemStack i : this.getContents()) {
             DA_item da = DA_item.get(i);
             if (da instanceof Spawn.EntityCollection ec)
                 entities.add(ec);

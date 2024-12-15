@@ -67,7 +67,7 @@ public final class Main extends JavaPlugin {
         super.onEnable();
         Bukkit.getPluginManager().registerEvents(new MainListener(), this);
         Bukkit.getPluginManager().registerEvents(new GeneralListener(), this);
-        Bukkit.getPluginManager().registerEvents(new Managable.ManagableListener(), this);
+        Bukkit.getPluginManager().registerEvents(new Manageable.ManagableListener(), this);
         loadCommands();
     }
 

@@ -1,22 +1,27 @@
-package org.hexils.dnarch.objects.conditions;
+package org.hexils.dnarch.items.conditions;
 
+import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.objects.actions.Spawn;
+import org.hexils.dnarch.dungeon.Dungeon;
+import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
-public class EntitySpawnCondition extends Condition {
-    private final Spawn spawn;
-    public EntitySpawnCondition(Spawn spawn) {
-        super(Type.ENTITY_SPAWN);
-        this.spawn = spawn;
-    }
+
+import static org.hetils.mpdl.ItemUtil.newItemStack;
+
+public class DungeonStart extends Condition {
+    private Dungeon d;
+     public DungeonStart(Dungeon d) {
+         super(Type.DUNGEON_START);
+         this.d = d;
+     }
 
     @Override
     public boolean isSatisfied() {
-        return this.spawn.isTriggered();
+        return d.isRunning();
     }
 
     @Override
@@ -31,7 +36,8 @@ public class EntitySpawnCondition extends Condition {
 
     @Override
     protected ItemStack toItem() {
-        return null;
+         ItemStack i = newItemStack(Material.HEAVY_WEIGHTED_PRESSURE_PLATE, "Dungeon start");
+         return i;
     }
 
     @Override
@@ -46,6 +52,5 @@ public class EntitySpawnCondition extends Condition {
 
     @Override
     protected void onTrigger() {
-
     }
 }

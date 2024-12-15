@@ -1,4 +1,4 @@
-package org.hexils.dnarch.objects.actions;
+package org.hexils.dnarch.items.actions;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;

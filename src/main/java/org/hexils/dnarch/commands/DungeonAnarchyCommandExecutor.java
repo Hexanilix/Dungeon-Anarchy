@@ -3,6 +3,7 @@ package org.hexils.dnarch.commands;
 import org.bukkit.ChatColor;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
+import org.hexils.dnarch.DA_item;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             case "help" -> {
                 p.sendMessage(HELP_MSG);
             }
+            case "name" -> {p.sendMessage(DA_item.get(p.getInventory().getItemInMainHand()).getName());}
         }
         return true;
     }

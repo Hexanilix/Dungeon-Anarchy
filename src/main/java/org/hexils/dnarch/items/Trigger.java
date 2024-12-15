@@ -1,4 +1,4 @@
-package org.hexils.dnarch.objects;
+package org.hexils.dnarch.items;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -33,11 +33,11 @@ public class Trigger extends DA_item implements Booled, Triggerable {
 
     @Override
     protected void createGUI() {
-        gui = org.hetils.mpdl.InventoryUtil.newInv(54, getName());
-        fillBox(gui, 18, 4, 4, (ItemStack) null);
-        fillBox(gui, 23, 4, 4, (ItemStack) null);
-        gui.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
-        gui.setItem(15, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
+        setSize(54);
+        fillBox(18, 4, 4, (ItemStack) null);
+        fillBox(23, 4, 4, (ItemStack) null);
+        this.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
+        this.setItem(15, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
     }
 
     public Trigger() {
@@ -78,13 +78,13 @@ public class Trigger extends DA_item implements Booled, Triggerable {
         Inventory cinv = event.getClickedInventory();
         DA_item da = DA_item.get(ci);
         if (cinv != null) {
-            if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this.gui) {
+            if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this) {
                 if (da instanceof Condition) {
-                    addToBox(gui, 18, 4, 4, ci);
+                    this.addToBox(18, 4, 4, ci);
                     cinv.setItem(event.getSlot(), null);
                     updateAC();
                 } else if (da instanceof Action) {
-                    addToBox(gui, 23, 4, 4, ci);
+                    this.addToBox(23, 4, 4, ci);
                     cinv.setItem(event.getSlot(), null);
                     updateAC();
                 } else return true;
@@ -109,10 +109,10 @@ public class Trigger extends DA_item implements Booled, Triggerable {
     private void updateAC(InventoryClickEvent event) { updateAC(event, null); }
     private void updateAC(InventoryClickEvent event, ItemStack ex) {
         conditions.clear();
-        for (ItemStack it : getBox(this.gui, 18, 4, 4))
+        for (ItemStack it : this.getBox(18, 4, 4))
             if (it != ex) addCondition(it);
         actions.clear();
-        for (ItemStack it : getBox(this.gui, 23, 4, 4))
+        for (ItemStack it : this.getBox(23, 4, 4))
             if (it != ex) addAction(it);
         if (event != null && !event.getClick().name().contains("SHIFT")) {
             addCondition(event.getCursor());

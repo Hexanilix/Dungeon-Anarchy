@@ -1,4 +1,4 @@
-package org.hexils.dnarch.objects;
+package org.hexils.dnarch.items;
 
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -8,7 +8,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.objects.actions.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +56,7 @@ public class Door extends Action {
     }
 
     @Override
-    protected void changeField(DungeonMaster dm, String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 

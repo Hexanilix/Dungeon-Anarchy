@@ -1,4 +1,4 @@
-package org.hexils.dnarch.objects.actions;
+package org.hexils.dnarch.items.actions;
 
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -7,7 +7,7 @@ import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.Booled;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.Triggerable;
+import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 public class TimerAction extends Action implements Booled {

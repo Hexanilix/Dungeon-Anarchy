@@ -1,4 +1,4 @@
-package org.hexils.dnarch.objects.actions;
+package org.hexils.dnarch.items.actions;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -6,12 +6,13 @@ import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.hetils.mpdl.InventoryUtil;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.EntitySpawn;
-import org.hexils.dnarch.objects.conditions.EntitySpawnCondition;
+import org.hexils.dnarch.items.EntitySpawn;
+import org.hexils.dnarch.items.Type;
+import org.hexils.dnarch.items.conditions.EntitySpawnCondition;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -21,7 +22,7 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
 public class Spawn extends Action {
-    public class EntityCollection extends DA_item {
+    public static class EntityCollection extends DA_item {
         private List<Entity> entities;
 
         public EntityCollection(List<Entity> entities) {
@@ -36,13 +37,13 @@ public class Spawn extends Action {
 
         @Override
         public void updateGUI() {
-            InventoryUtil.fillBox(gui, 9, 9, 5);
-            InventoryUtil.fillBox(gui, 9, 9, 5, entities.stream().map(org.hetils.mpdl.EntityUtil::toItem).toList());
+            this.fillBox(9, 9, 5);
+            this.fillBox(9, 9, 5, entities.stream().map(org.hetils.mpdl.EntityUtil::toItem).toList());
             if (entities.size() > 45) {
                 List<String> ents = new ArrayList<>();
                 for (int i = 44; i < entities.size(); i++)
                     ents.add(ChatColor.GRAY + entities.get(i).getType().name());
-                gui.setItem(53, newItemStack(Material.ENDER_CHEST, ChatColor.WHITE + "...and " + (entities.size()-44) + " others:", ents));
+                this.setItem(53, newItemStack(Material.ENDER_CHEST, ChatColor.WHITE + "...and " + (entities.size()-44) + " others:", ents));
             }
         }
 
@@ -56,6 +57,8 @@ public class Spawn extends Action {
             entities.forEach(Entity::remove);
             super.delete();
         }
+
+        public List<Entity> getEntities() { return entities; }
     }
 
     private Collection<EntitySpawn> entities = new ArrayList<>();
@@ -64,19 +67,19 @@ public class Spawn extends Action {
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition(this);
 
     public Spawn(EntitySpawn e, Location sp) {
-        super(Type.SPAWN);
+        super(Type.ENTITY_SPAWN_ACTION);
         this.entities.add(e);
         this.spawnp.add(sp);
     }
 
     public Spawn(Collection<EntitySpawn> entities, List<Location> spawnp) {
-        super(Type.SPAWN);
+        super(Type.ENTITY_SPAWN_ACTION);
         this.entities = entities;
         this.spawnp = spawnp;
     }
 
     public Spawn(EntitySpawn entity, List<Location> spawnp) {
-        super(Type.SPAWN);
+        super(Type.ENTITY_SPAWN_ACTION);
         this.entities.add(entity);
         this.spawnp = spawnp;
     }
@@ -106,15 +109,12 @@ public class Spawn extends Action {
 
     @Override
     protected void createGUI() {
-
+        this.setSize(54);
+        this.setNameSign(13);
+        this.fillBox(27, 9, 3, entities.stream().map(DA_item::getItem).toList());
     }
 
-    @Override
-    public void updateGUI() {
-
-    }
-
-    private List<String> entsToString() {
+    private @NotNull List<String> entsToString() {
         List<String> l = new ArrayList<>();
         for (EntitySpawn e : entities)
             l.add(ChatColor.GRAY + e.type.name());
@@ -127,8 +127,12 @@ public class Spawn extends Action {
         return i;
     }
 
+    public EntityCollection getColl() {
+        return s_ent_c;
+    }
+
     @Override
-    protected void changeField(DungeonMaster dm, String field, String value) {
+    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
 
     }
 
@@ -154,7 +158,6 @@ public class Spawn extends Action {
                 ", triggered=" + triggered +
                 ", type=" + type +
                 ", name='" + getName() + '\'' +
-                ", gui=" + gui +
                 '}';
     }
 }
