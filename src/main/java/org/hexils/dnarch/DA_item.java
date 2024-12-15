@@ -6,19 +6,16 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.ItemUtil;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.items.EntitySpawn;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.actions.DestroyBlock;
 import org.hexils.dnarch.items.actions.ModifyBlock;
 import org.hexils.dnarch.items.actions.ReplaceBlock;
-import org.hexils.dnarch.items.actions.Spawn;
+import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
 import org.hexils.dnarch.items.conditions.WithinDistance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,8 +29,8 @@ import static org.hexils.dnarch.Action.toReadableFormat;
 import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
 
-public abstract class DA_item extends Manageable {
-    public static final NSK ITEM_UUID = new NSK(new NamespacedKey("dungeon_anarchy", "item-uuid"), PersistentDataType.STRING);
+public abstract class DA_item extends Manageable implements Idable {
+    public static final NSK ITEM_UUID = new NSK(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DA_item> instances = new ArrayList<>();
     public static @Nullable DA_item get(String id) { return get(UUID.fromString(id)); }
     public static @Nullable DA_item get(ItemStack it) {
@@ -51,22 +48,22 @@ public abstract class DA_item extends Manageable {
 
     public static @Nullable DA_item commandNew(@NotNull Type t, DungeonMaster dm, @NotNull String[] args) {
         DA_item da = null;
-        log(Arrays.toString(args));
         switch (t) {
             case REPLACE_BLOCK -> {
                 Material mat = args.length >= 1 ? Material.getMaterial(args[0].toUpperCase()) : null;
                 if (mat != null) {
+                    log(dm.getSelectedBlocks());
                     da = new ReplaceBlock(dm.getSelectedBlocks(), mat);
                 } else dm.sendMessage(ChatColor.RED + "Please select a valid material!");
             }
             case DESTROY_BLOCK -> {
-                da = new DestroyBlock(dm.getSelectedBlocks());
+                log(dm.getSelectedBlocks());
+                da = new ReplaceBlock.DestroyBlock(dm.getSelectedBlocks());
             }
             case ENTITY_SPAWN_ACTION -> {
                 EntityType et = args.length >= 1 ? getEnum(EntityType.class, args[0]) : null;
-                log(et);
                 if (et != null) {
-                    da = new Spawn(new EntitySpawn(et), org.hetils.mpdl.BlockUtil.toLocations(dm.getSelectedBlocks()));
+                    da = new EntitySpawnAction(new org.hexils.dnarch.items.EntitySpawn(et), dm.getSelectedBlocks());
                 } else dm.sendMessage(ChatColor.RED + "Please select a valid entity type");
             }
             case MODIFY_BLOCK -> {
@@ -102,10 +99,8 @@ public abstract class DA_item extends Manageable {
             if (a instanceof BlockAction b) {
                 dm.deselectBlocks();
                 Map<Dungeon.Section, Integer> sectionCounts = new HashMap<>();
-                log(b.getAffectedBlocks().size());
                 for (Block block : b.getAffectedBlocks()) {
                     Dungeon.Section section = d.getSection(block);
-                    log(section);
                     sectionCounts.put(section, sectionCounts.getOrDefault(section, 0) + 1);
                 }
                 s = sectionCounts.entrySet()
@@ -123,12 +118,11 @@ public abstract class DA_item extends Manageable {
             }
         } else if (da instanceof Condition c) {
             s.addItem(c);
-        }
+        } else s.addItem(da);
         return da;
     }
 
     public static List<String> getTabCompleteFor(@NotNull Type t, String[] args) {
-        log(Arrays.toString(args));
         List<String> s = new ArrayList<>();
         switch (t) {
             case ENTITY_SPAWN_ACTION -> { if (args.length == 1) s = Arrays.stream(EntityType.values()).map(e -> e.name().toLowerCase()).toList(); }
@@ -137,78 +131,49 @@ public abstract class DA_item extends Manageable {
         return s;
     }
 
-//    private final class Renamer {
-//        private final DA_item da;
-//        public Renamer(DA_item da) {
-//            this.da = da;
-//        }
-//
-//        private void rename(Player p) {
-//            Inventory inv = Bukkit.createInventory(null, InventoryType.ANVIL, "Input new name:");
-//            inv.setItem(0, getNameSign());
-//            MainListener.onOpen.put(inv, (event) -> {
-//                new Thread() {
-//                    private Inventory inve = event.getInventory();
-//                    private String text;
-//                    private boolean run = true;
-//                    public void run() {
-//                        MainListener.onClick.put(inve, (event) -> {
-//                            if (event.getSlotType() == InventoryType.SlotType.RESULT) {
-//                                run = false;
-//                                DA_item.this.rename(text);
-//                                DA_item.this.manage(p);
-//                                return true;
-//                            }
-//                            return false;
-//                        });
-//
-//                        ItemStack st;
-//                        while (run) {
-//                            st = inve.getItem(2);
-//                            log(Arrays.toString(inve.getContents()));
-//                            if (st != null && st.hasItemMeta())
-//                                text = st.getItemMeta().getDisplayName();
-//                            try {
-//                                Thread.sleep(100);
-//                            } catch (InterruptedException e) {
-//                                throw new RuntimeException(e);
-//                            }
-//                        }
-//                    }
-//                }.start();
-//                return true;
-//            });
-//            p.openInventory(inv);
-//        }
-//    }
-
     @Override
-    public void rename(@NotNull DungeonMaster dm) {
-        super.rename(dm, () -> items.forEach(i -> ItemUtil.setName(i, getName())));
+    public void rename(@NotNull DungeonMaster dm) { rename(dm, null); }
+    @Override
+    public void rename(@NotNull DungeonMaster dm, Runnable onRename) {
+        super.rename(dm, () -> {
+            if (onRename != null) onRename.run();
+            log(items);
+            items.forEach(i -> ItemUtil.setName(i, getName()));
+            item = this.genItemStack();
+        });
     }
 
-    public DA_item() {
-        this.id = UUID.randomUUID();
-        instances.add(this);
-    }
-
-    public DA_item(String name) {
-        super(name);
-        this.id = UUID.randomUUID();
-        instances.add(this);
-    }
-
-    public final UUID getId() {
-        return id;
-    }
-
+    private final Type type;
+    private ItemStack item;
     private final List<ItemStack> items = new ArrayList<>();
 
-    protected abstract ItemStack toItem();
+    public DA_item(Type type) { this(type, type.getName()); }
+    public DA_item(Type type, String name) { this(type, name, true); }
+    public DA_item(Type type, boolean renameable) { this(type, type.getName(), renameable); }
+    public DA_item(Type type, String name, boolean renameable) {
+        super(name, renameable);
+        this.type = type;
+        this.id = UUID.randomUUID();
+        instances.add(this);
+    }
+
+    public Type getType() { return type; }
+
+    public final UUID getId() { return id; }
+
+    protected abstract ItemStack genItemStack();
     public final ItemStack getItem() {
-        ItemStack i = this.toItem();
-        NSK.setNSK(i, ITEM_UUID, id.toString());
-        items.add(i);
-        return i;
+        if (item == null) this.item = this.genItemStack();
+        NSK.setNSK(item, ITEM_UUID, id.toString());
+        items.add(item);
+        return item;
+    }
+
+    @Override
+    public String toString() {
+        return "DA_item{" +
+                "id=" + id +
+                ", type=" + type +
+                '}';
     }
 }

@@ -33,7 +33,7 @@ public class NOTCondition extends Condition {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         return null;
     }
 }

@@ -1,6 +1,9 @@
 package org.hexils.dnarch.items;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import static org.hexils.dnarch.Action.toReadableFormat;
 
 public enum Type {
     //Actions
@@ -21,15 +24,16 @@ public enum Type {
     BLOCK_CHANGE_EVENT,
 
     //Other
-    TIMER;
+    TIMER, ENTITY_SPAWN, TRIGGER, ENTITY_COLLECTION;
 
-
-    public static Type get(@NotNull String arg) {
+    public static @Nullable Type get(@NotNull String arg) {
         for (Type t : Type.values())
             if (t.name().equals(arg.toUpperCase()))
                 return t;
         return null;
     }
+
+    public String getName() { return toReadableFormat(this.name()); }
 
     public boolean isAction() {
         return switch (this) {

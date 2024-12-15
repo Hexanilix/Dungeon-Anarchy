@@ -18,6 +18,7 @@ import java.util.logging.Level;
 public final class Main extends JavaPlugin {
     public static Logger logger;
     public static JavaPlugin plugin;
+    public static String name = "dungeon_anarchy";
 
     public static void log(String s) {logger.log(s); }
     public static void log(Object o) { logger.log(o); }

@@ -15,7 +15,7 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 public class DungeonStart extends Condition {
     private Dungeon d;
      public DungeonStart(Dungeon d) {
-         super(Type.DUNGEON_START);
+         super(Type.DUNGEON_START, false);
          this.d = d;
      }
 
@@ -35,7 +35,7 @@ public class DungeonStart extends Condition {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
          ItemStack i = newItemStack(Material.HEAVY_WEIGHTED_PRESSURE_PLATE, "Dungeon start");
          return i;
     }

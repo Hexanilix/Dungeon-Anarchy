@@ -33,14 +33,16 @@ import static org.hexils.dnarch.commands.DungeonCommandExecutor.*;
 
 
 public abstract class Manageable implements Deletable {
-    public static final NSK MODIFIABLE = new NSK(new NamespacedKey("dungeon_anarchy", "gui_item-modifiable"), PersistentDataType.BOOLEAN);
-    public static final NSK ITEM_FIELD_VALUE = new NSK(new NamespacedKey("dungeon_anarchy", "gui_item-field_value"), PersistentDataType.STRING);
-    public static final NSK ITEM_ACTION = new NSK(new NamespacedKey("dungeon_anarchy", "gui_item-action"), PersistentDataType.STRING);
-    public static final NSK SIGN_CHANGEABLE = new NSK(new NamespacedKey("dungeon_anarchy", "gui_item-sign_changeable"), PersistentDataType.BOOLEAN);
-    public static final NSK ITEM_RENAME = new NSK(new NamespacedKey("dungeon_anarchy", "gui_item-prompt_rename"), PersistentDataType.BOOLEAN);
+    public static Collection<Manageable> instances = new ArrayList<>();
+
+    public static final NSK MODIFIABLE = new NSK(new NamespacedKey(Main.plugin, "gui_item-modifiable"), PersistentDataType.BOOLEAN);
+    public static final NSK ITEM_FIELD_VALUE = new NSK(new NamespacedKey(Main.plugin, "gui_item-field_value"), PersistentDataType.STRING);
+    public static final NSK ITEM_ACTION = new NSK(new NamespacedKey(Main.plugin, "gui_item-action"), PersistentDataType.STRING);
+    public static final NSK SIGN_CHANGEABLE = new NSK(new NamespacedKey(Main.plugin, "gui_item-sign_changeable"), PersistentDataType.BOOLEAN);
+    public static final NSK ITEM_RENAME = new NSK(new NamespacedKey(Main.plugin, "gui_item-prompt_rename"), PersistentDataType.BOOLEAN);
 
     public static void setField(ItemStack i, String field, String value) {
-        NSK.setNSK(i, ITEM_FIELD_VALUE, field + ":" + value);
+        NSK.setNSK(i, ITEM_FIELD_VALUE, field + " " + value);
     }
 
     public static void setGuiAction(ItemStack i, String action) {
@@ -48,16 +50,60 @@ public abstract class Manageable implements Deletable {
     }
 
     public static void setGuiAction(ItemStack i, String action, String... args) {
-        NSK.setNSK(i, ITEM_ACTION, action + ":" + String.join(" ", args));
+        NSK.setNSK(i, ITEM_ACTION, action + " " + String.join(" ", args));
     }
-    
-    public static Collection<Manageable> instances = new ArrayList<>();
 
-    protected void fillBox(int i, int i1, int i2, List<ItemStack> list) { InventoryUtil.fillBox(gui, i, i1, i2, list); }
-    protected void fillBox(int i, int i1, int i2, ItemStack... items) { InventoryUtil.fillBox(gui, i, i1, i2, items); }
-    protected void fillBox(int i, int i1, int i2, ItemStack item) { InventoryUtil.fillBox(gui, i, i1, i2, item); }
-    protected void addToBox(int i, int i1, int i2, ItemStack item) { InventoryUtil.addToBox(gui, i, i1, i2, item); }
-    protected ItemStack[] getBox(int i, int i1, int i2) { return InventoryUtil.getBox(gui, i, i1, i2); }
+    public static class ConditionGUI extends Manageable implements Idable {
+        public static List<ConditionGUI> instances = new ArrayList<>();
+        @Contract(pure = true)
+        public static @Nullable ConditionGUI get(UUID id) {
+            for (ConditionGUI c : ConditionGUI.instances)
+                if (c.id.equals(id))
+                    return c;
+            return null;
+        }
+        public static NSK CONDITION_GUI = new NSK(new NamespacedKey(Main.plugin, "open_condition_gui"), PersistentDataType.STRING);
+
+        private final List<Condition> conditions;
+
+        private final UUID id;
+
+        public ConditionGUI(String name, List<Condition> conditions) {
+            super(name);
+            this.id = UUID.randomUUID();
+            this.item = newItemStack(
+                    Material.BARREL,
+                    ChatColor.GREEN + "Events",
+                    List.of(ChatColor.GRAY + "Shows the list of events this object produces"),
+                    CONDITION_GUI, this.id.toString());
+            this.conditions = conditions;
+            instances.add(this);
+        }
+
+        @Override
+        protected void createGUI() {
+            this.setSize(54);
+            updateGUI();
+        }
+
+        @Override
+        public void updateGUI() {
+            if (conditions != null) this.fillBox(0, 9, 6, conditions.stream().map(DA_item::getItem).toList());
+        }
+
+        @Override
+        public boolean guiClickEvent(@NotNull InventoryClickEvent event) {
+            DA_item da = DA_item.get(event.getCurrentItem());
+            if (da != null) { DungeonMaster.getOrNew((Player) event.getWhoClicked()).giveItem(da); }
+            return false;
+        }
+
+        private final ItemStack item;
+        public @Nullable ItemStack toItem() { return item; }
+
+        @Override
+        public UUID getId() { return id; }
+    }
 
     public static class ManagableListener implements Listener {
         @EventHandler
@@ -71,6 +117,7 @@ public abstract class Manageable implements Deletable {
                         m.aboveManageable = null;
                         new BukkitRunnable() { @Override public void run() { am.manage(DungeonMaster.getOrNew((Player) event.getPlayer())); } }.runTaskLater(Main.plugin, 1);
                     }
+                    DungeonMaster.getOrNew((Player) event.getPlayer()).setCurrentManageable(null);
                     break;
                 }
         }
@@ -80,23 +127,28 @@ public abstract class Manageable implements Deletable {
     protected Manageable aboveManageable = null;
     protected Manageable underManageable = null;
     private ItemStack name_sign = null;
-    private String name = "Manageable";
+    private String name;
 
-    public Manageable() { instances.add(this); }
+    public boolean is_being_renamed = false;
+    private boolean renameable;
 
-    public Manageable(String name) {
+    public Manageable() { this("Manageable", true); }
+
+    public Manageable(String name) { this(name, true); }
+
+    public Manageable(String name, boolean renameable) {
         this.name = name;
         genNameSign();
+        this.renameable = renameable;
+        createGUI();
         instances.add(this);
     }
 
-    public ItemStack genNameSign() {
+    public final ItemStack genNameSign() {
         this.name_sign = newItemStack(Material.OAK_HANGING_SIGN, name != null ? (ChatColor.RESET + ChatColor.WHITE.toString() + name) : "null", List.of(ChatColor.GRAY + "Click to rename"), ITEM_RENAME, true);
         return name_sign;
     }
-    public void setNameSign(int index) {
-        this.setItem(index, name_sign == null ? genNameSign() : name_sign);
-    }
+    public void setNameSign(int index) { this.setItem(index, name_sign == null ? genNameSign() : name_sign); }
 
     @Contract(pure = true)
     public static @Nullable Manageable get(Inventory inventory) {
@@ -106,13 +158,22 @@ public abstract class Manageable implements Deletable {
         return null;
     }
 
-    public boolean isThisGUI(Inventory inv) { return inv == gui; }
+    public final boolean isThisGUI(Inventory inv) { return inv == gui; }
 
+    public final void manage(@NotNull DungeonMaster dm, @NotNull Manageable da) {
+        da.underManageable = this;
+        aboveManageable = da;
+        this.manage(dm);
+    }
     public final void manage(@NotNull DungeonMaster dm) {
+        if (dm.getCurrentManageable() == this) return;
         if (gui == null)
             this.createGUI();
         this.updateGUI();
-        if (gui != null) dm.openInventory(gui);
+        if (gui != null) {
+            dm.setCurrentManageable(this);
+            dm.openInventory(gui);
+        }
         else {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             StringBuilder sb = new StringBuilder("An error occurred when attempting to open gui of Manageable \"" + this.name + "\", gui is null:");
@@ -124,49 +185,40 @@ public abstract class Manageable implements Deletable {
             dm.sendMessage(ER + "An error occurred when attempting to open gui of " + this.name);
         }
     }
-    public final void manage(@NotNull DungeonMaster dm, @NotNull Manageable da) {
-        da.underManageable = this;
-        aboveManageable = da;
-        dm.setCurrentManageable(this);
-        this.manage(dm);
-    }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
-    public void setName(String s) {
+    public final void setName(String s) {
         this.name = s;
         setSize(ls);
     }
 
-    public boolean is_being_renamed = false;
-    public void rename(@NotNull DungeonMaster dm) {
-        rename(dm, null);
-    }
-
+    public final void setRenameable(boolean bool) { this.renameable = bool; }
+    public void rename(@NotNull DungeonMaster dm) { rename(dm, null); }
     public void rename(@NotNull DungeonMaster dm, Runnable onRename) {
-        is_being_renamed = true;
-        dm.closeInventory();
-        GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name + "\" or 'cancel':", s -> {
-            if (s.equalsIgnoreCase("cancel")) {
-                dm.sendMessage(W + "Cancelled.");
+        if (renameable) {
+            is_being_renamed = true;
+            dm.closeInventory();
+            GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name + "\" or 'cancel':", s -> {
+                if (s.equalsIgnoreCase("cancel")) {
+                    dm.sendMessage(W + "Cancelled.");
+                    return true;
+                }
+                String oldn = name;
+                name = s.replace(" ", "_");
+                genNameSign();
+                createGUI();
+                updateGUI();
+                if (dm.isManaging() && dm.getCurrentManageable() == this) manage(dm);
+                if (onRename != null) onRename.run();
+                is_being_renamed = false;
+                dm.sendMessage(OK + "Renamed \"" + oldn + "\" to \"" + name + "\"!");
                 return true;
-            }
-            String oldn = name;
-            name = s.replace(" ", "_");
-            genNameSign();
-            createGUI();
-            updateGUI();
-            if (dm.isManaging() && dm.getCurrentManageable() == this) manage(dm);
-            if (onRename != null) onRename.run();
-            is_being_renamed = false;
-            dm.sendMessage(OK + "Renamed \"" + oldn + "\" to \"" + name + "\"!");
-            return true;
-        }, () -> {
-            is_being_renamed = false;
-            dm.sendMessage(W + "Cancelled.");
-        });
+            }, () -> {
+                is_being_renamed = false;
+                dm.sendMessage(W + "Cancelled.");
+            });
+        }
     }
 
     public final void doAction(DungeonMaster dm, String command, InventoryClickEvent event) {
@@ -196,17 +248,19 @@ public abstract class Manageable implements Deletable {
 
     private int ls = 0;
     private String ln = "";
-    protected void setSize(int size) {
-        if (gui == null || !ln.equals(name))
-            gui = org.hetils.mpdl.InventoryUtil.newInv(size, name);
-        else if (ls != size) {
-            Inventory i = org.hetils.mpdl.InventoryUtil.newInv(size, name);
-            for (int j = 0; j < Math.min(size, gui.getSize()); j++)
-                i.setItem(j, gui.getItem(j));
-            gui = i;
+    protected final void setSize(int size) {
+        if (size != 0) {
+            if (gui == null || !ln.equals(name))
+                gui = org.hetils.mpdl.InventoryUtil.newInv(size, name);
+            else if (ls != size) {
+                Inventory i = org.hetils.mpdl.InventoryUtil.newInv(size, name);
+                for (int j = 0; j < Math.min(size, gui.getSize()); j++)
+                    i.setItem(j, gui.getItem(j));
+                gui = i;
+            }
+            ls = size;
+            ln = name;
         }
-        ls = size;
-        ln = name;
     }
 
     public void delete() {
@@ -215,151 +269,158 @@ public abstract class Manageable implements Deletable {
         System.gc();
     }
 
+    protected final void fillBox(int i, int i1, int i2, List<ItemStack> list) { InventoryUtil.fillBox(gui, i, i1, i2, list); }
+    protected final void fillBox(int i, int i1, int i2, ItemStack... items) { InventoryUtil.fillBox(gui, i, i1, i2, items); }
+    protected final void fillBox(int i, int i1, int i2, ItemStack item) { InventoryUtil.fillBox(gui, i, i1, i2, item); }
+    protected final void addToBox(int i, int i1, int i2, ItemStack item) { InventoryUtil.addToBox(gui, i, i1, i2, item); }
+    protected final ItemStack[] getBox(int i, int i1, int i2) { return InventoryUtil.getBox(gui, i, i1, i2); }
 
-    public int getSize() {
+    //<editor-fold defaultstate="collapsed" desc="Inventory (gui) delegations">
+    public final int getSize() {
         return gui.getSize();
     }
 
-    public boolean contains(@NotNull Material material) throws IllegalArgumentException {
+    public final boolean contains(@NotNull Material material) throws IllegalArgumentException {
         return gui.contains(material);
     }
 
     @Nullable
-    public ItemStack getItem(int index) {
+    public final ItemStack getItem(int index) {
         return gui.getItem(index);
     }
 
-    public int getMaxStackSize() {
+    public final int getMaxStackSize() {
         return gui.getMaxStackSize();
     }
 
-    public void clear() {
+    public final void clear() {
         gui.clear();
     }
 
-    public void setStorageContents(@NotNull ItemStack[] items) throws IllegalArgumentException {
+    public final void setStorageContents(@NotNull ItemStack[] items) throws IllegalArgumentException {
         gui.setStorageContents(items);
     }
 
     @NotNull
-    public HashMap<Integer, ? extends ItemStack> all(@Nullable ItemStack item) {
+    public final HashMap<Integer, ? extends ItemStack> all(@Nullable ItemStack item) {
         return gui.all(item);
     }
 
     @NotNull
-    public List<HumanEntity> getViewers() {
+    public final List<HumanEntity> getViewers() {
         return gui.getViewers();
     }
 
-    public void setMaxStackSize(int size) {
+    public final void setMaxStackSize(int size) {
         gui.setMaxStackSize(size);
     }
 
-    public int first(@NotNull ItemStack item) {
+    public final int first(@NotNull ItemStack item) {
         return gui.first(item);
     }
 
     @NotNull
-    public ListIterator<ItemStack> iterator() {
+    public final ListIterator<ItemStack> iterator() {
         return gui.iterator();
     }
 
     @NotNull
-    public ListIterator<ItemStack> iterator(int index) {
+    public final ListIterator<ItemStack> iterator(int index) {
         return gui.iterator(index);
     }
 
     @NotNull
-    public HashMap<Integer, ItemStack> addItem(@NotNull ItemStack... items) throws IllegalArgumentException {
+    public final HashMap<Integer, ItemStack> addItem(@NotNull ItemStack... items) throws IllegalArgumentException {
         return gui.addItem(items);
     }
 
-    public boolean contains(@NotNull Material material, int amount) throws IllegalArgumentException {
+    public final boolean contains(@NotNull Material material, int amount) throws IllegalArgumentException {
         return gui.contains(material, amount);
     }
 
     @Nullable
-    public InventoryHolder getHolder() {
+    public final InventoryHolder getHolder() {
         return gui.getHolder();
     }
 
-    public int first(@NotNull Material material) throws IllegalArgumentException {
+    public final int first(@NotNull Material material) throws IllegalArgumentException {
         return gui.first(material);
     }
 
     @Contract("null -> false")
-    public boolean contains(@Nullable ItemStack item) {
+    public final boolean contains(@Nullable ItemStack item) {
         return gui.contains(item);
     }
 
-    public void setItem(int index, @Nullable ItemStack item) {
+    public final void setItem(int index, @Nullable ItemStack item) {
         gui.setItem(index, item);
     }
 
     @NotNull
-    public HashMap<Integer, ItemStack> removeItem(@NotNull ItemStack... items) throws IllegalArgumentException {
+    public final HashMap<Integer, ItemStack> removeItem(@NotNull ItemStack... items) throws IllegalArgumentException {
         return gui.removeItem(items);
     }
 
-    public void remove(@NotNull Material material) throws IllegalArgumentException {
+    public final void remove(@NotNull Material material) throws IllegalArgumentException {
         gui.remove(material);
     }
 
     @Contract("null, _ -> false")
-    public boolean contains(@Nullable ItemStack item, int amount) {
+    public final boolean contains(@Nullable ItemStack item, int amount) {
         return gui.contains(item, amount);
     }
 
-    public Spliterator<ItemStack> spliterator() {
+    public final Spliterator<ItemStack> spliterator() {
         return gui.spliterator();
     }
 
-    public int firstEmpty() {
+    public final int firstEmpty() {
         return gui.firstEmpty();
     }
 
-    public void forEach(Consumer<? super ItemStack> action) {
+    public final void forEach(Consumer<? super ItemStack> action) {
         gui.forEach(action);
     }
 
     @Nullable
-    public Location getLocation() {
+    public final Location getLocation() {
         return gui.getLocation();
     }
 
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return gui.isEmpty();
     }
 
-    public void clear(int index) {
+    public final void clear(int index) {
         gui.clear(index);
     }
 
     @NotNull
-    public HashMap<Integer, ? extends ItemStack> all(@NotNull Material material) throws IllegalArgumentException {
+    public final HashMap<Integer, ? extends ItemStack> all(@NotNull Material material) throws IllegalArgumentException {
         return gui.all(material);
     }
 
     @NotNull
-    public ItemStack[] getStorageContents() {
+    public final ItemStack[] getStorageContents() {
         return gui.getStorageContents();
     }
 
     @NotNull
-    public ItemStack[] getContents() {
+    public final ItemStack[] getContents() {
         return gui.getContents();
     }
 
     @Contract("null, _ -> false")
-    public boolean containsAtLeast(@Nullable ItemStack item, int amount) {
+    public final boolean containsAtLeast(@Nullable ItemStack item, int amount) {
         return gui.containsAtLeast(item, amount);
     }
 
-    public void remove(@NotNull ItemStack item) {
+    public final void remove(@NotNull ItemStack item) {
         gui.remove(item);
     }
 
-    public void setContents(@NotNull ItemStack[] items) throws IllegalArgumentException {
+    public final void setContents(@NotNull ItemStack[] items) throws IllegalArgumentException {
         gui.setContents(items);
     }
+    //</editor-fold>
 }

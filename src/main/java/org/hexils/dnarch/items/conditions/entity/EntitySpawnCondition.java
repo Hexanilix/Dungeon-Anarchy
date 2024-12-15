@@ -1,23 +1,26 @@
-package org.hexils.dnarch.items.conditions;
+package org.hexils.dnarch.items.conditions.entity;
 
+import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.actions.Spawn;
+import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
 import org.jetbrains.annotations.NotNull;
 
+import static org.hetils.mpdl.ItemUtil.newItemStack;
+
 public class EntitySpawnCondition extends Condition {
-    private final Spawn spawn;
-    public EntitySpawnCondition(Spawn spawn) {
+    private final EntitySpawnAction entitySpawnAction;
+    public EntitySpawnCondition(EntitySpawnAction entitySpawnAction) {
         super(Type.ENTITY_SPAWN_EVENT);
-        this.spawn = spawn;
+        this.entitySpawnAction = entitySpawnAction;
     }
 
     @Override
     public boolean isSatisfied() {
-        return this.spawn.isTriggered();
+        return this.entitySpawnAction.isTriggered();
     }
 
     @Override
@@ -31,8 +34,8 @@ public class EntitySpawnCondition extends Condition {
     }
 
     @Override
-    protected ItemStack toItem() {
-        return null;
+    protected ItemStack genItemStack() {
+        return newItemStack(Material.TURTLE_EGG, "");
     }
 
     @Override

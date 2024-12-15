@@ -50,7 +50,7 @@ public class TimerAction extends Action implements Booled {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         return null;
     }
 

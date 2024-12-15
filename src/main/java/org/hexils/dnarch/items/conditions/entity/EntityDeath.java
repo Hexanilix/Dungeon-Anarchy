@@ -1,5 +1,6 @@
-package org.hexils.dnarch.items.conditions;
+package org.hexils.dnarch.items.conditions.entity;
 
+import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
@@ -8,21 +9,24 @@ import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.actions.Spawn;
+import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hetils.mpdl.ItemUtil.newItemStack;
+
 public class EntityDeath extends Condition {
     public static List<EntityDeath> instances = new ArrayList<>();
-    private Spawn.EntityCollection ec = null;
+    private EntitySpawnAction.EntityCollection ec = null;
 
-    public Spawn.EntityCollection getEc() {
-        return ec;
-    }
+    public EntitySpawnAction.EntityCollection getEc() { return spawn.getColl(); }
 
-    public EntityDeath() {
+    private final EntitySpawnAction spawn;
+    public EntityDeath(EntitySpawnAction spanwn) {
         super(Type.ENTITY_DEATH_EVENT);
+        this.spawn = spanwn;
+        instances.add(this);
     }
 
     @Override
@@ -31,14 +35,10 @@ public class EntityDeath extends Condition {
     }
 
     @Override
-    public boolean isSatisfied() {
-        return ec != null && ec.getEntities().stream().allMatch(Entity::isDead);
-    }
+    public boolean isSatisfied() { return spawn.isTriggered() && spawn.getColl().getEntities().stream().allMatch(Entity::isDead); }
 
     @Override
-    protected ItemStack toItem() {
-        return null;
-    }
+    protected ItemStack genItemStack() { return newItemStack(Material.IRON_SWORD, getName()); }
 
     @Override
     protected void createGUI() {
@@ -52,7 +52,7 @@ public class EntityDeath extends Condition {
             @Override
             public void run() {
                 DA_item da = DA_item.get(getItem(24));
-                if (da instanceof Spawn.EntityCollection e) {
+                if (da instanceof EntitySpawnAction.EntityCollection e) {
                     ec = e;
                 }
             }

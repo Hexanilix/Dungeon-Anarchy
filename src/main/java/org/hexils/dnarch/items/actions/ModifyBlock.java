@@ -60,7 +60,7 @@ public class ModifyBlock extends BlockAction {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.GOLDEN_SHOVEL, getName());
         return i;
     }

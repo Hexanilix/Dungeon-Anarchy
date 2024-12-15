@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.hexils.dnarch.Action.toReadableFormat;
+
 public abstract class Condition extends DA_item implements Booled, Triggerable {
 
     public final Map<DA_item, Runnable> runnables = new HashMap<>();
@@ -21,7 +23,9 @@ public abstract class Condition extends DA_item implements Booled, Triggerable {
         return type;
     }
 
-    public Condition(Type type) {
+    public Condition(Type type) { this(type, true); }
+    public Condition(Type type, boolean renamealbe) {
+        super(type, renamealbe);
         this.type = type;
     }
 

@@ -41,14 +41,14 @@ public class Trigger extends DA_item implements Booled, Triggerable {
     }
 
     public Trigger() {
-        super();
+        super(Type.TRIGGER);
     }
 
     @Override
     public void updateGUI() {}
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         ItemStack i = new ItemStack(Material.COMPARATOR);
         ItemMeta m = i.getItemMeta();
         assert m != null;

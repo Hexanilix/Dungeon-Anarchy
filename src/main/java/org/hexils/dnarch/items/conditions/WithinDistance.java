@@ -96,7 +96,7 @@ public class WithinDistance extends Condition {
     }
 
     @Override
-    public ItemStack toItem() {
+    public ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.SCULK_SENSOR, ChatColor.RESET + getName());
         ItemMeta m = i.getItemMeta();
         m.setLore(List.of(ChatColor.LIGHT_PURPLE + "Type: " + this.type.name()));

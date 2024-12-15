@@ -1,4 +1,4 @@
-package org.hexils.dnarch.items.actions;
+package org.hexils.dnarch.items.actions.entity;
 
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -15,7 +15,7 @@ import java.util.List;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ModifyEntity extends Action {
-    private List<Spawn.EntityCollection> entities = new ArrayList<>();
+    private List<EntitySpawnAction.EntityCollection> entities = new ArrayList<>();
 
     public ModifyEntity() {
         super(Type.ENTITY_MOD);
@@ -44,7 +44,7 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.TRIPWIRE_HOOK, "Entity Modification");
         return i;
     }
@@ -53,7 +53,7 @@ public class ModifyEntity extends Action {
     public boolean guiClickEvent(InventoryClickEvent event) {
         for (ItemStack i : this.getContents()) {
             DA_item da = DA_item.get(i);
-            if (da instanceof Spawn.EntityCollection ec)
+            if (da instanceof EntitySpawnAction.EntityCollection ec)
                 entities.add(ec);
         }
         return true;

@@ -18,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 
-import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.IF;
 
 public final class DungeonCreatorCommandExecutor implements CommandExecutor {
@@ -69,6 +68,15 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                 }
                 return OK + "Set 2nd position to " + org.hetils.mpdl.LocationUtil.toReadableFormat(dm.getSelectionB());
             }
+            case "deselect" -> {
+                if (args.length == 1) {
+                    dm.deselectBlocks();
+                    dm.clearSelection();
+                } else {
+                    if (args[1].equalsIgnoreCase("blocks")) dm.deselectBlocks();
+                    else if (args[1].equalsIgnoreCase("selection")) dm.clearSelection();
+                }
+            }
             case "create" -> {
                 if (args.length > 1) {
                     if (args[1].equalsIgnoreCase("dungeon")) {
@@ -91,15 +99,20 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     } else {
                         if (dm.isEditing()) {
                             switch (args[1].toLowerCase()) {
-                                case "section" -> {
-                                    return dm.getCurrentDungeon().commandNewSection(dm, Arrays.copyOfRange(args, 2, args.length));
-                                }
-                                case "action", "condition" -> {
-                                    if (args.length == 2) {
-                                        return ER + "Please specify the action type!";
-                                    } else {
+                                case "section" -> { return dm.getCurrentDungeon().commandNewSection(dm, Arrays.copyOfRange(args, 2, args.length)); }
+                                case "action"  -> {
+                                    if (args.length == 2) return ER + "Please specify the action type!";
+                                    else {
                                         Type t = Type.get(args[2]);
-                                        if (t != null) dm.give(DA_item.commandNew(t, dm, Arrays.copyOfRange(args, 3, args.length)));
+                                        if (t != null && t.isAction()) dm.giveItem(DA_item.commandNew(t, dm, Arrays.copyOfRange(args, 3, args.length)));
+                                        else return ER + "Unknown type " + ChatColor.ITALIC + args[2].toLowerCase();
+                                    }
+                                }
+                                case "condition" -> {
+                                    if (args.length == 2) return ER + "Please specify the action type!";
+                                    else {
+                                        Type t = Type.get(args[2]);
+                                        if (t != null && t.isCondition()) dm.giveItem(DA_item.commandNew(t, dm, Arrays.copyOfRange(args, 3, args.length)));
                                         else return ER + "Unknown type " + ChatColor.ITALIC + args[2].toLowerCase();
                                     }
                                 }
@@ -111,16 +124,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                             default -> p.sendMessage(ER + "Unknown argument " + ChatColor.ITALIC + args[1]);
                         }
                     }
-                } else {
-                    p.sendMessage(ER + "Please specify what to create!");
-                }
-            }
-            case "save" -> {
-                if (!dm.isEditing()) p.sendMessage(W + "You must be currently editing a dungeon to save it");
-                else {
-                    dm.getCurrentDungeon().save();
-                    p.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
-                }
+                } else return (ER + "Please specify what to create!");
             }
             case "delete" -> {
                 Dungeon d = dm.getCurrentDungeon();
@@ -149,6 +153,13 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                         } else if (s == null) return W + "You're currently not in a section.";
                         s.attemptRemove(dm);
                     }
+                }
+            }
+            case "save" -> {
+                if (!dm.isEditing()) p.sendMessage(W + "You must be currently editing a dungeon to save it");
+                else {
+                    dm.getCurrentDungeon().save();
+                    p.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
                 }
             }
             case "run" -> {
@@ -228,18 +239,18 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     Dungeon d;
                     if (args.length == 2) {
                         d = Dungeon.get(args[1]);
-                        if (d == null) {
-                            p.sendMessage(ER + "No dungeon named \"" + args[1] + "\"");
-                        } else {
+                        if (d == null) p.sendMessage(ER + "No dungeon named \"" + args[1] + "\"");
+                        else {
                             dm.setCurrentDungeon(d);
+                            return IF + "Editing dungeon " + d.getName();
                         }
                     } else {
                         d = Dungeon.get(p.getLocation());
-                        if (d == null) {
-                            p.sendMessage(ER + "You're currently not in a dungeon, please go into the desired dungeon or specify one.");
-                        } else {
+                        if (d == null) return ER + "You're currently not in a dungeon, please go into the desired dungeon or specify one.";
+                        else {
                             dm.setCurrentDungeon(d);
-                            p.sendMessage(OK + "Editing dungeon " + d.getDungeonInfo().display_name);
+                            d.showDungeonFor(dm);
+                            return (OK + "Editing dungeon " + d.getDungeonInfo().display_name);
                         }
                     }
                 } else p.sendMessage(W + "You're already editing dungeon \"" + dm.getCurrentDungeon().getName() + "\"!");
@@ -276,6 +287,25 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                 if (dm.isEditing()) dm.getCurrentDungeon().removeViewer(dm);
                 p.sendMessage(IF + "Hid " + dm.getCurrentDungeon().getDungeonInfo().display_name + " selections");
             }
+            case "teleport" -> {
+                if (!dm.isEditing()) return ER + "You must be editing a dungeon to teleport!";
+                else {
+                    Dungeon d = dm.getCurrentDungeon();
+                    if (args.length == 1) dm.teleport(d.getMains().getCenter());
+                    else switch (args[1]) {
+                        case "dungeon" -> dm.teleport(d.getMains().getCenter());
+                        case "section" -> {
+                            Dungeon.Section s = d.getSection(p);
+                            if (args.length >= 3) {
+                                s = d.getSection(args[2]);
+                                if (s == null) return ER + "No section named \"" + args[2] + "\"";
+                            } else if (s == null) return W + "You're currently not in a section.";
+                            dm.teleport(s.getCenter());
+                        }
+                        default -> p.sendMessage(ER + "Unknown argument " + args[1]);
+                    }
+                }
+            }
             default -> p.sendMessage(ER + "Unknown argument " + args[0]);
         }
         return r;
@@ -296,7 +326,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
         Player p = (Player) sender;
         DungeonMaster dm = DungeonMaster.getOrNew(p);
         if (args.length <= 1) {
-            s.addAll(List.of("wand", "pos1", "pos2", "hide", "show", "create", "delete"));
+            s.addAll(List.of("wand", "pos1", "pos2", "hide", "show", "create", "delete", "deselect"));
             if (dm.isEditing()) s.addAll(List.of("run", "reset", "rename", "save", "manage", "exit", "build"));
             else s.addAll(List.of("edit"));
         } else switch (args[0].toLowerCase()) {
@@ -319,7 +349,6 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     } else {
                         if (args.length >= 4) {
                             Type at = Type.get(args[2]);
-                            log(at);
                             if (at != null) return DA_item.getTabCompleteFor(at, Arrays.copyOfRange(args, 3, args.length));
                         } else switch (args[1].toLowerCase()) {
                             case "action" -> { return Arrays.stream(Type.values()).filter(Type::isAction).map(e -> e.name().toLowerCase()).toList(); }
@@ -341,9 +370,8 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
             }
             case "manage", "rename" -> {
                 if (!dm.isEditing()) return s;
-                if (args.length == 2) {
-                    s.addAll(List.of("dungeon", "section", "item"));
-                } else switch (args[1]) {
+                if (args.length == 2) s.addAll(List.of("dungeon", "section", "item"));
+                else switch (args[1]) {
                     case "dungeon" -> { if (args.length == 3) return getDungeonNames(); }
                     case "section" -> { if (args.length == 3) return getSectionNames(dm.getCurrentDungeon()); }
                     case "item" -> {
@@ -351,13 +379,22 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     }
                 }
             }
+            case "teleport" -> {
+                if (!dm.isEditing()) return s;
+                if (args.length == 2) s.addAll(List.of("dungeon", "section"));
+                else switch (args[1]) {
+                    case "dungeon" -> { if (args.length == 3) return getDungeonNames(); }
+                    case "section" -> { if (args.length == 3) return getSectionNames(dm.getCurrentDungeon()); }
+                }
+            }
+            case "deselect" -> { if (args.length == 2) return List.of("blocks", "selection"); }
             case "edit", "show", "hide" -> { if (!dm.isEditing() && args.length == 2) return getDungeonNames(); }
         }
-        return s.stream().filter(st -> st.startsWith(args[args.length-1].toLowerCase())).toList();
+        return s;
     }
 
     public static List<String> getDungeonNames() { return Dungeon.dungeons.stream().map(Manageable::getName).toList(); }
-    public static List<String> getSectionNames(Dungeon d) { return d.getSections().stream().map(Manageable::getName).toList(); }
+    public static List<String> getSectionNames(@NotNull Dungeon d) { return d.getSections().stream().map(Manageable::getName).toList(); }
 
     public static final class tab implements TabCompleter {
         @Override

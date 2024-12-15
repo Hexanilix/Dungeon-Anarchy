@@ -7,6 +7,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.hetils.mpdl.MaterialUtil;
 import org.hexils.dnarch.BlockAction;
 import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.items.Type;
@@ -20,6 +21,8 @@ import java.util.List;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ReplaceBlock extends BlockAction {
+    public static class DestroyBlock extends ReplaceBlock { public DestroyBlock(List<Block> blocks) { super(blocks, Material.AIR); } }
+
     private boolean sound = true;
     private boolean particles = true;
     private List<BlockData> ogbd = new ArrayList<>();
@@ -30,23 +33,10 @@ public class ReplaceBlock extends BlockAction {
     @Override
     protected void createGUI() {
         this.setSize(54);
-        ItemStack cm = newItemStack(hasMeta(change_material), "Change Material: " + change_material.name());
-        setField(cm, "material", change_material.name());
-        this.setItem(13, cm);
         this.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
     }
 
-    @Contract(pure = true)
-    private static @Nullable Material hasMeta(Material mat) {
-        if (mat == null) return null;
-        return switch (mat) {
-            case AIR -> Material.FEATHER;
-            case WATER -> Material.WATER_BUCKET;
-            case LAVA -> Material.LAVA_BUCKET;
-            case WATER_CAULDRON, LAVA_CAULDRON -> Material.CAULDRON;
-            default -> mat;
-        };
-    }
+
 
     public ReplaceBlock(List<Block> blocks, Material change_material) {
         super(Type.REPLACE_BLOCK, blocks);
@@ -84,12 +74,15 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     public void updateGUI() {
+        ItemStack cm = newItemStack(MaterialUtil.validMetaSubstitution(change_material), "Change Material: " + change_material.name());
+        setField(cm, "material", change_material.name());
+        this.setItem(13, cm);
         for (int i = 0; i < 27; i++)
             this.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.BlockUtil.b2i(blocks.get(i), ogbd.get(i)) : null);
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         ItemStack i = new ItemStack(Material.DIAMOND_PICKAXE);
         ItemMeta m = i.getItemMeta();
         assert m != null;

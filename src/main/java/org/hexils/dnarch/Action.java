@@ -37,7 +37,7 @@ public abstract class Action extends DA_item implements Triggerable {
     public final Type type;
 
     public Action(@NotNull Type type) {
-        super(toReadableFormat(type.name()));
+        super(type);
         this.type = type;
         actions.add(this);
     }

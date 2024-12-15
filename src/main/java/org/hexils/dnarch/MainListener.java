@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.dungeon.Dungeon;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.items.conditions.EntityDeath;
+import org.hexils.dnarch.items.conditions.entity.EntityDeath;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -22,6 +22,7 @@ import java.util.UUID;
 import static org.hexils.dnarch.Main.*;
 import static org.hexils.dnarch.DA_item.ITEM_UUID;
 import static org.hexils.dnarch.Manageable.*;
+import static org.hexils.dnarch.Manageable.ConditionGUI.CONDITION_GUI;
 
 public final class MainListener implements org.bukkit.event.Listener {
     @EventHandler
@@ -101,15 +102,15 @@ public final class MainListener implements org.bukkit.event.Listener {
                             DA_item da = DA_item.get(it);
                             if (da != null)
                                 da.manage(dm, mg);
-                        } else if (NSK.hasNSK(it, ITEM_RENAME)) {
+                        }
+                        if (NSK.hasNSK(it, ITEM_RENAME)) {
                             Manageable m = Manageable.get(opi);
                             if (m == null) mg.rename(dm, () -> dm.openInventory(opi));
                             else mg.rename(dm, () -> mg.manage(dm));
-                        } else if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) {
-                            mg.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
-                        } else if (NSK.hasNSK(it, ITEM_ACTION)) {
-                            mg.doAction(dm, (String) NSK.getNSK(it, ITEM_ACTION), event);
                         }
+                        if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) mg.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
+                        if (NSK.hasNSK(it, ITEM_ACTION)) mg.doAction(dm, (String) NSK.getNSK(it, ITEM_ACTION), event);
+                        if (NSK.hasNSK(it, CONDITION_GUI)) ConditionGUI.get(UUID.fromString((String) NSK.getNSK(it, CONDITION_GUI))).manage(dm, mg);
                     }
                 }
         }
@@ -151,7 +152,7 @@ public final class MainListener implements org.bukkit.event.Listener {
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         for (EntityDeath ed : EntityDeath.instances)
-            if (ed.getEc().getEntities().contains(event.getEntity()))
+            if (ed.getEc() != null && ed.getEc().getEntities().contains(event.getEntity()))
                 ed.trigger();
     }
 }

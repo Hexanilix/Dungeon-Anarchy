@@ -51,7 +51,7 @@ public class Door extends Action {
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         return null;
     }
 

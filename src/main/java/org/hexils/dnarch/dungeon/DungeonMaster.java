@@ -110,9 +110,7 @@ public class DungeonMaster {
         raw_selected_area.setValue(null);
         selected_area.set(org.hetils.mpdl.LocationUtil.toMaxMin(raw_selected_area));
     }
-    public Pair<Location, Location> getSelectedArea() {
-        return new Pair<>(selected_area.key() != null ? selected_area.key().clone().add(1, 1, 1) : null, selected_area.value());
-    }
+    public Pair<Location, Location> getSelectedArea() { return new Pair<>(selected_area.key() != null ? selected_area.key().clone().add(1, 1, 1) : null, selected_area.value()); }
     public void clearSelection() {
         this.raw_selected_area.setKey(null);
         this.raw_selected_area.setValue(null);
@@ -154,15 +152,14 @@ public class DungeonMaster {
 
     public List<Block> getSelectionBlocks() {
         List<Block> c = new ArrayList<>();
-        Pair<Location, Location> area = getSelectedArea();
-        if (area.key() != null && area.value() != null) {
-            World w = area.key().getWorld();
-            int xm = (int) Math.max(area.key().getX(), area.value().getX());
-            int ym = (int) Math.max(area.key().getY(), area.value().getY());
-            int zm = (int) Math.max(area.key().getZ(), area.value().getZ());
-            int mx = (int) Math.min(area.key().getX(), area.value().getX());
-            int my = (int) Math.min(area.key().getY(), area.value().getY());
-            int mz = (int) Math.min(area.key().getZ(), area.value().getZ());
+        if (raw_selected_area.key() != null && raw_selected_area.value() != null) {
+            World w = raw_selected_area.key().getWorld();
+            int xm = (int) Math.max(raw_selected_area.key().getX(), raw_selected_area.value().getX());
+            int ym = (int) Math.max(raw_selected_area.key().getY(), raw_selected_area.value().getY());
+            int zm = (int) Math.max(raw_selected_area.key().getZ(), raw_selected_area.value().getZ());
+            int mx = (int) Math.min(raw_selected_area.key().getX(), raw_selected_area.value().getX());
+            int my = (int) Math.min(raw_selected_area.key().getY(), raw_selected_area.value().getY());
+            int mz = (int) Math.min(raw_selected_area.key().getZ(), raw_selected_area.value().getZ());
             for (int x = mx; x <= xm; x++)
                 for (int y = my; y <= ym; y++)
                     for (int z = mz; z <= zm; z++) {
@@ -173,22 +170,19 @@ public class DungeonMaster {
         return c;
     }
 
-    public Dungeon getCurrentDungeon() { return current_dungeon; }
-    public void setCurrentDungeon(Dungeon current_dungeon) { this.current_dungeon = current_dungeon; }
     public boolean isEditing() { return current_dungeon != null; }
+    public void setCurrentDungeon(Dungeon current_dungeon) { this.current_dungeon = current_dungeon; }
+    public Dungeon getCurrentDungeon() { return current_dungeon; }
 
-    public void give(DA_item a) { if (a != null) this.p.getInventory().addItem(a.getItem()); }
+    public void giveItem(DA_item a) { if (a != null) this.p.getInventory().addItem(a.getItem()); }
 
     public boolean inBuildMode() { return build_mode && current_dungeon != null; }
+    public void setBuildMode(boolean b) { this.build_mode = b; }
 
     public boolean hasBlocksSelected() { return !slb.isEmpty(); }
 
-    public void setBuildMode(boolean b) { this.build_mode = b; }
-
-    public void setCurrentManageable(Manageable manageable) { this.current_manageable = manageable; }
-
     public boolean isManaging() { return current_manageable != null; }
-
+    public void setCurrentManageable(Manageable manageable) { this.current_manageable = manageable; }
     public Manageable getCurrentManageable() { return current_manageable; }
 
     private final class SelectThread extends PluginThread {
@@ -340,6 +334,8 @@ public class DungeonMaster {
     public void hideSelections() { select_thread.clearSelected(); }
 
 
+
+    //<editor-fold defaultstate="collapsed" desc="Player (p) delegations">
     @NotNull
     public String getName() {
         return p.getName();
@@ -2247,4 +2243,5 @@ public class DungeonMaster {
     public void setNoActionTicks(int ticks) {
         p.setNoActionTicks(ticks);
     }
+    //</editor-fold>
 }

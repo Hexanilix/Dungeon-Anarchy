@@ -1,5 +1,6 @@
 package org.hexils.dnarch.items.conditions;
 
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -17,6 +18,7 @@ import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.List;
 
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
@@ -66,8 +68,8 @@ public class WithinBoundsCondition extends Condition {
     }
 
     @Override
-    protected ItemStack toItem() {
-        return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, getName());
+    protected ItemStack genItemStack() {
+        return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, ChatColor.GOLD + "Area Condition", List.of(ChatColor.GRAY + "This condition triggers whenever a player enters"));
     }
 
     @Override

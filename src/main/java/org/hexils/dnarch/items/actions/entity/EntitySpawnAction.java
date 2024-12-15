@@ -1,17 +1,19 @@
-package org.hexils.dnarch.items.actions;
+package org.hexils.dnarch.items.actions.entity;
 
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.hexils.dnarch.Action;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.hexils.dnarch.BlockAction;
 import org.hexils.dnarch.DA_item;
 import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.items.EntitySpawn;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.conditions.EntitySpawnCondition;
+import org.hexils.dnarch.items.conditions.entity.EntityDeath;
+import org.hexils.dnarch.items.conditions.entity.EntitySpawnCondition;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -21,11 +23,12 @@ import java.util.logging.Level;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
-public class Spawn extends Action {
+public class EntitySpawnAction extends BlockAction {
     public static class EntityCollection extends DA_item {
         private List<Entity> entities;
 
         public EntityCollection(List<Entity> entities) {
+            super(Type.ENTITY_COLLECTION);
             this.entities = entities;
         }
 
@@ -48,7 +51,7 @@ public class Spawn extends Action {
         }
 
         @Override
-        protected ItemStack toItem() {
+        protected ItemStack genItemStack() {
             ItemStack i = newItemStack(Material.SPAWNER, "Entity Collection");
             return i;
         }
@@ -61,45 +64,38 @@ public class Spawn extends Action {
         public List<Entity> getEntities() { return entities; }
     }
 
-    private Collection<EntitySpawn> entities = new ArrayList<>();
+    private Collection<org.hexils.dnarch.items.EntitySpawn> entities = new ArrayList<>();
     private EntityCollection s_ent_c = null;
-    private List<Location> spawnp = new ArrayList<>();
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition(this);
+    private final EntityDeath entity_death_event = new EntityDeath(this);
 
-    public Spawn(EntitySpawn e, Location sp) {
-        super(Type.ENTITY_SPAWN_ACTION);
-        this.entities.add(e);
-        this.spawnp.add(sp);
-    }
-
-    public Spawn(Collection<EntitySpawn> entities, List<Location> spawnp) {
-        super(Type.ENTITY_SPAWN_ACTION);
+    public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn e, Block sp) { this(List.of(e), List.of(sp)); }
+    public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn entity, List<Block> spawnp) { this(List.of(entity), spawnp); }
+    public EntitySpawnAction(Collection<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
+        super(Type.ENTITY_SPAWN_ACTION, spawnp);
         this.entities = entities;
-        this.spawnp = spawnp;
-    }
-
-    public Spawn(EntitySpawn entity, List<Location> spawnp) {
-        super(Type.ENTITY_SPAWN_ACTION);
-        this.entities.add(entity);
-        this.spawnp = spawnp;
+        this.cgui = new ConditionGUI(getName(), List.of(ent_spaw_c, entity_death_event));
     }
 
     @Override
     public void trigger() {
-        List<Entity> spawnede = new ArrayList<>();
-        Random r = new Random();
-        for (EntitySpawn e : entities) {
-            Location l = spawnp.get(r.nextInt(spawnp.size()));
-            Entity ent = l.getWorld().spawnEntity(l, e.type);
-            spawnede.add(ent);
-            if (e.name != null) {
-                ent.setCustomNameVisible(true);
-                ent.setCustomName(e.name);
-            } else log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.LocationUtil.toReadableFormat(l));
+        if (!triggered) {
+            List<Entity> spawnede = new ArrayList<>();
+            Random r = new Random();
+            for (org.hexils.dnarch.items.EntitySpawn e : entities) {
+                Location l = this.affected_blocks.get(r.nextInt(this.affected_blocks.size())).getLocation().add(.5, .5, .5);
+                Entity ent = l.getWorld().spawnEntity(l, e.type);
+                spawnede.add(ent);
+                if (e.name != null) {
+                    ent.setCustomNameVisible(true);
+                    ent.setCustomName(e.name);
+                } else
+                    log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.LocationUtil.toReadableFormat(l));
+            }
+            this.s_ent_c = new EntityCollection(spawnede);
+            this.triggered = true;
+            ent_spaw_c.trigger();
         }
-        this.s_ent_c = new EntityCollection(spawnede);
-        this.triggered = true;
-        ent_spaw_c.trigger();
     }
 
     @Override
@@ -107,23 +103,17 @@ public class Spawn extends Action {
         this.s_ent_c.delete();
     }
 
-    @Override
-    protected void createGUI() {
-        this.setSize(54);
-        this.setNameSign(13);
-        this.fillBox(27, 9, 3, entities.stream().map(DA_item::getItem).toList());
-    }
-
     private @NotNull List<String> entsToString() {
         List<String> l = new ArrayList<>();
-        for (EntitySpawn e : entities)
+        for (org.hexils.dnarch.items.EntitySpawn e : entities)
             l.add(ChatColor.GRAY + e.type.name());
         return l;
     }
 
     @Override
-    protected ItemStack toItem() {
+    protected ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.SPAWNER, getName(), entsToString());
+        ItemMeta m = i .getItemMeta();
         return i;
     }
 
@@ -131,16 +121,25 @@ public class Spawn extends Action {
         return s_ent_c;
     }
 
+    private final ConditionGUI cgui;
     @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
+    public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { onRename.run(); cgui.setName(getName()); }); }
 
+    @Override
+    protected void createGUI() {
+        this.setSize(54);
+        this.setNameSign(13);
+        this.setItem(12, cgui.toItem());
+
+        this.fillBox(27, 9, 3, (ItemStack) null);
+        this.fillBox(27, 9, 3, entities.stream().map(DA_item::getItem).toList());
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
+    protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
         switch (action) {
-            case "getEntColl" -> dm.give(s_ent_c);
-            case "getEntCond" -> dm.give(ent_spaw_c);
+            case "getEntColl" -> dm.giveItem(s_ent_c);
+            case "getEntCond" -> dm.giveItem(ent_spaw_c);
         }
     }
 
@@ -152,7 +151,7 @@ public class Spawn extends Action {
     public String toString() {
         return "Spawn{" +
                 "entities=" + entities +
-                ", spawnp=" + spawnp +
+                ", spawnp=" + this.affected_blocks +
                 ", ent_spaw_c=" + ent_spaw_c +
                 ", spawnede=" + s_ent_c +
                 ", triggered=" + triggered +
