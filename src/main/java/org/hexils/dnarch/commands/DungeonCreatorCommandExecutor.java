@@ -35,15 +35,14 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
 
     public static @Nullable String execute(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
+            //TODO dc usage message
             return null;
         }
         if (sender instanceof ConsoleCommandSender console) {
             return null;
         }
         Player p = (Player) sender;
-        if (!sender.isOp()) {
-            return ER + "You cannot use this command!";
-        }
+        if (!sender.isOp()) return ER + "You cannot use this command!";
         DungeonMaster dm = DungeonMaster.getOrNew(p);
         String r = null;
         switch (args[0].toLowerCase()) {
@@ -189,8 +188,8 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                         if (a != null) a.rename(dm);
                         else {
                             Dungeon.Section s = d.getSection(p);
-                            if (s != null) s.manage(dm);
-                            else d.manage(dm);
+                            if (s != null) s.rename(dm);
+                            else d.rename(dm);
                         }
                     }
                     else switch (args[1]) {
@@ -239,20 +238,14 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     Dungeon d;
                     if (args.length == 2) {
                         d = Dungeon.get(args[1]);
-                        if (d == null) p.sendMessage(ER + "No dungeon named \"" + args[1] + "\"");
-                        else {
-                            dm.setCurrentDungeon(d);
-                            return IF + "Editing dungeon " + d.getName();
-                        }
+                        if (d == null) return ER + "No dungeon named \"" + args[1] + "\"";
                     } else {
                         d = Dungeon.get(p.getLocation());
                         if (d == null) return ER + "You're currently not in a dungeon, please go into the desired dungeon or specify one.";
-                        else {
-                            dm.setCurrentDungeon(d);
-                            d.showDungeonFor(dm);
-                            return (OK + "Editing dungeon " + d.getDungeonInfo().display_name);
-                        }
                     }
+                    dm.setCurrentDungeon(d);
+                    d.showDungeonFor(dm);
+                    return (OK + "Editing dungeon " + d.getDungeonInfo().display_name);
                 } else p.sendMessage(W + "You're already editing dungeon \"" + dm.getCurrentDungeon().getName() + "\"!");
             }
             case "build" -> {
@@ -269,6 +262,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     Dungeon d = dm.getCurrentDungeon();
                     d.save();
                     d.removeViewer(dm);
+                    d.removeEditor(dm);
                     dm.setCurrentDungeon(null);
                     p.sendMessage(IF + "Finished and saved dungeon " + d.getName());
                 } else p.sendMessage(W + "You're not editing a dungeon");

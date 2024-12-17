@@ -45,7 +45,7 @@ public class TimerAction extends Action implements Booled {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
 
     }
 

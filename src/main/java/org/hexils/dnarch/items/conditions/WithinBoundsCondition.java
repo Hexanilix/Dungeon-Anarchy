@@ -27,6 +27,8 @@ public class WithinBoundsCondition extends Condition {
     private LocationUtil.BoundingBox bounds;
     private BukkitRunnable runnable;
     private boolean satisfied = false;
+    private boolean enter = true;
+
     public WithinBoundsCondition(LocationUtil.@NotNull BoundingBox bounds) {
         super(Type.WITHIN_BOUNDS);
         this.bounds = bounds.clone();

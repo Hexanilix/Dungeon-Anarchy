@@ -164,6 +164,7 @@ public abstract class DA_item extends Manageable implements Idable {
     protected abstract ItemStack genItemStack();
     public final ItemStack getItem() {
         if (item == null) this.item = this.genItemStack();
+        ItemUtil.setName(item, getName());
         NSK.setNSK(item, ITEM_UUID, id.toString());
         items.add(item);
         return item;

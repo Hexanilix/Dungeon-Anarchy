@@ -30,7 +30,7 @@ public class DungeonStart extends Condition {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
 
     }
 

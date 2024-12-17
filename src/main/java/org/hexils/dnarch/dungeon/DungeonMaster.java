@@ -130,7 +130,7 @@ public class DungeonMaster {
     public boolean selectBlock(Block b) {
         if (this.isEditing()) {
             if (!slb.contains(b)) {
-                if (!this.current_dungeon.isWithinDungeon(b.getLocation())) {
+                if (!this.current_dungeon.contains(b.getLocation())) {
                     p.sendMessage(W + "Block is out of dungeon bounds!");
                 } else {
                     if (!slb.isEmpty() && slb.get(0).getWorld() != b.getWorld())
@@ -164,14 +164,19 @@ public class DungeonMaster {
                 for (int y = my; y <= ym; y++)
                     for (int z = mz; z <= zm; z++) {
                         Block b = w.getBlockAt(x, y, z);
-                        if (current_dungeon.isWithinDungeon(b.getLocation())) c.add(b);
+                        if (current_dungeon.contains(b.getLocation())) c.add(b);
                     }
         }
         return c;
     }
 
     public boolean isEditing() { return current_dungeon != null; }
-    public void setCurrentDungeon(Dungeon current_dungeon) { this.current_dungeon = current_dungeon; }
+    public void setCurrentDungeon(Dungeon dungeon) {
+        if (dungeon == null) {
+            if (this.current_dungeon != null) this.current_dungeon.removeEditor(this);
+        } else dungeon.addEditor(this);
+        this.current_dungeon = dungeon;
+    }
     public Dungeon getCurrentDungeon() { return current_dungeon; }
 
     public void giveItem(DA_item a) { if (a != null) this.p.getInventory().addItem(a.getItem()); }

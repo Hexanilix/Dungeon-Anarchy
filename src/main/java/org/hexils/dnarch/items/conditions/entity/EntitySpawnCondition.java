@@ -29,13 +29,13 @@ public class EntitySpawnCondition extends Condition {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
 
     }
 
     @Override
     protected ItemStack genItemStack() {
-        return newItemStack(Material.TURTLE_EGG, "");
+        return new ItemStack(Material.TURTLE_EGG);
     }
 
     @Override

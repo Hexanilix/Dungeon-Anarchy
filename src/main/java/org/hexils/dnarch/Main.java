@@ -63,8 +63,10 @@ public final class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        logger = new Logger(this.getName());
         plugin = this;
+        logger = new Logger(this.getName());
+        this.getDataFolder().mkdir();
+        FileManager.dungeon_dir.mkdir();
         super.onEnable();
         Bukkit.getPluginManager().registerEvents(new MainListener(), this);
         Bukkit.getPluginManager().registerEvents(new GeneralListener(), this);

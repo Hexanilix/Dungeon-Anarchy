@@ -73,7 +73,7 @@ public class ReplaceBlock extends BlockAction {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
         ItemStack cm = newItemStack(MaterialUtil.validMetaSubstitution(change_material), "Change Material: " + change_material.name());
         setField(cm, "material", change_material.name());
         this.setItem(13, cm);

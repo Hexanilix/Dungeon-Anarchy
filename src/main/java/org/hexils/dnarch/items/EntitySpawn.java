@@ -32,7 +32,7 @@ public class EntitySpawn extends DA_item {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
         this.setItem(11, newItemStack(Material.getMaterial(type.name()+"_SPAWN_EGG"), toReadableFormat(type.name())));
     }
 

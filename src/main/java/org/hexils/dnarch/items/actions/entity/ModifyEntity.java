@@ -39,7 +39,7 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
 
     }
 

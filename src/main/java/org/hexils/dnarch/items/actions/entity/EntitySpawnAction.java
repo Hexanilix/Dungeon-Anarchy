@@ -39,7 +39,7 @@ public class EntitySpawnAction extends BlockAction {
         }
 
         @Override
-        public void updateGUI() {
+        protected void updateGUI() {
             this.fillBox(9, 9, 5);
             this.fillBox(9, 9, 5, entities.stream().map(org.hetils.mpdl.EntityUtil::toItem).toList());
             if (entities.size() > 45) {
@@ -74,7 +74,7 @@ public class EntitySpawnAction extends BlockAction {
     public EntitySpawnAction(Collection<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
         super(Type.ENTITY_SPAWN_ACTION, spawnp);
         this.entities = entities;
-        this.cgui = new ConditionGUI(getName(), List.of(ent_spaw_c, entity_death_event));
+        this.cgui = new ItemListGUI(getName(), List.of(ent_spaw_c, entity_death_event));
     }
 
     @Override
@@ -121,7 +121,7 @@ public class EntitySpawnAction extends BlockAction {
         return s_ent_c;
     }
 
-    private final ConditionGUI cgui;
+    private final ItemListGUI cgui;
     @Override
     public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { onRename.run(); cgui.setName(getName()); }); }
 

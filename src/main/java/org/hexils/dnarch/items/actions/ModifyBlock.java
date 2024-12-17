@@ -66,7 +66,7 @@ public class ModifyBlock extends BlockAction {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
         for (int i = 0; i < 27; i++)
             this.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
     }

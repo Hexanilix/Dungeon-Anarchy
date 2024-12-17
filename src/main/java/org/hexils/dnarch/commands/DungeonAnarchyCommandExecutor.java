@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.hexils.dnarch.Main.log;
+
 public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
     public static final ChatColor A = ChatColor.AQUA;
     public static final String HELP_MSG = A +
@@ -29,6 +31,10 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                 p.sendMessage(HELP_MSG);
             }
             case "name" -> {p.sendMessage(DA_item.get(p.getInventory().getItemInMainHand()).getName());}
+            case "dc" -> {
+                log("setb");
+                p.performCommand("dungeon_anarchy:dc create dungeon");
+            }
         }
         return true;
     }

@@ -46,7 +46,7 @@ public class Door extends Action {
     }
 
     @Override
-    public void updateGUI() {
+    protected void updateGUI() {
 
     }
 

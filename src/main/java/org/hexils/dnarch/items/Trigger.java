@@ -45,7 +45,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
     }
 
     @Override
-    public void updateGUI() {}
+    protected void updateGUI() {}
 
     @Override
     protected ItemStack genItemStack() {

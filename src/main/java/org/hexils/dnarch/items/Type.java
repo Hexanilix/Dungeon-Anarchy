@@ -24,7 +24,7 @@ public enum Type {
     BLOCK_CHANGE_EVENT,
 
     //Other
-    TIMER, ENTITY_SPAWN, TRIGGER, ENTITY_COLLECTION;
+    TIMER, ENTITY_SPAWN, TRIGGER, ENTITY_COLLECTION, RESET_ACTION;
 
     public static @Nullable Type get(@NotNull String arg) {
         for (Type t : Type.values())
