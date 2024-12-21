@@ -1,5 +1,7 @@
 package org.hexils.dnarch.dungeon;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -8,7 +10,9 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import org.hetils.jgl17.JSON;
 import org.hetils.jgl17.Pair;
+import org.hetils.jgl17.oodp.OODP;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hetils.mpdl.GeneralListener;
@@ -20,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,8 +34,7 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.*;
 import static org.hexils.dnarch.commands.DungeonCreatorCommandExecutor.W;
 
-public class Dungeon extends Manageable implements Savable {
-    public World getWorld() { return this.world; }
+public class Dungeon extends Manageable implements Savable, Deletable {
 
     public static class DuplicateNameException extends Exception {  public DuplicateNameException(String s) { super(s); } }
     public static class DungeonIntersectViolation extends Exception {  public DungeonIntersectViolation(String s) { super(s); } }
@@ -60,6 +65,7 @@ public class Dungeon extends Manageable implements Savable {
         private final WithinBoundsCondition sectionEnter;
         private final ItemListGUI event_gui;
         private final ItemListGUI item_gui;
+        private Material displ_mat = Material.GREEN_CONCRETE;
 
         public Section(Pair<Location, Location> selection) {
             this(selection, "Section" + sections.size());
@@ -89,9 +95,7 @@ public class Dungeon extends Manageable implements Savable {
         @Override
         public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { if (onRename != null) onRename.run(); event_gui.setName(getName()); item_gui.setName(getName());}); }
 
-        public UUID getId() {
-            return id;
-        }
+        public UUID getId() { return id; }
 
         @Override
         protected void createGUI() {
@@ -177,8 +181,6 @@ public class Dungeon extends Manageable implements Savable {
 
         public Dungeon getDungeon() { return Dungeon.this; }
 
-        private Material displ_mat = Material.GREEN_CONCRETE;
-
         public ItemStack toItem() {
             ItemStack i = newItemStack(displ_mat, getName());
             Manageable.setGuiAction(i, "open", id.toString());
@@ -230,7 +232,7 @@ public class Dungeon extends Manageable implements Savable {
     }
 
     public Dungeon(UUID creator, String name, @NotNull Pair<Location, Location> sec) throws DuplicateNameException, DungeonIntersectViolation {
-        super(name);
+        super(name, true,  54);
         if (get(name) != null) throw new DuplicateNameException("Dungeon " + name + "already exists");
         Section si = getIntersectedSection(sec);
         if (si != null) throw new DungeonIntersectViolation("Couldn't create dungeon \"" + name + "\" due to section intersection with section \"" + si.getName() + "\" of dungeon \"" + si.getDungeon().getDungeonInfo().display_name + "\"");
@@ -247,6 +249,8 @@ public class Dungeon extends Manageable implements Savable {
         bounding_box = new LocationUtil.BoundingBox(sec);
         dungeons.add(this);
     }
+
+    public World getWorld() { return this.world; }
 
     public static @Nullable Section getIntersectedSection(Pair<Location, Location> bb) {
         for (Dungeon d : dungeons)
@@ -326,7 +330,6 @@ public class Dungeon extends Manageable implements Savable {
     }
 
     public BoundingBox getBoundingBox() { return this.bounding_box; }
-
     private void updateBoundingBox() {
         List<Vector> l = new ArrayList<>(sections.stream().map(s -> s.bounds.getMax()).toList());
         l.addAll(sections.stream().map(s -> s.bounds.getMin()).toList());
@@ -335,7 +338,27 @@ public class Dungeon extends Manageable implements Savable {
         bounding_box.resize(VectorUtil.toMaxMin(l));
         viewers.forEach(this::showDungeonFor);
     }
-
+    public boolean contains(Location l) {
+        if (!bounding_box.contains(l)) return false;
+        for (Section s : sections)
+            if (s.bounds.contains(l))
+                return true;
+        return mains.bounds.contains(l);
+    }
+    public boolean contains(Entity e) {
+        if (!bounding_box.contains(e)) return false;
+        for (Section s : sections)
+            if (s.bounds.contains(e))
+                return true;
+        return mains.bounds.contains(e);
+    }
+    public boolean intersects(Entity e) {
+        if (!bounding_box.contains(e)) return false;
+        for (Section s : sections)
+            if (s.bounds.contains(e))
+                return true;
+        return mains.bounds.contains(e);
+    }
 
     public static final Particle[] selectParts;
     static {
@@ -361,28 +384,6 @@ public class Dungeon extends Manageable implements Savable {
         sections.forEach(dm::hideSelection);
         if (dm.isEditing() && dm.getCurrentDungeon() == this)
             dm.setCurrentDungeon(this);
-    }
-
-    public boolean contains(Location l) {
-        if (!bounding_box.contains(l)) return false;
-        for (Section s : sections)
-            if (s.bounds.contains(l))
-                return true;
-        return mains.bounds.contains(l);
-    }
-    public boolean contains(Entity e) {
-        if (!bounding_box.contains(e)) return false;
-        for (Section s : sections)
-            if (s.bounds.contains(e))
-                return true;
-        return mains.bounds.contains(e);
-    }
-    public boolean intersects(Entity e) {
-        if (!bounding_box.contains(e)) return false;
-        for (Section s : sections)
-            if (s.bounds.contains(e))
-                return true;
-        return mains.bounds.contains(e);
     }
 
     public void attemptRemove(@NotNull DungeonMaster dm) {
@@ -430,7 +431,9 @@ public class Dungeon extends Manageable implements Savable {
     }
 
     public List<DA_item> getConditions() { return List.of(dungeon_start); }
-    
+
+
+    //Manageable
     private final Manageable sector_gui_list = new Manageable(()->this.dungeon_info.display_name + " sections", false, 54) {
         @Override
         protected void updateGUI() { this.fillBox(10, 7, 4, sections.stream().map(Section::toItem).toList()); }
@@ -449,12 +452,10 @@ public class Dungeon extends Manageable implements Savable {
             }
         }
     };
-
     private final ItemListGUI dungeon_event_list = new ItemListGUI("Events", dungeon_start);
 
     @Override
     protected void createGUI() {
-        this.setSize(54);
         this.setNameSign(13);
     }
     
@@ -488,7 +489,12 @@ public class Dungeon extends Manageable implements Savable {
     @Override
     public void save() {
         File f = FileManager.getFile(this);
-        List<String> lines = new ArrayList<>();
+        String json = Main.dp.toOodp(this);
+        try (FileOutputStream outputStream = new FileOutputStream(f)) {
+            outputStream.write(json.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

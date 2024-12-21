@@ -1,7 +1,6 @@
 package org.hexils.dnarch;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.HumanEntity;
@@ -11,7 +10,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -24,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
@@ -42,11 +39,11 @@ public abstract class Manageable implements Deletable {
         return null;
     }
 
-    public static final NSK MODIFIABLE = new NSK(new NamespacedKey(Main.plugin, "gui_item-modifiable"), PersistentDataType.BOOLEAN);
-    public static final NSK ITEM_FIELD_VALUE = new NSK(new NamespacedKey(Main.plugin, "gui_item-field_value"), PersistentDataType.STRING);
-    public static final NSK ITEM_ACTION = new NSK(new NamespacedKey(Main.plugin, "gui_item-action"), PersistentDataType.STRING);
-    public static final NSK SIGN_CHANGEABLE = new NSK(new NamespacedKey(Main.plugin, "gui_item-sign_changeable"), PersistentDataType.BOOLEAN);
-    public static final NSK ITEM_RENAME = new NSK(new NamespacedKey(Main.plugin, "gui_item-prompt_rename"), PersistentDataType.BOOLEAN);
+    public static final NSK<Byte, Boolean> MODIFIABLE = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-modifiable"), PersistentDataType.BOOLEAN);
+    public static final NSK<String, String> ITEM_FIELD_VALUE = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-field_value"), PersistentDataType.STRING);
+    public static final NSK<String, String> ITEM_ACTION = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-action"), PersistentDataType.STRING);
+    public static final NSK<Byte, Boolean> SIGN_CHANGEABLE = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-sign_changeable"), PersistentDataType.BOOLEAN);
+    public static final NSK<Byte, Boolean> ITEM_RENAME = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-prompt_rename"), PersistentDataType.BOOLEAN);
 
     public static void setField(ItemStack i, String field, String value) { NSK.setNSK(i, ITEM_FIELD_VALUE, field + " " + value); }
 
@@ -72,14 +69,13 @@ public abstract class Manageable implements Deletable {
         }
     }
 
+    public interface NameGetter { String getName(); }
+
     private Inventory gui = null;
     protected Manageable aboveManageable = null;
     protected Manageable underManageable = null;
     private ItemStack name_sign = null;
     private NameGetter name;
-
-    public interface NameGetter { String genName(); }
-
     public boolean is_being_renamed = false;
     private boolean renameable;
 
@@ -101,7 +97,7 @@ public abstract class Manageable implements Deletable {
     }
 
     public final ItemStack genNameSign() {
-        this.name_sign = newItemStack(Material.OAK_HANGING_SIGN, name.genName() != null ? (ChatColor.RESET + ChatColor.WHITE.toString() + name.genName()) : "null", List.of(ChatColor.GRAY + "Click to rename"), ITEM_RENAME, true);
+        this.name_sign = newItemStack(Material.OAK_HANGING_SIGN, name.getName() != null ? (ChatColor.RESET + ChatColor.WHITE.toString() + name.getName()) : "null", List.of(ChatColor.GRAY + "Click to rename"), ITEM_RENAME, true);
         return name_sign;
     }
     public void setNameSign(int index) { this.setItem(index, name_sign == null ? genNameSign() : name_sign); }
@@ -126,17 +122,17 @@ public abstract class Manageable implements Deletable {
         }
         else {
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
-            StringBuilder sb = new StringBuilder("An error occurred when attempting to open gui of Manageable \"" + this.name.genName() + "\", gui is null:");
+            StringBuilder sb = new StringBuilder("An error occurred when attempting to open gui of Manageable \"" + this.name.getName() + "\", gui is null:");
             for (StackTraceElement stackTraceElement : stackTrace)
                 if (stackTraceElement.getClassName().startsWith("org.hexils.dnarch"))
                     sb.append('\n').append("\tat ").append(stackTraceElement.getClassName()).append("::").append(stackTraceElement.getMethodName()).append(" on line ").append(stackTraceElement.getLineNumber());
             sb.append('\n').append("Since you're seeing this error, please report this at https://github.com/Hexanilix/Dungeon-Anarchy-vv1.20.2/issues with a screenshot/copy of this message, and if possible a screenshot of the affected item");
             log(Level.SEVERE, sb.toString());
-            dm.sendMessage(ER + "An error occurred when attempting to open gui of " + this.name.genName());
+            dm.sendMessage(ER + "An error occurred when attempting to open gui of " + this.name.getName());
         }
     }
 
-    public String getName() { return name.genName(); }
+    public String getName() { return name.getName(); }
 
     public final void setName(String s) {
         this.name = ()->s;
@@ -149,12 +145,12 @@ public abstract class Manageable implements Deletable {
         if (renameable) {
             is_being_renamed = true;
             dm.closeInventory();
-            GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name.genName() + "\" or 'cancel':", s -> {
+            GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name.getName() + "\" or 'cancel':", s -> {
                 if (s.equalsIgnoreCase("cancel")) {
                     dm.sendMessage(W + "Cancelled.");
                     return true;
                 }
-                String oldn = name.genName();
+                String oldn = name.getName();
                 String nn = s.replace(" ", "_");
                 name = ()->nn;
                 genNameSign();
@@ -163,7 +159,7 @@ public abstract class Manageable implements Deletable {
                 if (dm.isManaging() && dm.getCurrentManageable() == this) manage(dm);
                 if (onRename != null) onRename.run();
                 is_being_renamed = false;
-                dm.sendMessage(OK + "Renamed \"" + oldn + "\" to \"" + name.genName() + "\"!");
+                dm.sendMessage(OK + "Renamed \"" + oldn + "\" to \"" + name.getName() + "\"!");
                 return true;
             }, () -> {
                 is_being_renamed = false;
@@ -201,7 +197,7 @@ public abstract class Manageable implements Deletable {
     private String ln = "";
     protected final void setSize(int size) {
         if (size != 0) {
-            String genned = name.genName();
+            String genned = name.getName();
             if (gui == null || !ln.equals(genned))
                 gui = org.hetils.mpdl.InventoryUtil.newInv(size, genned);
             else if (ls != size) {

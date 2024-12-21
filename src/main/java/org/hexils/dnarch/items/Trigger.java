@@ -54,7 +54,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
         assert m != null;
         m.setDisplayName(getName());
 
-        m.getPersistentDataContainer().set(MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
+        m.getPersistentDataContainer().set(MODIFIABLE.key, PersistentDataType.BOOLEAN, true);
         i.setItemMeta(m);
         return i;
     }

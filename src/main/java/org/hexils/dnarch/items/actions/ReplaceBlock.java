@@ -36,8 +36,6 @@ public class ReplaceBlock extends BlockAction {
         this.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
     }
 
-
-
     public ReplaceBlock(List<Block> blocks, Material change_material) {
         super(Type.REPLACE_BLOCK, blocks);
         this.change_material = change_material;
@@ -83,13 +81,7 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     protected ItemStack genItemStack() {
-        ItemStack i = new ItemStack(Material.DIAMOND_PICKAXE);
-        ItemMeta m = i.getItemMeta();
-        assert m != null;
-        m.setDisplayName(getName());
-        m.getPersistentDataContainer().set(MODIFIABLE.key(), PersistentDataType.BOOLEAN, true);
-        i.setItemMeta(m);
-        return i;
+        return new ItemStack(Material.DIAMOND_PICKAXE);
     }
 
     @Override
