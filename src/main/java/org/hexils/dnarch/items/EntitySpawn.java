@@ -3,13 +3,13 @@ package org.hexils.dnarch.items;
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
-import org.hexils.dnarch.DA_item;
+import org.hexils.dnarch.DAItem;
 import org.jetbrains.annotations.NotNull;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Action.toReadableFormat;
 
-public class EntitySpawn extends DA_item {
+public class EntitySpawn extends DAItem {
 
     public final EntityType type;
     public final String name;

@@ -6,7 +6,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.Booled;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 

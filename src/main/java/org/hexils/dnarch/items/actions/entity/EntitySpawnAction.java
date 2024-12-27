@@ -7,13 +7,9 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.hexils.dnarch.BlockAction;
-import org.hexils.dnarch.DA_item;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.*;
+import org.hexils.dnarch.items.Multiplier;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.conditions.entity.EntityDeath;
-import org.hexils.dnarch.items.conditions.entity.EntitySpawnCondition;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -24,54 +20,16 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
 public class EntitySpawnAction extends BlockAction {
-    public static class EntityCollection extends DA_item {
-        private List<Entity> entities;
 
-        public EntityCollection(List<Entity> entities) {
-            super(Type.ENTITY_COLLECTION);
-            this.entities = entities;
-        }
-
-        @Override
-        protected void createGUI() {
-            this.setSize(54);
-            updateGUI();
-        }
-
-        @Override
-        protected void updateGUI() {
-            this.fillBox(9, 9, 5);
-            this.fillBox(9, 9, 5, entities.stream().map(org.hetils.mpdl.EntityUtil::toItem).toList());
-            if (entities.size() > 45) {
-                List<String> ents = new ArrayList<>();
-                for (int i = 44; i < entities.size(); i++)
-                    ents.add(ChatColor.GRAY + entities.get(i).getType().name());
-                this.setItem(53, newItemStack(Material.ENDER_CHEST, ChatColor.WHITE + "...and " + (entities.size()-44) + " others:", ents));
-            }
-        }
-
-        @Override
-        protected ItemStack genItemStack() {
-            ItemStack i = newItemStack(Material.SPAWNER, "Entity Collection");
-            return i;
-        }
-
-        public void delete() {
-            entities.forEach(Entity::remove);
-            super.delete();
-        }
-
-        public List<Entity> getEntities() { return entities; }
-    }
-
-    private Collection<org.hexils.dnarch.items.EntitySpawn> entities = new ArrayList<>();
-    private EntityCollection s_ent_c = null;
-    private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition(this);
-    private final EntityDeath entity_death_event = new EntityDeath(this);
+    private List<org.hexils.dnarch.items.EntitySpawn> entities;
+    private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition();
+    private final EntityDeathCondition entity_death_event = new EntityDeathCondition();
+    private List<Entity> spawned_entities = null;
+    private Multiplier multiplier = null;
 
     public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn e, Block sp) { this(List.of(e), List.of(sp)); }
     public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn entity, List<Block> spawnp) { this(List.of(entity), spawnp); }
-    public EntitySpawnAction(Collection<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
+    public EntitySpawnAction(List<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
         super(Type.ENTITY_SPAWN_ACTION, spawnp);
         this.entities = entities;
         this.cgui = new ItemListGUI(getName(), List.of(ent_spaw_c, entity_death_event));
@@ -82,7 +40,7 @@ public class EntitySpawnAction extends BlockAction {
         if (!triggered) {
             List<Entity> spawnede = new ArrayList<>();
             Random r = new Random();
-            for (org.hexils.dnarch.items.EntitySpawn e : entities) {
+            for (int i = 0; i < (multiplier == null ? 1 : multiplier.multiplier()); i++) for (org.hexils.dnarch.items.EntitySpawn e : entities) {
                 Location l = this.affected_blocks.get(r.nextInt(this.affected_blocks.size())).getLocation().add(.5, .5, .5);
                 Entity ent = l.getWorld().spawnEntity(l, e.type);
                 spawnede.add(ent);
@@ -92,7 +50,7 @@ public class EntitySpawnAction extends BlockAction {
                 } else
                     log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.LocationUtil.toReadableFormat(l));
             }
-            this.s_ent_c = new EntityCollection(spawnede);
+            this.spawned_entities = spawnede;
             this.triggered = true;
             ent_spaw_c.trigger();
         }
@@ -100,7 +58,7 @@ public class EntitySpawnAction extends BlockAction {
 
     @Override
     protected void resetAction() {
-        this.s_ent_c.delete();
+        this.spawned_entities.forEach(Entity::remove); spawned_entities.clear();
     }
 
     private @NotNull List<String> entsToString() {
@@ -113,13 +71,10 @@ public class EntitySpawnAction extends BlockAction {
     @Override
     protected ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.SPAWNER, getName(), entsToString());
-        ItemMeta m = i .getItemMeta();
         return i;
     }
 
-    public EntityCollection getColl() {
-        return s_ent_c;
-    }
+    public List<Entity> getSpawnedEntities() { return spawned_entities; }
 
     private final ItemListGUI cgui;
     @Override
@@ -132,20 +87,23 @@ public class EntitySpawnAction extends BlockAction {
         this.setItem(12, cgui.toItem());
 
         this.fillBox(27, 9, 3, (ItemStack) null);
-        this.fillBox(27, 9, 3, entities.stream().map(DA_item::getItem).toList());
+    }
+
+    @Override
+    protected void updateGUI() {
+        this.setItem(23, (multiplier == null ? newItemStack(Material.RED_STAINED_GLASS, ChatColor.YELLOW + "No multiplier") : multiplier.getItem()));
+        this.fillBox(27, 9, 3, entities.stream().map(DAItem::getItem).toList());
     }
 
     @Override
     protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
         switch (action) {
-            case "getEntColl" -> dm.giveItem(s_ent_c);
-            case "getEntCond" -> dm.giveItem(ent_spaw_c);
+
         }
     }
 
-    public EntitySpawnCondition getEntitySpawnCondition() {
-        return ent_spaw_c;
-    }
+    public EntitySpawnCondition getEntitySpawnCondition() { return ent_spaw_c; }
+    public EntityDeathCondition getEntityDeathCondition() { return entity_death_event; }
 
     @Override
     public String toString() {
@@ -153,10 +111,50 @@ public class EntitySpawnAction extends BlockAction {
                 "entities=" + entities +
                 ", spawnp=" + this.affected_blocks +
                 ", ent_spaw_c=" + ent_spaw_c +
-                ", spawnede=" + s_ent_c +
+                ", spawnede=" + spawned_entities +
                 ", triggered=" + triggered +
-                ", type=" + type +
                 ", name='" + getName() + '\'' +
                 '}';
+    }
+
+    public class EntitySpawnCondition extends Condition {
+        public EntitySpawnCondition() {
+            super(Type.ENTITY_SPAWN_EVENT);
+        }
+
+        @Override
+        public boolean isSatisfied() { return EntitySpawnAction.this.isTriggered(); }
+
+        @Override
+        protected void createGUI() {
+
+        }
+
+        @Override
+        protected ItemStack genItemStack() { return newItemStack(entities.get(0).getItem().getType(), "Entity Death Condition"); }
+
+    }
+
+    public class EntityDeathCondition extends Condition {
+        public static List<EntityDeathCondition> instances = new ArrayList<>();
+
+        public EntitySpawnAction getAction() { return EntitySpawnAction.this; }
+
+        public EntityDeathCondition() {
+            super(Type.ENTITY_DEATH_EVENT);
+            instances.add(this);
+        }
+
+        @Override
+        public boolean isSatisfied() { return EntitySpawnAction.this.isTriggered() && EntitySpawnAction.this.getSpawnedEntities().stream().allMatch(Entity::isDead); }
+
+        @Override
+        protected ItemStack genItemStack() { return newItemStack(Material.SKELETON_SKULL, getName()); }
+
+        @Override
+        protected void createGUI() {
+            this.setSize(54);
+            this.setItem(24, null);
+        }
     }
 }

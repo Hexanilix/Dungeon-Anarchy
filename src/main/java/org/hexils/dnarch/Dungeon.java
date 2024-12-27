@@ -1,7 +1,5 @@
-package org.hexils.dnarch.dungeon;
+package org.hexils.dnarch;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
@@ -10,22 +8,17 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
-import org.hetils.jgl17.JSON;
 import org.hetils.jgl17.Pair;
-import org.hetils.jgl17.oodp.OODP;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hetils.mpdl.GeneralListener;
-import org.hexils.dnarch.*;
-import org.hexils.dnarch.items.conditions.DungeonStart;
+import org.hexils.dnarch.items.Type;
 import org.hexils.dnarch.items.conditions.WithinBoundsCondition;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +28,14 @@ import static org.hexils.dnarch.commands.DungeonCommandExecutor.*;
 import static org.hexils.dnarch.commands.DungeonCreatorCommandExecutor.W;
 
 public class Dungeon extends Manageable implements Savable, Deletable {
+
+    static void setSectionId(Section s, UUID id) {
+        try {
+            Section.class.getDeclaredField("id").set(s, id);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static class DuplicateNameException extends Exception {  public DuplicateNameException(String s) { super(s); } }
     public static class DungeonIntersectViolation extends Exception {  public DungeonIntersectViolation(String s) { super(s); } }
@@ -60,25 +61,18 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
     public class Section extends Manageable {
         private UUID id;
-        private final List<DA_item> items = new ArrayList<>();
+        private final List<DAItem> items = new ArrayList<>();
         private final LocationUtil.BoundingBox bounds;
         private final WithinBoundsCondition sectionEnter;
         private final ItemListGUI event_gui;
         private final ItemListGUI item_gui;
         private Material displ_mat = Material.GREEN_CONCRETE;
 
-        public Section(Pair<Location, Location> selection) {
-            this(selection, "Section" + sections.size());
-        }
-
-        public Section(Pair<Location, Location> selection, String name) {
+        Section(UUID id, String name, List<DAItem> items, LocationUtil.BoundingBox bounds) {
             super(name);
-            int i = 0;
-            do {
-                id = UUID.randomUUID();
-                i++;
-            } while (i < 256);
-            this.bounds = new LocationUtil.BoundingBox(selection);
+            this.id = id;
+            this.items.addAll(items);
+            this.bounds = bounds;
             this.sectionEnter = new WithinBoundsCondition(this.bounds);
             this.sectionEnter.setRenameable(false);
             this.event_gui = new ItemListGUI(name + " events", () -> newItemStack(
@@ -92,10 +86,18 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             sections.add(this);
         }
 
+        public Section(Pair<Location, Location> selection) {
+            this(selection, "Section" + sections.size());
+        }
+
+        public Section(Pair<Location, Location> selection, String name) { this(UUID.randomUUID(), name, new ArrayList<>(), new LocationUtil.BoundingBox(selection)); }
+
         @Override
         public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { if (onRename != null) onRename.run(); event_gui.setName(getName()); item_gui.setName(getName());}); }
 
         public UUID getId() { return id; }
+
+        public LocationUtil.BoundingBox getBounds() { return bounds; }
 
         @Override
         protected void createGUI() {
@@ -117,11 +119,13 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             );
         }
 
-        public List<DA_item> getItems() { return items; }
+        public WithinBoundsCondition getWhithinBoundCondition() { return sectionEnter; }
 
-        public void addItem(@NotNull DA_item i) { items.add(i); }
+        public List<DAItem> getItems() { return items; }
 
-        public boolean removeItem(DA_item i) {
+        public void addItem(@NotNull DAItem i) { items.add(i); }
+
+        public boolean removeItem(DAItem i) {
             if (items.remove(i)) {
                 i.delete();
                 return true;
@@ -153,24 +157,24 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             } else m = null;
             GeneralListener.confirmWithPlayer(dm.p, W + "Are you sure you want to delete section \"" + getName() + W + "\"? (yes/no)", text -> {
                 if (text.equalsIgnoreCase("yes")) {
-                    if (mains == this) {
-                        if (sections.size() != 1 || this != sections.get(0)) {
-                            mains = sections.get(0);
-                            dm.sendMessage(W + "Set the main dungeon sector to \"" + mains.getName() + "\"");
-                        } else {
-                            dm.sendMessage(ER + "You can't delete the main sector of a dungeon! Use \"/dc delete\" to delete the dungeon");
-                            return true;
-                        }
+                    if (sections.size() == 1) {
+                        dm.sendMessage(ER, "You can't delete the main sector of a dungeon! Use \"/dc delete\" to delete the dungeon");
+                        return true;
                     }
                     this.delete();
+                    if (mains == this) {
+                        mains = sections.get(0);
+                        dm.sendMessage(W, "Set the main dungeon sector to \"" + mains.getName() + "\"");
+                    }
                     updateBoundingBox();
-                    dm.sendMessage(IF + "Deleted section \"" + getName() + "\"!.");
+                    viewers.forEach(v -> v.hideSelection(this));
+                    dm.sendMessage(IF, "Deleted section \"" + getName() + "\"!.");
                 } else {
-                    dm.sendMessage(IF + "Cancelled.");
+                    dm.sendMessage(IF, "Cancelled.");
                     if (m != null) m.manage(dm);
                 }
                 return true;
-            }, () -> dm.sendMessage(IF + "Cancelled."));
+            }, () -> dm.sendMessage(IF, "Cancelled."));
         }
 
         @Override
@@ -201,16 +205,33 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
     private final LocationUtil.BoundingBox bounding_box;
     private final World world;
-    private final List<Section> sections = new ArrayList<>();
+    private List<Section> sections = new ArrayList<>();
     private Section mains;
     private Location entranceLocation;
     private boolean open = false;
     private List<DungeonMaster> editors = new ArrayList<>();
     private boolean running = false;
-    private final DungeonInfo dungeon_info = new DungeonInfo();
+    private DungeonInfo dungeon_info = new DungeonInfo();
     private final List<DungeonMaster> viewers = new ArrayList<>();
-    public final DungeonStart dungeon_start = new DungeonStart(Dungeon.this);
+    public final Condition dungeon_start = new Condition(Type.DUNGEON_START, false) {
+        { this.setName(Dungeon.this::getName); }
+        @Override
+        public boolean isSatisfied() {
+            return Dungeon.this.isRunning();
+        }
+
+        @Override
+        protected @NotNull ItemStack genItemStack() {
+            ItemStack i = new ItemStack(Material.HEAVY_WEIGHTED_PRESSURE_PLATE);
+            return i;
+        }
+    };
+
     private final List<Player> players = new ArrayList<>();
+
+    public void setMains(Section s) { if (sections.contains(s)) mains = s; }
+
+    Section newSection(UUID id, String name, List<DAItem> items, LocationUtil.BoundingBox bounds) { return new Section(id, name, items, bounds); }
 
     public static String getNewDGName() {
         String name;
@@ -229,6 +250,19 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         } catch (DuplicateNameException | DungeonIntersectViolation e) {
             throw new RuntimeException(e.getCause());
         }
+    }
+
+    Dungeon(String name, World w, LocationUtil.BoundingBox bounds, DungeonInfo dg_info) throws DuplicateNameException, DungeonIntersectViolation {
+        super(name);
+        if (get(name) != null) throw new DuplicateNameException("Dungeon " + name + "already exists");
+        Section si = getIntersectedSection(bounds);
+        if (si != null) throw new DungeonIntersectViolation(
+                "Couldn't create dungeon \"" + name + "\" due to section intersection with section \"" + si.getName() + "\" of dungeon \"" + si.getDungeon().getDungeonInfo().display_name + "\""
+        );
+        this.world = w;
+        this.bounding_box = bounds;
+        this.dungeon_info = dg_info;
+        dungeons.add(this);
     }
 
     public Dungeon(UUID creator, String name, @NotNull Pair<Location, Location> sec) throws DuplicateNameException, DungeonIntersectViolation {
@@ -251,6 +285,8 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     }
 
     public World getWorld() { return this.world; }
+
+    public Condition getDungeonStart() { return dungeon_start; }
 
     public static @Nullable Section getIntersectedSection(Pair<Location, Location> bb) {
         for (Dungeon d : dungeons)
@@ -314,7 +350,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
     public UUID getCreator() { return dungeon_info.creator; }
 
-    public List<DA_item> getItems() { return sections.stream().map(Section::getItems).flatMap(List::stream).collect(Collectors.toList()); }
+    public List<DAItem> getItems() { return sections.stream().map(Section::getItems).flatMap(List::stream).collect(Collectors.toList()); }
 
     public String getCreatorName() { return dungeon_info.creator_name; }
 
@@ -393,29 +429,31 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                 this.delete();
                 this.removeViewer(dm);
                 dm.setCurrentDungeon(null);
-                dm.sendMessage(IF + "Deleted dungeon \"" + name + "\"!");
+                dm.sendMessage(IF, "Deleted dungeon \"" + name + "\"!");
             }
             return true;
         });
     }
 
+    public Section getSection(UUID id) {
+        for (Section s : sections)
+            if (s.getId().equals(id))
+                return s;
+        return null;
+    }
     public Section getSection(Player p) {
-        if (mains.bounds.contains(p)) return mains;
         for (Section s : sections)
             if (s.bounds.contains(p))
                 return s;
         return null;
     }
     public Section getSection(String s) {
-        if (mains.getName().equals(s)) return mains;
         for (Section sc : sections)
             if (sc.getName().equals(s))
                 return sc;
         return null;
     }
-    public Section getSection(@NotNull Block b) {
-        return getSection(b.getLocation());
-    }
+    public Section getSection(@NotNull Block b) { return getSection(b.getLocation()); }
     public Section getSection(Location l) {
         if (mains.bounds.contains(l)) return mains;
         for (Section sc : sections)
@@ -424,13 +462,9 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         return null;
     }
 
-    public @NotNull List<Section> getSections() {
-        List<Section> secs = new ArrayList<>(sections);
-        secs.add(mains);
-        return secs;
-    }
+    public @NotNull List<Section> getSections() { return sections; }
 
-    public List<DA_item> getConditions() { return List.of(dungeon_start); }
+    public List<DAItem> getConditions() { return List.of(dungeon_start); }
 
 
     //Manageable
@@ -475,6 +509,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     }
 
     public DungeonInfo getDungeonInfo() { return dungeon_info; }
+    public void setDungeonInfo(DungeonInfo info) { this.dungeon_info = info; }
 
     public static class DungeonInfo {
 
@@ -489,12 +524,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     @Override
     public void save() {
         File f = FileManager.getFile(this);
-        String json = Main.dp.toOodp(this);
-        try (FileOutputStream outputStream = new FileOutputStream(f)) {
-            outputStream.write(json.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Main.dp.saveToFile(this, f);
     }
 
     @Override
@@ -506,6 +536,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                 dm.setCurrentDungeon(this);
         });
         dungeons.remove(this);
+        FileManager.deleteFile(this);
         super.delete();
     }
 }

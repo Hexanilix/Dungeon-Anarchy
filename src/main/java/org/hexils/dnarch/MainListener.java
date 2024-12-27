@@ -18,16 +18,14 @@ import org.bukkit.util.Vector;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.NSK;
 import org.hetils.mpdl.VectorUtil;
-import org.hexils.dnarch.dungeon.Dungeon;
-import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.items.conditions.entity.EntityDeath;
+import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
 
 import static org.hexils.dnarch.Main.*;
-import static org.hexils.dnarch.DA_item.ITEM_UUID;
+import static org.hexils.dnarch.DAItem.ITEM_UUID;
 import static org.hexils.dnarch.Manageable.*;
 import static org.hexils.dnarch.Manageable.ItemListGUI.ITEM_LIST_GUI;
 
@@ -63,7 +61,7 @@ public final class MainListener implements org.bukkit.event.Listener {
             String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
             if (s != null) {
                 UUID id = UUID.fromString(s);
-                DA_item di = DA_item.get(id);
+                DAItem di = DAItem.get(id);
                 if (di != null) {
                     di.manage(dm);
                     event.setCancelled(true);
@@ -102,10 +100,10 @@ public final class MainListener implements org.bukkit.event.Listener {
                 if (mg.isThisGUI(opi)) {
                     event.setCancelled(true);
                     ItemStack it = event.getCurrentItem();
-                    if (DA_item.get(it) == mg)
+                    if (DAItem.get(it) == mg)
                         return;
                     if (event.getAction() == InventoryAction.CLONE_STACK) {
-                        DA_item da = DA_item.get(it);
+                        DAItem da = DAItem.get(it);
                         if (da != null)
                             da.manage(dm, mg);
                     }
@@ -170,8 +168,8 @@ public final class MainListener implements org.bukkit.event.Listener {
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
-        for (EntityDeath ed : EntityDeath.instances)
-            if (ed.getEc() != null && ed.getEc().getEntities().contains(event.getEntity()))
+        for (EntitySpawnAction.EntityDeathCondition ed : EntitySpawnAction.EntityDeathCondition.instances)
+            if (ed.getAction() != null && ed.getAction().getSpawnedEntities().contains(event.getEntity()))
                 ed.trigger();
     }
 

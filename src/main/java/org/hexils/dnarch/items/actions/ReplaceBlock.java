@@ -5,15 +5,12 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.MaterialUtil;
 import org.hexils.dnarch.BlockAction;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,10 +22,9 @@ public class ReplaceBlock extends BlockAction {
 
     private boolean sound = true;
     private boolean particles = true;
-    private List<BlockData> ogbd = new ArrayList<>();
-    private List<Block> blocks = new ArrayList<>();
+    @OODPExclude private final List<BlockData> ogbd = new ArrayList<>();
     private Material change_material;
-    private World world;
+    @OODPExclude private World world;
 
     @Override
     protected void createGUI() {
@@ -36,14 +32,15 @@ public class ReplaceBlock extends BlockAction {
         this.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
     }
 
+    public ReplaceBlock() { super(Type.REPLACE_BLOCK); }
     public ReplaceBlock(List<Block> blocks, Material change_material) {
-        super(Type.REPLACE_BLOCK, blocks);
+        super(Type.REPLACE_BLOCK);
         this.change_material = change_material;
         if (blocks != null && !blocks.isEmpty()) {
             world = blocks.get(0).getWorld();
             for (Block b : blocks)
                 if (b.getWorld() == world) {
-                    this.blocks.add(b);
+                    this.affected_blocks.add(b);
                     this.ogbd.add(b.getBlockData());
                 }
         }
@@ -52,8 +49,14 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     public void trigger() {
-        if (!triggered) {
-            for (Block b : blocks) {
+        if (!triggered && !affected_blocks.isEmpty()) {
+            if (world == null) world = affected_blocks.get(0).getWorld();
+            if (ogbd.isEmpty()) {
+                for (Block b : affected_blocks)
+                    if (b.getWorld() == world)
+                        this.ogbd.add(b.getBlockData());
+            }
+            for (Block b : affected_blocks) {
                 if (sound)
                     world.playSound(b.getLocation(), Sound.BLOCK_STONE_BREAK, .5f, .5f);
                 if (particles)
@@ -66,8 +69,8 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     protected void resetAction() {
-        for (int i = 0; i < blocks.size(); i++)
-            blocks.get(i).setBlockData(ogbd.get(i));
+        for (int i = 0; i < ogbd.size(); i++)
+            affected_blocks.get(i).setBlockData(ogbd.get(i));
     }
 
     @Override
@@ -76,7 +79,7 @@ public class ReplaceBlock extends BlockAction {
         setField(cm, "material", change_material.name());
         this.setItem(13, cm);
         for (int i = 0; i < 27; i++)
-            this.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.BlockUtil.b2i(blocks.get(i), ogbd.get(i)) : null);
+            this.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), ogbd.get(i)) : null);
     }
 
     @Override
@@ -91,14 +94,6 @@ public class ReplaceBlock extends BlockAction {
                 Material m = Material.getMaterial(value);
                 if (m != null)
                     this.change_material = m;
-            }
-            case "blocks" -> {
-                if (dm.getSelectedBlocks().isEmpty())
-                    dm.sendMessage( ChatColor.RED + "You have no blocks currently selected!");
-                else {
-                    this.blocks = dm.getSelectedBlocks();
-                    dm.deselectBlocks();
-                }
             }
         }
     }

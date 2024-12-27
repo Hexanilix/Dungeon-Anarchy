@@ -13,10 +13,10 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.GeneralListener;
 import org.hetils.mpdl.InventoryUtil;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -78,23 +78,30 @@ public abstract class Manageable implements Deletable {
     private NameGetter name;
     public boolean is_being_renamed = false;
     private boolean renameable;
+    @OODPExclude
+    private final String og_name;
 
-    public Manageable() { this(()->"Manageable", true, 0); }
-    public Manageable(boolean renameable) { this(()->"Manageable", renameable, 0); }
+    public static int default_size = 54;
+
+    public Manageable() { this(()->"Manageable", true, default_size); }
+    public Manageable(boolean renameable) { this(()->"Manageable", renameable, default_size); }
     public Manageable(boolean renameable, int size) { this(()->"Manageable", renameable, size); }
 
-    public Manageable(String name) { this(()->name, true, 0); }
-    public Manageable(String name, boolean renameable) { this(()->name, renameable, 0); }
+    public Manageable(String name) { this(()->name, true, default_size); }
+    public Manageable(String name, boolean renameable) { this(()->name, renameable, default_size); }
     public Manageable(String name, boolean renameable, int size) { this(()->name, renameable, size); }
 
-    public Manageable(NameGetter name) { this(name, true, 0); }
-    public Manageable(NameGetter name, boolean renameable) { this(name, renameable, 0); }
-    public Manageable(NameGetter name, boolean renameable, int size) {
+    public Manageable(NameGetter name) { this(name, true, default_size); }
+    public Manageable(NameGetter name, boolean renameable) { this(name, renameable, default_size); }
+    public Manageable(@NotNull NameGetter name, boolean renameable, int size) {
         this.name = name;
         this.renameable = renameable;
         setSize(size);
+        this.og_name = name.getName();
         instances.add(this);
     }
+
+    public String getOGName() { return og_name; }
 
     public final ItemStack genNameSign() {
         this.name_sign = newItemStack(Material.OAK_HANGING_SIGN, name.getName() != null ? (ChatColor.RESET + ChatColor.WHITE.toString() + name.getName()) : "null", List.of(ChatColor.GRAY + "Click to rename"), ITEM_RENAME, true);
@@ -119,23 +126,24 @@ public abstract class Manageable implements Deletable {
         if (gui != null) {
             dm.setCurrentManageable(this);
             dm.openInventory(gui);
-        }
-        else {
+        } else {
+            aboveManageable = null;
             StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             StringBuilder sb = new StringBuilder("An error occurred when attempting to open gui of Manageable \"" + this.name.getName() + "\", gui is null:");
             for (StackTraceElement stackTraceElement : stackTrace)
-                if (stackTraceElement.getClassName().startsWith("org.hexils.dnarch"))
+                if (stackTraceElement.getClassName().startsWith("org.hexils") || stackTraceElement.getClassName().startsWith("org.hetils"))
                     sb.append('\n').append("\tat ").append(stackTraceElement.getClassName()).append("::").append(stackTraceElement.getMethodName()).append(" on line ").append(stackTraceElement.getLineNumber());
             sb.append('\n').append("Since you're seeing this error, please report this at https://github.com/Hexanilix/Dungeon-Anarchy-vv1.20.2/issues with a screenshot/copy of this message, and if possible a screenshot of the affected item");
             log(Level.SEVERE, sb.toString());
-            dm.sendMessage(ER + "An error occurred when attempting to open gui of " + this.name.getName());
+            dm.sendMessage(ER, "An error occurred when attempting to open gui of " + this.name.getName());
         }
     }
 
     public String getName() { return name.getName(); }
 
-    public final void setName(String s) {
-        this.name = ()->s;
+    public final void setName(String s) { setName(()->s); }
+    public final void setName(NameGetter g) {
+        this.name = g;
         setSize(ls);
     }
 
@@ -147,7 +155,7 @@ public abstract class Manageable implements Deletable {
             dm.closeInventory();
             GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name.getName() + "\" or 'cancel':", s -> {
                 if (s.equalsIgnoreCase("cancel")) {
-                    dm.sendMessage(W + "Cancelled.");
+                    dm.sendMessage(W, "Cancelled.");
                     return true;
                 }
                 String oldn = name.getName();
@@ -163,9 +171,9 @@ public abstract class Manageable implements Deletable {
                 return true;
             }, () -> {
                 is_being_renamed = false;
-                dm.sendMessage(W + "Cancelled.");
+                dm.sendMessage(W, "Cancelled.");
             });
-        }
+        } else dm.sendMessage(W, "This object isn't renameable.");
     }
 
     public final void doAction(DungeonMaster dm, String command, InventoryClickEvent event) {
@@ -193,7 +201,9 @@ public abstract class Manageable implements Deletable {
 
     public boolean guiClickEvent(InventoryClickEvent event) {return true;}
 
+    @OODPExclude
     private int ls = 0;
+    @OODPExclude
     private String ln = "";
     protected final void setSize(int size) {
         if (size != 0) {
@@ -234,14 +244,14 @@ public abstract class Manageable implements Deletable {
         }
         public static NSK ITEM_LIST_GUI = new NSK(new NamespacedKey(Main.plugin, "open_item_list_gui"), PersistentDataType.STRING);
 
-        private final List<DA_item> items;
+        private final List<DAItem> items;
 
         private final UUID id;
 
-        public ItemListGUI(String name, DA_item... items) { this(name, null, Arrays.asList(items)); }
-        public ItemListGUI(String name, List<DA_item> items) { this(name, null, items); }
-        public ItemListGUI(String name, ItemGenerator item_gen, DA_item... items) { this(name, item_gen, Arrays.asList(items)); }
-        public ItemListGUI(String name, ItemGenerator item_gen, List<DA_item> items) {
+        public ItemListGUI(String name, DAItem... items) { this(name, null, Arrays.asList(items)); }
+        public ItemListGUI(String name, List<DAItem> items) { this(name, null, items); }
+        public ItemListGUI(String name, ItemGenerator item_gen, DAItem... items) { this(name, item_gen, Arrays.asList(items)); }
+        public ItemListGUI(String name, ItemGenerator item_gen, List<DAItem> items) {
             super(name);
             this.id = UUID.randomUUID();
             this.item_gen = item_gen != null ? item_gen : () -> newItemStack(
@@ -258,11 +268,11 @@ public abstract class Manageable implements Deletable {
         protected void createGUI() { this.setSize(54); }
 
         @Override
-        protected void updateGUI() { if (items != null) this.fillBox(0, 9, 6, items.stream().map(DA_item::getItem).toList()); }
+        protected void updateGUI() { if (items != null) this.fillBox(0, 9, 6, items.stream().map(DAItem::getItem).toList()); }
 
         @Override
         public boolean guiClickEvent(@NotNull InventoryClickEvent event) {
-            DA_item da = DA_item.get(event.getCurrentItem());
+            DAItem da = DAItem.get(event.getCurrentItem());
             if (da != null) { DungeonMaster.getOrNew((Player) event.getWhoClicked()).giveItem(da); }
             return false;
         }

@@ -7,7 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

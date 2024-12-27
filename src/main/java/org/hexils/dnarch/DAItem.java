@@ -10,8 +10,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.ItemUtil;
 import org.hetils.mpdl.NSK;
-import org.hexils.dnarch.dungeon.Dungeon;
-import org.hexils.dnarch.dungeon.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.hexils.dnarch.items.actions.ModifyBlock;
 import org.hexils.dnarch.items.actions.ReplaceBlock;
@@ -29,35 +27,31 @@ import static org.hexils.dnarch.Action.toReadableFormat;
 import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
 
-public abstract class DA_item extends Manageable implements Idable {
+public abstract class DAItem extends Manageable implements Idable, Deletable {
     public static final NSK ITEM_UUID = new NSK(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
-    public static final Collection<DA_item> instances = new ArrayList<>();
-    public static @Nullable DA_item get(String id) { return get(UUID.fromString(id)); }
-    public static @Nullable DA_item get(ItemStack it) {
+    public static final Collection<DAItem> instances = new ArrayList<>();
+    public static @Nullable DAItem get(String id) { return get(UUID.fromString(id)); }
+    public static @Nullable DAItem get(ItemStack it) {
         String s = (String) NSK.getNSK(it, ITEM_UUID);
-        return s == null ? null : DA_item.get(UUID.fromString(s));
+        return s == null ? null : DAItem.get(UUID.fromString(s));
     }
-    public static @Nullable DA_item get(UUID id) {
-        for (DA_item d : instances)
+    public static @Nullable DAItem get(UUID id) {
+        for (DAItem d : instances)
             if (d.getId().equals(id))
                 return d;
         return null;
     }
 
-    private final UUID id;
-
-    public static @Nullable DA_item commandNew(@NotNull Type t, DungeonMaster dm, @NotNull String[] args) {
-        DA_item da = null;
+    public static @Nullable DAItem commandNew(@NotNull Type t, DungeonMaster dm, @NotNull String[] args) {
+        DAItem da = null;
         switch (t) {
             case REPLACE_BLOCK -> {
                 Material mat = args.length >= 1 ? Material.getMaterial(args[0].toUpperCase()) : null;
                 if (mat != null) {
-                    log(dm.getSelectedBlocks());
                     da = new ReplaceBlock(dm.getSelectedBlocks(), mat);
                 } else dm.sendMessage(ChatColor.RED + "Please select a valid material!");
             }
             case DESTROY_BLOCK -> {
-                log(dm.getSelectedBlocks());
                 da = new ReplaceBlock.DestroyBlock(dm.getSelectedBlocks());
             }
             case ENTITY_SPAWN_ACTION -> {
@@ -90,7 +84,7 @@ public abstract class DA_item extends Manageable implements Idable {
             }
         }
         if (da == null) {
-            dm.sendMessage(ER + "Couldn't create " + toReadableFormat(t.name()));
+            dm.sendMessage(ER, "Couldn't create " + toReadableFormat(t.name()));
             return null;
         }
         Dungeon d = dm.getCurrentDungeon();
@@ -113,7 +107,7 @@ public abstract class DA_item extends Manageable implements Idable {
                 s.addItem(a);
                 return a;
             } else {
-                dm.sendMessage(ER + "Error occurred when getting section");
+                dm.sendMessage(ER, "Error occurred when getting section");
                 return null;
             }
         } else if (da instanceof Condition c) {
@@ -143,19 +137,22 @@ public abstract class DA_item extends Manageable implements Idable {
         });
     }
 
+    private UUID id;
     private final Type type;
     private ItemStack item;
     private final List<ItemStack> items = new ArrayList<>();
 
-    public DA_item(Type type) { this(type, type.getName()); }
-    public DA_item(Type type, String name) { this(type, name, true); }
-    public DA_item(Type type, boolean renameable) { this(type, type.getName(), renameable); }
-    public DA_item(Type type, String name, boolean renameable) {
+    public DAItem(Type type) { this(type, type.getName()); }
+    public DAItem(Type type, String name) { this(type, name, true); }
+    public DAItem(Type type, boolean renameable) { this(type, type.getName(), renameable); }
+    public DAItem(Type type, String name, boolean renameable) {
         super(name, renameable);
         this.type = type;
         this.id = UUID.randomUUID();
         instances.add(this);
     }
+
+    void setId(UUID id) { this.id = id; }
 
     public Type getType() { return type; }
 
@@ -168,6 +165,11 @@ public abstract class DA_item extends Manageable implements Idable {
         NSK.setNSK(item, ITEM_UUID, id.toString());
         items.add(item);
         return item;
+    }
+
+    @Override
+    public void delete() {
+        instances.remove(this);
     }
 
     @Override

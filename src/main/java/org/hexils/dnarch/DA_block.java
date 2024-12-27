@@ -6,7 +6,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.items.Type;
 
-public abstract class DA_block extends DA_item {
+public abstract class DA_block extends DAItem {
     public static final NSK BLOCK = new NSK(new NamespacedKey(Main.plugin, "block"), PersistentDataType.STRING);
     public Block block;
 

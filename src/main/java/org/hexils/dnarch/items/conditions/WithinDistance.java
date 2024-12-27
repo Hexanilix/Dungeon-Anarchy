@@ -99,7 +99,7 @@ public class WithinDistance extends Condition {
     public ItemStack genItemStack() {
         ItemStack i = newItemStack(Material.SCULK_SENSOR, ChatColor.RESET + getName());
         ItemMeta m = i.getItemMeta();
-        m.setLore(List.of(ChatColor.LIGHT_PURPLE + "Type: " + this.type.name()));
+        m.setLore(List.of(ChatColor.LIGHT_PURPLE + "Type: " + this.getType()));
         i.setItemMeta(m);
         return i;
     }

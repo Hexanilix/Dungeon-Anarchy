@@ -10,7 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.*;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -19,7 +19,7 @@ import java.util.*;
 import static org.hetils.mpdl.InventoryUtil.*;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class Trigger extends DA_item implements Booled, Triggerable {
+public class Trigger extends DAItem implements Booled, Triggerable {
     public final List<Condition> conditions = new ArrayList<>();
     public final List<Action> actions = new ArrayList<>();
 
@@ -76,7 +76,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
         if ((ci == null || ci.isSimilar(BACKGROUND)) && iih == null)
             return false;
         Inventory cinv = event.getClickedInventory();
-        DA_item da = DA_item.get(ci);
+        DAItem da = DAItem.get(ci);
         if (cinv != null) {
             if ((event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) && cinv != this) {
                 if (da instanceof Condition) {
@@ -90,7 +90,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
                 } else return true;
             } else {
                 if (da == null) {
-                    da = DA_item.get(event.getCursor());
+                    da = DAItem.get(event.getCursor());
                     if ((da instanceof Action || da instanceof Condition) && ci == null) {
                         event.setCancelled(false);
                         updateAC(event);
@@ -121,7 +121,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
     }
     private boolean addCondition(ItemStack it) {
         String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
+        if (s != null && DAItem.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
             condition.runnables.put(this, this::trigger);
             return conditions.add(condition);
         }
@@ -130,7 +130,7 @@ public class Trigger extends DA_item implements Booled, Triggerable {
 
     private boolean addAction(ItemStack it) {
         String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DA_item.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action))
+        if (s != null && DAItem.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action))
             return actions.add(action);
         return false;
     }

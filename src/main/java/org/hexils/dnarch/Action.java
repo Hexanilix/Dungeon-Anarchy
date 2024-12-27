@@ -1,24 +1,15 @@
 package org.hexils.dnarch;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.block.Block;
-import org.bukkit.entity.EntityType;
-import org.hexils.dnarch.dungeon.Dungeon;
-import org.hexils.dnarch.dungeon.DungeonMaster;
-import org.hexils.dnarch.items.EntitySpawn;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.actions.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 import static org.hexils.dnarch.Main.log;
-import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
 
 
-public abstract class Action extends DA_item implements Triggerable {
+public abstract class Action extends DAItem implements Triggerable {
 
     public final static Collection<Action> actions = new HashSet<>();
 
@@ -33,12 +24,11 @@ public abstract class Action extends DA_item implements Triggerable {
         return s.toString();
     }
 
+    @OODPExclude
     protected boolean triggered;
-    public final Type type;
 
     public Action(@NotNull Type type) {
         super(type);
-        this.type = type;
         actions.add(this);
     }
 

@@ -1,4 +1,4 @@
-package org.hexils.dnarch.dungeon;
+package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.advancement.Advancement;
@@ -31,8 +31,6 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.hetils.jgl17.Pair;
 import org.hetils.mpdl.PluginThread;
-import org.hexils.dnarch.DA_item;
-import org.hexils.dnarch.Manageable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -55,6 +53,8 @@ public class DungeonMaster {
         return new DungeonMaster(p);
     }
 
+    public static Collection<UUID> permittedPlayers = new HashSet<>();
+
 
     private final Pair<Location, Location> selected_area = new Pair<>();
     private final Pair<Location, Location> raw_selected_area = new Pair<>();
@@ -71,6 +71,9 @@ public class DungeonMaster {
         dms.add(this);
         this.select_thread.start();
     }
+
+    public static boolean isPermitted(@NotNull Player p) { return p.isOp() || isPermitted(p.getUniqueId()); }
+    public static boolean isPermitted(UUID id) { return permittedPlayers.contains(id); }
 
     public boolean setSelectionA(Block b) {
         Location key = b != null ? b.getLocation() : null;
@@ -179,7 +182,7 @@ public class DungeonMaster {
     }
     public Dungeon getCurrentDungeon() { return current_dungeon; }
 
-    public void giveItem(DA_item a) { if (a != null) this.p.getInventory().addItem(a.getItem()); }
+    public void giveItem(DAItem a) { if (a != null) this.p.getInventory().addItem(a.getItem()); }
 
     public boolean inBuildMode() { return build_mode && current_dungeon != null; }
     public void setBuildMode(boolean b) { this.build_mode = b; }
@@ -1572,7 +1575,10 @@ public class DungeonMaster {
     }
 
     public void sendMessage(@NotNull String message) {
-        p.sendMessage(message);
+        p.sendMessage("[DA] " + message);
+    }
+    public void sendMessage(ChatColor c, String message) {
+        p.sendMessage(c + "[DA] " + message);
     }
 
     @NotNull

@@ -13,7 +13,7 @@ import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.Main;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 

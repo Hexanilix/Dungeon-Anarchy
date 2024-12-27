@@ -4,7 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
-import org.hexils.dnarch.DA_item;
+import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,8 +38,8 @@ public class ResetAction extends Action {
     public boolean guiClickEvent(@NotNull InventoryClickEvent event) {
         ItemStack ci = event.getCurrentItem();
         ItemStack iih = event.getCursor();
-        DA_item cda = DA_item.get(ci);
-        DA_item hda = DA_item.get(iih);
+        DAItem cda = DAItem.get(ci);
+        DAItem hda = DAItem.get(iih);
         if ((cda != null && !(cda instanceof Action)) || (hda != null && !(hda instanceof Action))) return false;
 
         return false;

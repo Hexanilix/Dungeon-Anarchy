@@ -4,9 +4,10 @@ import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
-import org.hexils.dnarch.DA_item;
-import org.hexils.dnarch.dungeon.DungeonMaster;
+import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.List;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ModifyEntity extends Action {
-    private List<EntitySpawnAction.EntityCollection> entities = new ArrayList<>();
+    private List<EntitySpawnAction> spawns = new ArrayList<>();
 
     public ModifyEntity() {
         super(Type.ENTITY_MOD);
@@ -52,9 +53,9 @@ public class ModifyEntity extends Action {
     @Override
     public boolean guiClickEvent(InventoryClickEvent event) {
         for (ItemStack i : this.getContents()) {
-            DA_item da = DA_item.get(i);
-            if (da instanceof EntitySpawnAction.EntityCollection ec)
-                entities.add(ec);
+            DAItem da = DAItem.get(i);
+            if (da instanceof EntitySpawnAction ec)
+                spawns.add(ec);
         }
         return true;
     }
@@ -69,7 +70,15 @@ public class ModifyEntity extends Action {
 
     }
 
-    public static String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
+    @Contract(pure = true)
+    public static @NotNull String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
         return "";
+    }
+
+    @Override
+    public String toString() {
+        return "ModifyEntity{" +
+                "spawns=" + spawns.stream().map(s -> getId()) +
+                '}';
     }
 }
