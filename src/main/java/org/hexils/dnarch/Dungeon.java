@@ -9,6 +9,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 import org.hetils.jgl17.Pair;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hetils.mpdl.GeneralListener;
@@ -18,7 +19,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -158,23 +158,23 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             GeneralListener.confirmWithPlayer(dm.p, W + "Are you sure you want to delete section \"" + getName() + W + "\"? (yes/no)", text -> {
                 if (text.equalsIgnoreCase("yes")) {
                     if (sections.size() == 1) {
-                        dm.sendMessage(ER, "You can't delete the main sector of a dungeon! Use \"/dc delete\" to delete the dungeon");
+                        dm.sendMessage(ER + "You can't delete the main sector of a dungeon! Use \"/dc delete\" to delete the dungeon");
                         return true;
                     }
                     this.delete();
                     if (mains == this) {
                         mains = sections.get(0);
-                        dm.sendMessage(W, "Set the main dungeon sector to \"" + mains.getName() + "\"");
+                        dm.sendMessage(W + "Set the main dungeon sector to \"" + mains.getName() + "\"");
                     }
                     updateBoundingBox();
                     viewers.forEach(v -> v.hideSelection(this));
-                    dm.sendMessage(IF, "Deleted section \"" + getName() + "\"!.");
+                    dm.sendMessage(IF + "Deleted section \"" + getName() + "\"!.");
                 } else {
-                    dm.sendMessage(IF, "Cancelled.");
+                    dm.sendMessage(IF + "Cancelled.");
                     if (m != null) m.manage(dm);
                 }
                 return true;
-            }, () -> dm.sendMessage(IF, "Cancelled."));
+            }, () -> dm.sendMessage(IF + "Cancelled."));
         }
 
         @Override
@@ -209,9 +209,12 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     private Section mains;
     private Location entranceLocation;
     private boolean open = false;
+    @OODPExclude
     private List<DungeonMaster> editors = new ArrayList<>();
+    @OODPExclude
     private boolean running = false;
     private DungeonInfo dungeon_info = new DungeonInfo();
+    @OODPExclude
     private final List<DungeonMaster> viewers = new ArrayList<>();
     public final Condition dungeon_start = new Condition(Type.DUNGEON_START, false) {
         { this.setName(Dungeon.this::getName); }
@@ -340,7 +343,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     public void start() {
         if (!this.running) {
             this.running = true;
-            dungeon_start.trigger();
+            dungeon_start.onTrigger();
         }
     }
 
@@ -429,7 +432,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                 this.delete();
                 this.removeViewer(dm);
                 dm.setCurrentDungeon(null);
-                dm.sendMessage(IF, "Deleted dungeon \"" + name + "\"!");
+                dm.sendMessage(IF + "Deleted dungeon \"" + name + "\"!");
             }
             return true;
         });
@@ -468,7 +471,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
 
     //Manageable
-    private final Manageable sector_gui_list = new Manageable(()->this.dungeon_info.display_name + " sections", false, 54) {
+    private final Manageable sector_gui_list = new Manageable(()->Dungeon.this.getName() + " sections", false, 54) {
         @Override
         protected void updateGUI() { this.fillBox(10, 7, 4, sections.stream().map(Section::toItem).toList()); }
 
@@ -523,8 +526,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
     @Override
     public void save() {
-        File f = FileManager.getFile(this);
-        Main.dp.saveToFile(this, f);
+        FileManager.saveDungeon(this);
     }
 
     @Override

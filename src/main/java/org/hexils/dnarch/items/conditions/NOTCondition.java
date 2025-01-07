@@ -2,20 +2,17 @@ package org.hexils.dnarch.items.conditions;
 
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
+import org.hexils.dnarch.items.InnerItemClass;
 import org.hexils.dnarch.items.Type;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@InnerItemClass
 public class NOTCondition extends Condition {
     private List<Condition> conditions = new ArrayList<>();
     public NOTCondition() {
         super(Type.NOT);
-    }
-
-    @Override
-    protected void onTrigger() {
-
     }
 
     @Override

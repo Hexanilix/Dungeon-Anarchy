@@ -42,7 +42,7 @@ public class ModifyBlock extends BlockAction {
     }
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
         modify.forEach(b -> mod.get(type).modify(b));
     }
 

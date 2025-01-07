@@ -8,8 +8,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Condition;
+import org.hexils.dnarch.RunnableDA;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,8 +20,9 @@ import java.util.List;
 
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hexils.dnarch.Main.log;
 
-public class WithinDistance extends Condition {
+public class WithinDistance extends Condition implements RunnableDA {
     public static boolean hasPlayers(Collection<Entity> c) {
         if (c == null) return false;
         for (Entity e : c)
@@ -28,7 +31,8 @@ public class WithinDistance extends Condition {
         return false;
     }
 
-    protected void onTrigger() { this.satisfied = true; }
+    @Override
+    public void onTrigger() { this.satisfied = true; }
 
     @Override
     public boolean isSatisfied() {
@@ -44,22 +48,33 @@ public class WithinDistance extends Condition {
     private Location loc;
     private TriggerShape shape;
     private double rad;
+    @OODPExclude
     private BukkitRunnable runnable;
+    @OODPExclude
     private boolean satisfied = false;
 
+    public WithinDistance() { super(Type.WITHIN_DISTANCE); }
     public WithinDistance(@NotNull Location loc) {
         super(Type.WITHIN_DISTANCE);
         this.loc = loc;
         this.rad = 1;
         this.shape = TriggerShape.SPHERE;
+        start();
+    }
+
+    @Override
+    public void start() {
         this.runnable = new BukkitRunnable() {
             Collection<Entity> c;
             @Override
             public void run() {
                 c = loc.getWorld().getNearbyEntities(loc, rad, rad, rad);
                 if (hasPlayers(c)) {
-                    if (!satisfied)
-                        trigger();
+                    if (!satisfied) {
+                        log("WD satisf");
+                        satisfied = true;
+                        WithinDistance.this.trigger();
+                    }
                 } else satisfied = false;
             }
         };
@@ -78,17 +93,11 @@ public class WithinDistance extends Condition {
         this.rad = rad;
     }
 
-    public double getRad() {
-        return rad;
-    }
+    public double getRad() { return rad; }
 
-    public void setShape(TriggerShape shape) {
-        this.shape = shape;
-    }
+    public void setShape(TriggerShape shape) { this.shape = shape; }
 
-    public TriggerShape getShape() {
-        return shape;
-    }
+    public TriggerShape getShape() { return shape; }
 
     @Override
     protected void createGUI() {

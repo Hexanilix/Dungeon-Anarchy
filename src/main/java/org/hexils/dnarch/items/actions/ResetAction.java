@@ -46,7 +46,7 @@ public class ResetAction extends Action {
     }
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
 //        for (Item)
     }
 }

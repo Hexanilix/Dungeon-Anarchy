@@ -18,7 +18,7 @@ public class TimerAction extends Action implements Booled {
         public void run() {
             timer-=50;
             if (timer <= 0) {
-                trigger();
+                onTrigger();
                 cancel();
             }
         }
@@ -31,7 +31,7 @@ public class TimerAction extends Action implements Booled {
     }
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
         this.cd.runTaskTimer(Main.plugin, 0, 0);
     }
 

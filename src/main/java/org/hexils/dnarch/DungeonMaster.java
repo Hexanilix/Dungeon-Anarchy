@@ -1574,13 +1574,6 @@ public class DungeonMaster {
         p.setMaximumNoDamageTicks(ticks);
     }
 
-    public void sendMessage(@NotNull String message) {
-        p.sendMessage("[DA] " + message);
-    }
-    public void sendMessage(ChatColor c, String message) {
-        p.sendMessage(c + "[DA] " + message);
-    }
-
     @NotNull
     public Location getEyeLocation() {
         return p.getEyeLocation();
@@ -1592,6 +1585,13 @@ public class DungeonMaster {
 
     public void sendMessage(@Nullable UUID sender, @NotNull String message) {
         p.sendMessage(sender, message);
+    }
+
+    public void sendMessage(@NotNull String message) {
+        p.sendMessage("[DA] " + message);
+    }
+    public void sendMessage(ChatColor c, String message) {
+        p.sendMessage(c + "[DA] " + message);
     }
 
     public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count) {

@@ -9,17 +9,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import static org.hexils.dnarch.Main.log;
 
 
 public class DungeonCommandExecutor implements CommandExecutor {
-    public static ChatColor ER = ChatColor.RED;
+    public static ChatColor IF = ChatColor.AQUA;
     public static ChatColor OK = ChatColor.GREEN;
     public static ChatColor W = ChatColor.YELLOW;
-    public static ChatColor IF = ChatColor.AQUA;
+    public static ChatColor ER = ChatColor.RED;
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
@@ -41,7 +38,7 @@ public class DungeonCommandExecutor implements CommandExecutor {
                                 "%sName: %s\nDifficulty: %s\nDescription: %s",
                                 IF, di.display_name, di.difficulty, di.description
                         ));
-                    } else dm.sendMessage(W, "You're currently not in a dungeon. No info to show");
+                    } else dm.sendMessage(W + "You're currently not in a dungeon. No info to show");
                 }
             }
         } else {
@@ -56,7 +53,7 @@ public class DungeonCommandExecutor implements CommandExecutor {
                                 "%sName: %s\nDifficulty: %s\nDescription: %s",
                                 IF, di.display_name, di.difficulty, di.description
                         ));
-                    } else dm.sendMessage(W, "You're currently not in a dungeon. No info to show");
+                    } else dm.sendMessage(W + "You're currently not in a dungeon. No info to show");
                 }
                 default -> {
                     Dungeon d = Dungeon.get(args[0]);
@@ -69,17 +66,17 @@ public class DungeonCommandExecutor implements CommandExecutor {
                                     case "open" -> {
                                         if (args[3].equalsIgnoreCase("true")) {
                                             d.setOpen(true);
-                                            if (!d.getEditors().isEmpty()) dm.sendMessage(W, "Couldn't open dungeon since there are still other people editing it:\n- " + String.join("\n- ", d.getEditors().stream().map(DungeonMaster::getDisplayName).toList()));
-                                            else dm.sendMessage(IF, "Opened dungeon " + d.getName());
+                                            if (!d.getEditors().isEmpty()) dm.sendMessage(W + "Couldn't open dungeon since there are still other people editing it:\n- " + String.join("\n- ", d.getEditors().stream().map(DungeonMaster::getDisplayName).toList()));
+                                            else dm.sendMessage(IF + "Opened dungeon " + d.getName());
                                         } else if (args[3].equalsIgnoreCase("false")) {
                                             d.setOpen(false);
-                                            dm.sendMessage(IF, "Closed dungeon " + d.getName());
+                                            dm.sendMessage(IF + "Closed dungeon " + d.getName());
                                         }
                                     }
                                 }
                             }
                         }
-                    } else dm.sendMessage(ER, "Unknown argument " + args[0]);
+                    } else dm.sendMessage(ER + "Unknown argument " + args[0]);
                 }
             }
         }

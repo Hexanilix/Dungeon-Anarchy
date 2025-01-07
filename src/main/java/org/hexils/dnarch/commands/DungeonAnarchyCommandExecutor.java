@@ -19,20 +19,54 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.*;
+import java.util.logging.Level;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.Manageable.ITEM_ACTION;
 
 public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
-    public static final ChatColor A = ChatColor.AQUA;
-    public static final String HELP_MSG = A +
+    public static ChatColor IF = ChatColor.AQUA;
+    public static ChatColor OK = ChatColor.GREEN;
+    public static ChatColor W = ChatColor.YELLOW;
+    public static ChatColor ER = ChatColor.RED;
+
+    public static final String HELP_MSG = IF +
             "/dungeon, /dg - The command to manage dungeons";
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
             return true;
+        }
+        Player p = sender instanceof Player ? (Player) sender : null;
+        DungeonMaster dm = p != null ? DungeonMaster.getOrNew(p) : null;
+        switch (args[0]) {
+            case "reload" -> {
+                if (args.length == 1) {
+                    log(Level.INFO, "Reloading...");
+                    if (dm != null) dm.sendMessage(IF + "Reloading...");
+                    Main.reload();
+                    log(Level.INFO, "Done.");
+                    if (dm != null) dm.sendMessage(OK + "Done.");
+                } else switch (args[1]) {
+                    case "from" -> {
+                        if (args.length == 2) {
+
+                        } else switch (args[2]) {
+                            case "file" -> {
+                                if (args.length == 3) {
+
+                                } else {
+                                    Dungeon d = Dungeon.get(args[3]);
+                                    if (d != null)
+                                        FileManager.reloadDungeon(d);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         if (sender instanceof ConsoleCommandSender console) {
             switch (args[0]) {
@@ -56,15 +90,12 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             }
             return true;
         }
-        Player p = (Player) sender;
-        DungeonMaster dm = DungeonMaster.getOrNew(p);
         switch (args[0]) {
             case "help" -> {
                 dm.sendMessage(HELP_MSG);
             }
             case "rb" -> {
                 ReplaceBlock rp = (ReplaceBlock) DAItem.get(p.getInventory().getItemInMainHand());
-                log(rp.getAffectedBlocks());
             }
             case "name" -> {dm.sendMessage(DAItem.get(p.getInventory().getItemInMainHand()).getName());}
             case "dc" -> {
@@ -170,10 +201,26 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
         public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
             List<String> s = new ArrayList<>();
             Player p = (Player) sender;
-            if (args.length > 1) {
+            if (args.length == 1) {
+                s.addAll(List.of("dungeon_manager"));
+                if (DungeonMaster.isPermitted(p)) s.addAll(List.of("debug", "permit", "reload"));
+            } else {
                 switch (args[0]) {
                     case "dungeon_manager" -> {
                         return DungeonCreatorCommandExecutor.complete(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+                    }
+                    case "reload" -> {
+                        if (args.length == 2) {
+                            s.addAll(List.of("from"));
+                        } else switch (args[1]) {
+                            case "from" -> {
+                                if (args.length == 3) {
+                                    s.addAll(List.of("file"));
+                                } else switch (args[2]) {
+                                    case "file" -> DungeonCreatorCommandExecutor.getDungeonNames();
+                                }
+                            }
+                        }
                     }
                     case "debug" -> {
                         if (args.length == 2) return List.of("loc_dungeon_saving_process");
@@ -191,9 +238,6 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                         }
                     }
                 }
-            } else {
-                s.addAll(List.of("dungeon_manager"));
-                if (DungeonMaster.isPermitted(p)) s.addAll(List.of("debug", "permit"));
             }
             return s;
         }

@@ -32,9 +32,10 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
         return true;
     }
 
-    public static ChatColor ER = ChatColor.RED;
+    public static ChatColor IF = ChatColor.AQUA;
     public static ChatColor OK = ChatColor.GREEN;
     public static ChatColor W = ChatColor.YELLOW;
+    public static ChatColor ER = ChatColor.RED;
 
     public static @Nullable String execute(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         if (args.length == 0) {
@@ -83,6 +84,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
             case "create" -> {
                 if (args.length > 1) {
                     if (args[1].equalsIgnoreCase("dungeon")) {
+                        if (dm.isEditing()) return ER + "You can't create dungeon while editing!";
                         if (dm.hasAreaSelected()) {
                             Dungeon d;
                             Dungeon.Section si = Dungeon.getIntersectedSection(dm.getSelectedArea());
@@ -95,10 +97,11 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                                     } catch (Dungeon.DungeonIntersectViolation e) { throw new RuntimeException(e); }
                                 } else d = Dungeon.create(dm.getUniqueId(), dm.getSelectedArea());
                                 dm.clearSelection();
+                                d.showDungeonFor(dm);
                                 dm.setCurrentDungeon(d);
                                 dm.sendMessage(OK + "Created new dungeon " + d.getName());
                             } else return ER + "Cannot create dungeon, selection intersects sector \"" + si.getName() + "\" in dungeon \"" + si.getDungeon().getDungeonInfo().display_name;
-                        } else dm.sendMessage(ER, "You must select a section to create a dungeon");
+                        } else dm.sendMessage(ER + "You must select a section to create a dungeon");
                     } else {
                         if (dm.isEditing()) {
                             switch (args[1].toLowerCase()) {
@@ -120,11 +123,11 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                                     }
                                 }
                                 case "trigger" -> p.getInventory().addItem(new Trigger().getItem());
-                                default -> dm.sendMessage(ER, "Unknown type " + args[1]);
+                                default -> dm.sendMessage(ER + "Unknown type " + args[1]);
                             }
                         } else switch (args[1].toLowerCase()) {
-                            case "section", "action", "condition", "trigger" -> dm.sendMessage(ER, "You must be currently editing a dungeon to create elements");
-                            default -> dm.sendMessage(ER, "Unknown argument " + ChatColor.ITALIC + args[1]);
+                            case "section", "action", "condition", "trigger" -> dm.sendMessage(ER + "You must be currently editing a dungeon to create elements");
+                            default -> dm.sendMessage(ER + "Unknown argument " + ChatColor.ITALIC + args[1]);
                         }
                     }
                 } else return (ER + "Please specify what to create!");
@@ -159,7 +162,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                 }
             }
             case "save" -> {
-                if (!dm.isEditing()) dm.sendMessage(W, "You must be currently editing a dungeon to save it");
+                if (!dm.isEditing()) dm.sendMessage(W + "You must be currently editing a dungeon to save it");
                 else {
                     dm.getCurrentDungeon().save();
                     dm.sendMessage(OK + "Saved dungeon " + dm.getCurrentDungeon().getName());
@@ -169,10 +172,10 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                 if (!dm.isEditing()) return W + "You must be currently editing a dungeon to run elements";
                 DAItem da = DAItem.get(p.getInventory().getItemInMainHand());
                 if (da instanceof Action a)
-                    a.trigger();
+                    a.onTrigger();
                 else if (da instanceof Trigger t) {
-                  t.actions.forEach(Action::trigger);
-                } else dm.sendMessage(W, "Please hold a executable item");
+                  t.actions.forEach(Action::onTrigger);
+                } else dm.sendMessage(W + "Please hold a executable item");
             }
             case "reset" -> {
                 if (!dm.isEditing()) return W + "You must be currently editing a dungeon to reset elements";
@@ -181,7 +184,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     a.reset();
                 else if (da instanceof Trigger t)
                     t.actions.forEach(Action::reset);
-                else dm.sendMessage(W, "Please hold a resetable item");
+                else dm.sendMessage(W + "Please hold a resetable item");
             }
             case "rename" -> {
                 if (!dm.isEditing()) return ER + "You must be editing a dungeon to rename elements";
@@ -209,9 +212,9 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                         case "item" -> {
                             DAItem a = DAItem.get(p.getInventory().getItemInMainHand());
                             if (a != null) a.rename(dm);
-                            else dm.sendMessage(W, "Please hold a renameable item");
+                            else dm.sendMessage(W + "Please hold a renameable item");
                         }
-                        default -> dm.sendMessage(ER, "Unknown argument " + args[1]);
+                        default -> dm.sendMessage(ER + "Unknown argument " + args[1]);
                     }
                 }
             }
@@ -232,9 +235,9 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     case "item" -> {
                         DAItem da = DAItem.get(p.getInventory().getItemInMainHand());
                         if (da != null) da.manage(dm);
-                        else dm.sendMessage(W, "Please hold a managable item!");
+                        else dm.sendMessage(W + "Please hold a managable item!");
                     }
-                    default -> dm.sendMessage(ER, "Unknown type " + args[1]);
+                    default -> dm.sendMessage(ER + "Unknown type " + args[1]);
                 }
             }
             case "edit" -> {
@@ -250,7 +253,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     dm.setCurrentDungeon(d);
                     d.showDungeonFor(dm);
                     dm.sendMessage(OK + "Editing dungeon " + d.getDungeonInfo().display_name);
-                } else dm.sendMessage(W, "You're already editing dungeon \"" + dm.getCurrentDungeon().getName() + "\"!");
+                } else dm.sendMessage(W + "You're already editing dungeon \"" + dm.getCurrentDungeon().getName() + "\"!");
             }
             case "build" -> {
                 if (!dm.isEditing()) return W + "You must be editing a dungeon to enable build mode";
@@ -259,7 +262,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     dm.getCurrentDungeon().save();
                     dm.sendMessage(OK + "Saved dungeon");
                 }
-                dm.sendMessage(IF, "You are " + (dm.inBuildMode() ? "now" : "no longer") + " in build mode.");
+                dm.sendMessage(IF + "You are " + (dm.inBuildMode() ? "now" : "no longer") + " in build mode.");
             }
             case "exit" -> {
                 if (dm.isEditing()) {
@@ -268,8 +271,8 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                     d.removeViewer(dm);
                     d.removeEditor(dm);
                     dm.setCurrentDungeon(null);
-                    dm.sendMessage(IF, "Finished and saved dungeon " + d.getName());
-                } else dm.sendMessage(W, "You're not editing a dungeon");
+                    dm.sendMessage(IF + "Finished and saved dungeon " + d.getName());
+                } else dm.sendMessage(W + "You're not editing a dungeon");
             }
             case "show" -> {
                 Dungeon d = dm.getCurrentDungeon();
@@ -307,11 +310,11 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                             } else if (s == null) return W + "You're currently not in a section.";
                             dm.teleport(s.getCenter());
                         }
-                        default -> dm.sendMessage(ER, "Unknown argument " + args[1]);
+                        default -> dm.sendMessage(ER + "Unknown argument " + args[1]);
                     }
                 }
             }
-            default -> dm.sendMessage(ER, "Unknown argument " + args[0]);
+            default -> dm.sendMessage(ER + "Unknown argument " + args[0]);
         }
         return r;
     }

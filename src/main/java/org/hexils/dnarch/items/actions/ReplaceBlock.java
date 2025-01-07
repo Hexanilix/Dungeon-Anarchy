@@ -22,7 +22,6 @@ public class ReplaceBlock extends BlockAction {
 
     private boolean sound = true;
     private boolean particles = true;
-    @OODPExclude private final List<BlockData> ogbd = new ArrayList<>();
     private Material change_material;
     @OODPExclude private World world;
 
@@ -41,20 +40,20 @@ public class ReplaceBlock extends BlockAction {
             for (Block b : blocks)
                 if (b.getWorld() == world) {
                     this.affected_blocks.add(b);
-                    this.ogbd.add(b.getBlockData());
+                    this.original_block_data.add(b.getBlockData());
                 }
         }
     }
 
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
         if (!triggered && !affected_blocks.isEmpty()) {
             if (world == null) world = affected_blocks.get(0).getWorld();
-            if (ogbd.isEmpty()) {
+            if (original_block_data.isEmpty()) {
                 for (Block b : affected_blocks)
                     if (b.getWorld() == world)
-                        this.ogbd.add(b.getBlockData());
+                        this.original_block_data.add(b.getBlockData());
             }
             for (Block b : affected_blocks) {
                 if (sound)
@@ -69,8 +68,8 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     protected void resetAction() {
-        for (int i = 0; i < ogbd.size(); i++)
-            affected_blocks.get(i).setBlockData(ogbd.get(i));
+        for (int i = 0; i < original_block_data.size(); i++)
+            affected_blocks.get(i).setBlockData(original_block_data.get(i));
     }
 
     @Override
@@ -79,7 +78,7 @@ public class ReplaceBlock extends BlockAction {
         setField(cm, "material", change_material.name());
         this.setItem(13, cm);
         for (int i = 0; i < 27; i++)
-            this.setItem(i+27, i < ogbd.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), ogbd.get(i)) : null);
+            this.setItem(i+27, i < original_block_data.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), original_block_data.get(i)) : null);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.Condition;
@@ -25,9 +26,10 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class WithinBoundsCondition extends Condition {
     private LocationUtil.BoundingBox bounds;
+    @OODPExclude
     private BukkitRunnable runnable;
+    @OODPExclude
     private boolean satisfied = false;
-    private boolean enter = true;
 
     public WithinBoundsCondition(LocationUtil.@NotNull BoundingBox bounds) {
         super(Type.WITHIN_BOUNDS);
@@ -44,7 +46,7 @@ public class WithinBoundsCondition extends Condition {
                     if (check(c)) {
                         boolean h = satisfied;
                         satisfied = true;
-                        if (!h) trigger();
+                        if (!h) WithinBoundsCondition.this.onTrigger();
                     } else satisfied = false;
                 } else satisfied = false;
             }
@@ -82,9 +84,5 @@ public class WithinBoundsCondition extends Condition {
     @Override
     protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
-    }
-
-    @Override
-    protected void onTrigger() {
     }
 }

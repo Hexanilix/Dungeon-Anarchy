@@ -71,28 +71,32 @@ public abstract class Manageable implements Deletable {
 
     public interface NameGetter { String getName(); }
 
-    private Inventory gui = null;
+    @OODPExclude
+    protected Inventory gui = null;
+    @OODPExclude
     protected Manageable aboveManageable = null;
+    @OODPExclude
     protected Manageable underManageable = null;
+    @OODPExclude
     private ItemStack name_sign = null;
     private NameGetter name;
+    @OODPExclude
     public boolean is_being_renamed = false;
     private boolean renameable;
-    @OODPExclude
     private final String og_name;
+    public static int DEF_SIZE = 54;
+    private boolean default_gui = true;
 
-    public static int default_size = 54;
-
-    public Manageable() { this(()->"Manageable", true, default_size); }
-    public Manageable(boolean renameable) { this(()->"Manageable", renameable, default_size); }
+    public Manageable() { this(()->"Manageable", true, DEF_SIZE); }
+    public Manageable(boolean renameable) { this(()->"Manageable", renameable, DEF_SIZE); }
     public Manageable(boolean renameable, int size) { this(()->"Manageable", renameable, size); }
 
-    public Manageable(String name) { this(()->name, true, default_size); }
-    public Manageable(String name, boolean renameable) { this(()->name, renameable, default_size); }
+    public Manageable(String name) { this(()->name, true, DEF_SIZE); }
+    public Manageable(String name, boolean renameable) { this(()->name, renameable, DEF_SIZE); }
     public Manageable(String name, boolean renameable, int size) { this(()->name, renameable, size); }
 
-    public Manageable(NameGetter name) { this(name, true, default_size); }
-    public Manageable(NameGetter name, boolean renameable) { this(name, renameable, default_size); }
+    public Manageable(NameGetter name) { this(name, true, DEF_SIZE); }
+    public Manageable(NameGetter name, boolean renameable) { this(name, renameable, DEF_SIZE); }
     public Manageable(@NotNull NameGetter name, boolean renameable, int size) {
         this.name = name;
         this.renameable = renameable;
@@ -118,10 +122,14 @@ public abstract class Manageable implements Deletable {
     }
     public final void manage(@NotNull DungeonMaster dm) {
         if (dm.getCurrentManageable() == this) return;
-        if (gui == null)
+        if (gui == null || default_gui) {
             this.createGUI();
-        if (gui == null)
-            this.setSize(27);
+            default_gui = false;
+        }
+        if (gui == null) {
+            this.setSize(DEF_SIZE);
+            default_gui = true;
+        }
         this.updateGUI();
         if (gui != null) {
             dm.setCurrentManageable(this);
@@ -135,7 +143,7 @@ public abstract class Manageable implements Deletable {
                     sb.append('\n').append("\tat ").append(stackTraceElement.getClassName()).append("::").append(stackTraceElement.getMethodName()).append(" on line ").append(stackTraceElement.getLineNumber());
             sb.append('\n').append("Since you're seeing this error, please report this at https://github.com/Hexanilix/Dungeon-Anarchy-vv1.20.2/issues with a screenshot/copy of this message, and if possible a screenshot of the affected item");
             log(Level.SEVERE, sb.toString());
-            dm.sendMessage(ER, "An error occurred when attempting to open gui of " + this.name.getName());
+            dm.sendMessage(ER + "An error occurred when attempting to open gui of " + this.name.getName());
         }
     }
 
@@ -155,7 +163,7 @@ public abstract class Manageable implements Deletable {
             dm.closeInventory();
             GeneralListener.confirmWithPlayer(dm.p, ChatColor.AQUA + "Please type in the new name for \"" + this.name.getName() + "\" or 'cancel':", s -> {
                 if (s.equalsIgnoreCase("cancel")) {
-                    dm.sendMessage(W, "Cancelled.");
+                    dm.sendMessage(W + "Cancelled.");
                     return true;
                 }
                 String oldn = name.getName();
@@ -171,9 +179,9 @@ public abstract class Manageable implements Deletable {
                 return true;
             }, () -> {
                 is_being_renamed = false;
-                dm.sendMessage(W, "Cancelled.");
+                dm.sendMessage(W + "Cancelled.");
             });
-        } else dm.sendMessage(W, "This object isn't renameable.");
+        } else dm.sendMessage(W + "This object isn't renameable.");
     }
 
     public final void doAction(DungeonMaster dm, String command, InventoryClickEvent event) {

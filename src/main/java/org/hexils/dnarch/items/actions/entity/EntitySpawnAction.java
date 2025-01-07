@@ -7,6 +7,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Multiplier;
 import org.hexils.dnarch.items.Type;
@@ -24,6 +25,7 @@ public class EntitySpawnAction extends BlockAction {
     private List<org.hexils.dnarch.items.EntitySpawn> entities;
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition();
     private final EntityDeathCondition entity_death_event = new EntityDeathCondition();
+    @OODPExclude
     private List<Entity> spawned_entities = null;
     private Multiplier multiplier = null;
 
@@ -36,7 +38,7 @@ public class EntitySpawnAction extends BlockAction {
     }
 
     @Override
-    public void trigger() {
+    public void onTrigger() {
         if (!triggered) {
             List<Entity> spawnede = new ArrayList<>();
             Random r = new Random();
@@ -52,7 +54,7 @@ public class EntitySpawnAction extends BlockAction {
             }
             this.spawned_entities = spawnede;
             this.triggered = true;
-            ent_spaw_c.trigger();
+            ent_spaw_c.onTrigger();
         }
     }
 
@@ -124,11 +126,6 @@ public class EntitySpawnAction extends BlockAction {
 
         @Override
         public boolean isSatisfied() { return EntitySpawnAction.this.isTriggered(); }
-
-        @Override
-        protected void createGUI() {
-
-        }
 
         @Override
         protected ItemStack genItemStack() { return newItemStack(entities.get(0).getItem().getType(), "Entity Death Condition"); }

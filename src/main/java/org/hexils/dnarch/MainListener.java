@@ -170,7 +170,7 @@ public final class MainListener implements org.bukkit.event.Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         for (EntitySpawnAction.EntityDeathCondition ed : EntitySpawnAction.EntityDeathCondition.instances)
             if (ed.getAction() != null && ed.getAction().getSpawnedEntities().contains(event.getEntity()))
-                ed.trigger();
+                ed.onTrigger();
     }
 
     @EventHandler

@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.ItemUtil;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.items.Type;
@@ -28,7 +29,7 @@ import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
 
 public abstract class DAItem extends Manageable implements Idable, Deletable {
-    public static final NSK ITEM_UUID = new NSK(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
+    public static final NSK<String, String> ITEM_UUID = new NSK<>(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DAItem> instances = new ArrayList<>();
     public static @Nullable DAItem get(String id) { return get(UUID.fromString(id)); }
     public static @Nullable DAItem get(ItemStack it) {
@@ -84,7 +85,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
             }
         }
         if (da == null) {
-            dm.sendMessage(ER, "Couldn't create " + toReadableFormat(t.name()));
+            dm.sendMessage(ER + "Couldn't create " + toReadableFormat(t.name()));
             return null;
         }
         Dungeon d = dm.getCurrentDungeon();
@@ -107,7 +108,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
                 s.addItem(a);
                 return a;
             } else {
-                dm.sendMessage(ER, "Error occurred when getting section");
+                dm.sendMessage(ER + "Error occurred when getting section");
                 return null;
             }
         } else if (da instanceof Condition c) {
@@ -125,21 +126,11 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
         return s;
     }
 
-    @Override
-    public void rename(@NotNull DungeonMaster dm) { rename(dm, null); }
-    @Override
-    public void rename(@NotNull DungeonMaster dm, Runnable onRename) {
-        super.rename(dm, () -> {
-            if (onRename != null) onRename.run();
-            log(items);
-            items.forEach(i -> ItemUtil.setName(i, getName()));
-            item = this.genItemStack();
-        });
-    }
-
     private UUID id;
     private final Type type;
+    @OODPExclude
     private ItemStack item;
+    @OODPExclude
     private final List<ItemStack> items = new ArrayList<>();
 
     public DAItem(Type type) { this(type, type.getName()); }
@@ -150,6 +141,17 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
         this.type = type;
         this.id = UUID.randomUUID();
         instances.add(this);
+    }
+
+    @Override
+    public void rename(@NotNull DungeonMaster dm) { rename(dm, null); }
+    @Override
+    public void rename(@NotNull DungeonMaster dm, Runnable onRename) {
+        super.rename(dm, () -> {
+            if (onRename != null) onRename.run();
+            items.forEach(i -> ItemUtil.setName(i, getName()));
+            item = this.genItemStack();
+        });
     }
 
     void setId(UUID id) { this.id = id; }

@@ -2,6 +2,7 @@ package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.generator.WorldInfo;
@@ -16,6 +17,7 @@ import org.hetils.mpdl.*;
 import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCommandExecutor;
+import org.hexils.dnarch.items.Trigger;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,41 +25,35 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.logging.Level;
 
+//TODO make version compatible
 public final class Main extends JavaPlugin {
-    public static Logger logger;
-    public static JavaPlugin plugin;
-    public static String name = "dungeon_anarchy";
 
-    public static OODP dp;
+    public static final String minecraft_version;
+    static {
+        String v = Bukkit.getBukkitVersion().replace(".", "_");
+        String[] vs = v.split("-");
+        minecraft_version = "v" + vs[0].substring(0, vs[0].length()-1) + vs[1].charAt(0) + vs[0].substring(vs[0].length()-1);
+    }
+    public static JavaPlugin plugin;
+    public static final String name = "dungeon_anarchy";
+    public static final Logger logger = new Logger("Dungeon Anarchy");
+
+    public static OODP dp = new OODP();
+
+    public static class Config {
+        public boolean readable_file_data = false;
+    }
+    public static class Debug {
+        public boolean auto_exclude_fields = true;
+        public boolean log_converting_process = false;
+    }
+    public static Config config = new Config();
+    public static Debug debug = new Debug();
 
     static {
-        dp = new OODP();
+        dp.convertClassExtendingFunc(Manageable.NameGetter.class, ng -> Map.of("name", ng.getName()));
 
-//        dp.customCheck(o -> {
-//            if (o.getClass().getName().startsWith("org.bukkit.craftbukkit.v1_20_R2.block.")) {
-//                return Block.class;
-//            }
-//            return null;
-//        });
-
-        dp.autoExcludeFields(false);
-
-        dp.excludeFieldsFor(Manageable.class, "gui", "aboveManageable", "underManageable", "name_sign", "name", "renameable", "is_being_renamed");
-        dp.excludeFieldsFor(Dungeon.class,
-                "editors",
-                "sector_gui_list",
-                "dungeon_event_list",
-                "entranceLocation",
-                "running",
-                "dungeon_start",
-                "viewers",
-                "players",
-                "bounding_box"
-                );
-        dp.excludeFieldsFor(Dungeon.Section.class, "sectionEnter", "event_gui", "item_gui", "items");
-        dp.excludeFieldsFor(DAItem.class, "item", "items");
-
-        dp.processAs("org.bukkit.craftbukkit.v1_20_R2.CraftWorld", World.class);
+        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".CraftWorld", World.class);
         dp.convertClassFunc(World.class, WorldInfo::getUID);
         dp.createClassFunc(World.class, om -> Bukkit.getWorld(om.getUUID("id")));
 
@@ -77,8 +73,7 @@ public final class Main extends JavaPlugin {
 
         dp.convertClassExtendingFunc(Entity.class, Entity::getUniqueId);
 
-        //TODO make version compatible
-        dp.processAs("org.bukkit.craftbukkit.v1_20_R2.inventory.CraftItemStack", ItemStack.class);
+        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".inventory.CraftItemStack", ItemStack.class);
         //TODO enchants
         dp.hashConvertClassFunc(ItemStack.class, (item) -> {
             HashMap<String, Object> map = new HashMap<>();
@@ -105,7 +100,7 @@ public final class Main extends JavaPlugin {
             return map;
         });
         dp.createClassFunc(ItemStack.class, om -> {
-            ItemStack item = new ItemStack(om.getAs("mat", Material.class), om.get("amount", int.class, 1));
+            ItemStack item = new ItemStack(om.get("mat", Material.class), om.get("amount", int.class, 1));
             ItemMeta m = item.getItemMeta();
             if (m != null) {
                 if (om.has("localized_name")) m.setLocalizedName(om.getString("localized_name"));
@@ -141,7 +136,7 @@ public final class Main extends JavaPlugin {
             return map;
         });
         dp.createClassFunc(Location.class, om -> new Location(Bukkit.getWorld(om.getUUID("world")), om.getDouble("x"), om.getDouble("y"), om.getDouble("z"), om.getFloat("yaw"), om.getFloat("pitch")));
-        dp.processAs("org.bukkit.craftbukkit.v1_20_R2.block.CraftBlock", Block.class);
+        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".block.CraftBlock", Block.class);
         dp.convertClassFunc(Block.class, b -> {
             HashMap<String, Object> map = new HashMap<>();
             map.put("world", b.getWorld());
@@ -182,21 +177,27 @@ public final class Main extends JavaPlugin {
             double[] ar = om.getDoubleArr("bounding_box");
             Dungeon d = null;
             try {
-                d = new Dungeon(om.getString("name"), w, new LocationUtil.BoundingBox(new Pair<>(new Location(w, ar[0], ar[1], ar[2]), new Location(w, ar[3], ar[4], ar[5]))), om.getAs("dungeon_info", Dungeon.DungeonInfo.class));
+                d = new Dungeon(om.getString("name"), w, new LocationUtil.BoundingBox(new Pair<>(new Location(w, ar[0], ar[1], ar[2]), new Location(w, ar[3], ar[4], ar[5]))), om.get("dungeon_info", Dungeon.DungeonInfo.class));
                 d.getDungeonStart().setId(om.getUUID("dungeon_start_id"));
                 Dungeon finalD = d;
                 dp.createClassFunc(Dungeon.Section.class, som -> {
                     try {
                         double[] a = som.getDoubleArr("bounds");
                         LocationUtil.BoundingBox bb = new LocationUtil.BoundingBox(new Pair<>(new Location(w, a[0], a[1], a[2]), new Location(w, a[3], a[4], a[5])));
-                        List<DAItem> items = som.getObjectiveList("items").stream().map(im -> (DAItem) im.as(Type.get(im.getString("type")).getDAClass())).toList();
+                        List<DAItem> items = new ArrayList<>();
+                        for (OODP.ObjectiveMap objectiveMapm : som.getObjectiveList("items"))
+                            items.add((DAItem) objectiveMapm.as(Type.get(objectiveMapm.getString("type")).getDAClass()));
+                        items.forEach(i -> {
+                            if (i instanceof BlockAction ba) ba.updateBlockData();
+                            if (i instanceof RunnableDA rda) rda.start();
+                        });
                         Dungeon.Section s = finalD.newSection(som.getUUID("id"), som.getString("name"), items, bb);
                         DAItem i = s.getWhithinBoundCondition();
                         i.setId(som.getUUID("section_enter_id"));
                         return s;
                     } catch (Exception e) { throw new RuntimeException(e); }
                 });
-                om.getObjectList("sections", Dungeon.Section.class );
+                om.getList("sections", Dungeon.Section.class);
                 d.setMains(d.getSection(om.getUUID("mains_id")));
             } catch (Exception e) {
                 Dungeon.dungeons.remove(d);
@@ -206,23 +207,13 @@ public final class Main extends JavaPlugin {
         });
     }
 
-    public static void forceSetField(Object o, @NotNull Field f, Object val) {
-        f.setAccessible(true);
-        try {
-            f.set(o, val);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static void log(String s) {logger.log(s); }
+    public static void log(String s) { logger.log(s); }
     public static void log(Object o) { logger.log(o); }
     public static void log(Level level, String s) { logger.log(level, s); }
     public static void log(Level level, Object o) { logger.log(level, o); }
 
-    public static final ItemStack wand;
+    public static final ItemStack wand = new ItemStack(Material.STICK);
     static {
-        wand = new ItemStack(Material.STICK);
         ItemMeta m = wand.getItemMeta();
         assert m != null;
         m.addItemFlags(ItemFlag.HIDE_ENCHANTS);
@@ -259,22 +250,25 @@ public final class Main extends JavaPlugin {
     @Override
     public void onEnable() {
         plugin = this;
-        logger = new Logger(this.getName());
         super.onEnable();
         Bukkit.getPluginManager().registerEvents(new MainListener(), this);
         Bukkit.getPluginManager().registerEvents(new GeneralListener(), this);
         Bukkit.getPluginManager().registerEvents(new Manageable.ManagableListener(), this);
         loadCommands();
         FileManager.loadData();
-        try {
-            Class<?> c = Class.forName("org.bukkit.craftbukkit.v1_20_R2.block.impl.CraftLeaves");
-            while (c.getSuperclass() != null) {
-                log(c.getSuperclass());
-                c = c.getSuperclass();
-            }
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+
+        dp.autoExcludeFields(debug.auto_exclude_fields);
+        dp.logConversions(debug.log_converting_process);
+    }
+
+    public static void reload() {
+        Dungeon.dungeons.clear();
+        Trigger.triggers.clear();
+        DungeonMaster.permittedPlayers.clear();
+        FileManager.loadConfig();
+        plugin.onDisable();
+        FileManager.loadData();
+        plugin.onEnable();
     }
 
     @Override

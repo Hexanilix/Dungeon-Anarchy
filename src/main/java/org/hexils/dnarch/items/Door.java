@@ -68,7 +68,7 @@ public class Door extends Action {
     private BukkitRunnable openr = null;
     private Collection<Block> mdblocks = new ArrayList<>();
     @Override
-    public void trigger() {
+    public void onTrigger() {
         if (isopen) return;
         openr = new BukkitRunnable() {
             private float ca = 0;

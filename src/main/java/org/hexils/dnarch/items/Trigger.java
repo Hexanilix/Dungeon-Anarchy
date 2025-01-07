@@ -7,10 +7,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.*;
-import org.hexils.dnarch.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -18,34 +16,26 @@ import java.util.*;
 
 import static org.hetils.mpdl.InventoryUtil.*;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hexils.dnarch.Main.log;
 
 public class Trigger extends DAItem implements Booled, Triggerable {
+    public static Collection<Trigger> triggers = new HashSet<>();
+
     public final List<Condition> conditions = new ArrayList<>();
     public final List<Action> actions = new ArrayList<>();
 
+    public Trigger() { super(Type.TRIGGER); triggers.add(this); }
+
     @Override
-    public boolean isSatisfied() {
-        for (Condition c : conditions)
-            if (!c.isSatisfied())
-                return false;
-        return true;
-    }
+    public boolean isSatisfied() { return conditions.stream().allMatch(Booled::isSatisfied); }
 
     @Override
     protected void createGUI() {
-        setSize(54);
         fillBox(18, 4, 4, (ItemStack) null);
         fillBox(23, 4, 4, (ItemStack) null);
         this.setItem(10, newItemStack(Material.COMPARATOR,  ChatColor.LIGHT_PURPLE + "Conditions to trigger: "));
-        this.setItem(15, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
+        this.setItem(16, newItemStack(Material.REDSTONE_BLOCK,  ChatColor.AQUA + "Actions on trigger: "));
     }
-
-    public Trigger() {
-        super(Type.TRIGGER);
-    }
-
-    @Override
-    protected void updateGUI() {}
 
     @Override
     protected ItemStack genItemStack() {
@@ -53,20 +43,8 @@ public class Trigger extends DAItem implements Booled, Triggerable {
         ItemMeta m = i.getItemMeta();
         assert m != null;
         m.setDisplayName(getName());
-
-        m.getPersistentDataContainer().set(MODIFIABLE.key, PersistentDataType.BOOLEAN, true);
         i.setItemMeta(m);
         return i;
-    }
-
-    @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
-
-    }
-
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
-
     }
 
     @Override
@@ -122,7 +100,6 @@ public class Trigger extends DAItem implements Booled, Triggerable {
     private boolean addCondition(ItemStack it) {
         String s = (String) NSK.getNSK(it, ITEM_UUID);
         if (s != null && DAItem.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
-            condition.runnables.put(this, this::trigger);
             return conditions.add(condition);
         }
         return false;
@@ -135,12 +112,11 @@ public class Trigger extends DAItem implements Booled, Triggerable {
         return false;
     }
 
-
-
     @Override
-    public void trigger() {
+    public void onTrigger() {
+        log("trig Triggered");
         if (isSatisfied())
             for (Action a : actions)
-                a.trigger();
+                a.onTrigger();
     }
 }

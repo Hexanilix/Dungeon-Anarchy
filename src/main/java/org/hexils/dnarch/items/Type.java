@@ -93,4 +93,5 @@ public enum Type {
             case ENTITY_SPAWN -> EntitySpawn.class;
         };
     }
+
 }
