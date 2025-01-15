@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
@@ -30,21 +31,23 @@ import static org.hexils.dnarch.Manageable.*;
 import static org.hexils.dnarch.Manageable.ItemListGUI.ITEM_LIST_GUI;
 
 public final class MainListener implements org.bukkit.event.Listener {
+
     @EventHandler
     public void onInteract(@NotNull PlayerInteractEvent event) {
         Player p = event.getPlayer();
         ItemStack item = event.getItem();
         if (item == null) return;
         DungeonMaster dm = DungeonMaster.getOrNew(p);
+        Action ac = event.getAction();
         if (item.isSimilar(wand)) {
+            event.setCancelled(true);
             Block b = event.getClickedBlock();
-            switch (event.getAction()) {
+            switch (ac) {
                 case LEFT_CLICK_BLOCK -> {
                     if (p.isSneaking()) {
                         if (b == null) return;
                         if (!dm.setSelectionA(b))
                             dm.clearSelectionA();
-                        event.setCancelled(true);
                     }
                 }
                 case RIGHT_CLICK_BLOCK -> {
@@ -52,19 +55,31 @@ public final class MainListener implements org.bukkit.event.Listener {
                         if (b == null) return;
                         if (!dm.setSelectionB(b))
                             dm.clearSelectionB();
-                        event.setCancelled(true);
                     } else if (dm.isEditing() && !dm.selectBlock(b))
                             dm.deselectBlock(b);
                 }
             }
-        } else if (NSK.hasNSK(event.getItem(), ITEM_UUID)) {
-            String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
-            if (s != null) {
-                UUID id = UUID.fromString(s);
-                DAItem di = DAItem.get(id);
-                if (di != null) {
-                    di.manage(dm);
+        } else {
+            DAItem da = DAItem.get(item);
+            if (da != null) {
+                if (da instanceof Trigger trig && p.isSneaking()) {
                     event.setCancelled(true);
+                    if (ac == Action.LEFT_CLICK_AIR || ac == Action.LEFT_CLICK_BLOCK) {
+                        trig.trigger(true);
+                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Executed " + trig.getName());
+                    } else {
+                        trig.reset();
+                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Reset " + trig.getName());
+                    }
+                } else {
+                    String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
+                    if (s != null) {
+                        DAItem di = DAItem.get(UUID.fromString(s));
+                        if (di != null) {
+                            di.manage(dm);
+                            event.setCancelled(true);
+                        }
+                    }
                 }
             }
         }
@@ -90,36 +105,6 @@ public final class MainListener implements org.bukkit.event.Listener {
 //            event.setCancelled(true);
 //        }
 //    }
-
-    @EventHandler
-    public void onInventoryClick(@NotNull InventoryClickEvent event) {
-        Inventory opi = event.getInventory();
-        if (event.getWhoClicked() instanceof Player p) {
-            DungeonMaster dm = DungeonMaster.getOrNew(p);
-            for (Manageable mg : Manageable.instances)
-                if (mg.isThisGUI(opi)) {
-                    event.setCancelled(true);
-                    ItemStack it = event.getCurrentItem();
-                    if (DAItem.get(it) == mg)
-                        return;
-                    if (event.getAction() == InventoryAction.CLONE_STACK) {
-                        DAItem da = DAItem.get(it);
-                        if (da != null)
-                            da.manage(dm, mg);
-                    }
-                    if (mg.guiClickEvent(event)) {
-                        if (NSK.hasNSK(it, ITEM_RENAME)) {
-                            Manageable m = Manageable.get(opi);
-                            if (m == null) mg.rename(dm, () -> dm.openInventory(opi));
-                            else mg.rename(dm, () -> mg.manage(dm));
-                        }
-                        if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) mg.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
-                        if (NSK.hasNSK(it, ITEM_ACTION)) mg.doAction(dm, (String) NSK.getNSK(it, ITEM_ACTION), event);
-                        if (NSK.hasNSK(it, ITEM_LIST_GUI)) ItemListGUI.get(UUID.fromString((String) NSK.getNSK(it, ITEM_LIST_GUI))).manage(dm, mg);
-                    }
-                }
-        }
-    }
 
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {

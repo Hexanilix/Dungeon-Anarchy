@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hexils.dnarch.Main.log;
 
 public class ReplaceBlock extends BlockAction {
     public static class DestroyBlock extends ReplaceBlock { public DestroyBlock(List<Block> blocks) { super(blocks, Material.AIR); } }
@@ -78,7 +79,7 @@ public class ReplaceBlock extends BlockAction {
         setField(cm, "material", change_material.name());
         this.setItem(13, cm);
         for (int i = 0; i < 27; i++)
-            this.setItem(i+27, i < original_block_data.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), original_block_data.get(i)) : null);
+            this.setItem(i + 27, i < original_block_data.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), original_block_data.get(i)) : null);
     }
 
     @Override

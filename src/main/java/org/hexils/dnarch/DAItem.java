@@ -85,7 +85,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
             }
         }
         if (da == null) {
-            dm.sendMessage(ER + "Couldn't create " + toReadableFormat(t.name()));
+            dm.sendError(ER + "Couldn't create " + toReadableFormat(t.name()));
             return null;
         }
         Dungeon d = dm.getCurrentDungeon();
@@ -104,16 +104,11 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
                         .map(Map.Entry::getKey)
                         .orElse(null);
             }
-            if (s != null) {
-                s.addItem(a);
-                return a;
-            } else {
-                dm.sendMessage(ER + "Error occurred when getting section");
-                return null;
-            }
         } else if (da instanceof Condition c) {
-            s.addItem(c);
-        } else s.addItem(da);
+
+        }
+        if (s != null) da.setSection(s);
+        d.addItem(da);
         return da;
     }
 
@@ -132,6 +127,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
     private ItemStack item;
     @OODPExclude
     private final List<ItemStack> items = new ArrayList<>();
+    Dungeon.Section section = null;
 
     public DAItem(Type type) { this(type, type.getName()); }
     public DAItem(Type type, String name) { this(type, name, true); }
@@ -141,6 +137,14 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
         this.type = type;
         this.id = UUID.randomUUID();
         instances.add(this);
+    }
+
+    public void setSection(Dungeon.Section s) {
+        if (s == section)
+            if (s.getItems().contains(this)) return;
+        else if (section != null) section.removeItem(this);
+        section = s;
+        section.addItem(this);
     }
 
     @Override
@@ -159,6 +163,8 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
     public Type getType() { return type; }
 
     public final UUID getId() { return id; }
+
+    public Dungeon.Section getSection() { return section; }
 
     protected abstract ItemStack genItemStack();
     public final ItemStack getItem() {

@@ -2,19 +2,13 @@ package org.hexils.dnarch.commands;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.*;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.SmallFireball;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.jgl17.oodp.OODP;
 import org.hetils.mpdl.NSK;
-import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.*;
-import org.hexils.dnarch.items.actions.ReplaceBlock;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -90,42 +84,12 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             }
             return true;
         }
-        switch (args[0]) {
+        if (dm != null) switch (args[0]) {
             case "help" -> {
                 dm.sendMessage(HELP_MSG);
             }
-            case "rb" -> {
-                ReplaceBlock rp = (ReplaceBlock) DAItem.get(p.getInventory().getItemInMainHand());
-            }
-            case "name" -> {dm.sendMessage(DAItem.get(p.getInventory().getItemInMainHand()).getName());}
-            case "dc" -> {
-                log("sek,awtfgylghzddkghdhkgdhkg,./ m.fbzdfbdfblilgjkhhgljytb");
-                dm.performCommand("dungeon_anarchy:dc create dungeon");
-            }
-            case "fireball" -> {
-                int amnt = Integer.parseInt(args[1]);
-                Random r = new Random();
-                new BukkitRunnable() {
-                    int a = 0;
-                    @Override
-                    public void run() {
-                        a++;
-                        Location loc = p.getEyeLocation().clone().add(r.nextDouble(), r.nextDouble(), r.nextDouble());
-                        SmallFireball f = (SmallFireball) p.getWorld().spawnEntity(loc, EntityType.SMALL_FIREBALL);
-                        f.setVelocity(VectorUtil.genVec(f.getLocation(), p.getTargetBlockExact(100).getLocation()).normalize().multiply(.2));
-                        if (a == amnt) cancel();
-                    }
-                }.runTaskTimer(Main.plugin, 0, 0);
-            }
-            case "testdp" -> {
-                OODP dp = Main.dp;
-                ItemStack it1 = p.getInventory().getItemInMainHand();
-                log(it1);
-                String dpd = dp.toOodp(it1);
-                log(dpd);
-                ItemStack it2 = dp.map(dpd).as(ItemStack.class);
-                log(it2);
-                log(it1.equals(it2));
+            case "test" -> {
+
             }
             case "load" -> {
                 FileManager.loadDungeons();
@@ -157,11 +121,11 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                             if (a) {
                                 if (!DungeonMaster.permittedPlayers.contains(id)) {
                                     DungeonMaster.permittedPlayers.add(id);
-                                    dm.sendMessage("Permitted " + pp.getName() + " to manage Dungeon Anarchy");
-                                } else dm.sendMessage("Player " + pp.getName() + " is already a permitted admin");
+                                    dm.sendInfo("Permitted " + pp.getName() + " to manage Dungeon Anarchy");
+                                } else dm.sendInfo("Player " + pp.getName() + " is already a permitted admin");
                             } else {
                                 DungeonMaster.permittedPlayers.remove(id);
-                                dm.sendMessage("Denied " + pp.getName() + " permission to manage Dungeon Anarchy");
+                                dm.sendError("Denied " + pp.getName() + " permission to manage Dungeon Anarchy");
                             }
                         }
                     }
@@ -177,18 +141,32 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                             case "loc_dungeon_saving_process" -> {
                                 if (args.length > 2) {
                                     if (args[2].equalsIgnoreCase("true")) {
-                                        Main.dp.logConversions(true);
-                                        dm.sendMessage("Enabled logging of the dungeon saving process");
+                                        Main.debug.logConvertingProcess(true);
+                                        dm.sendInfo(DungeonMaster.Sender.DEBUG, "Enabled logging of the dungeon saving process");
                                     }
                                     else if (args[2].equalsIgnoreCase("false")) {
-                                        Main.dp.logConversions(false);
-                                        dm.sendMessage("Disabled logging of the dungeon saving process");
+                                        Main.debug.logConvertingProcess(false);
+                                        dm.sendInfo(DungeonMaster.Sender.DEBUG, "Disabled logging of the dungeon saving process");
+                                    }
+                                }
+                            }
+                            case "get_item" -> {
+                                if (args.length >= 3) {
+                                    try {
+                                        DAItem da = DAItem.get(UUID.fromString(args[2]));
+                                        if (da != null) {
+                                            dm.giveItem(da);
+                                            dm.sendInfo(DungeonMaster.Sender.DEBUG, "Found " + da.getName());
+                                        }
+                                        else dm.sendError(DungeonMaster.Sender.DEBUG,"No item with id " + args[2]);
+                                    } catch (Exception e) {
+                                        dm.sendError(DungeonMaster.Sender.DEBUG, "Invalid UUID");
                                     }
                                 }
                             }
                         }
                     }
-                }
+                } else dm.sendMessage(ER + "No permission.");
             }
         }
         return true;

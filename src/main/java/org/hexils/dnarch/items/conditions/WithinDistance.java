@@ -71,7 +71,6 @@ public class WithinDistance extends Condition implements RunnableDA {
                 c = loc.getWorld().getNearbyEntities(loc, rad, rad, rad);
                 if (hasPlayers(c)) {
                     if (!satisfied) {
-                        log("WD satisf");
                         satisfied = true;
                         WithinDistance.this.trigger();
                     }

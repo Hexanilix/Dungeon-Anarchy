@@ -33,8 +33,9 @@ public class EntitySpawnAction extends BlockAction {
     public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn entity, List<Block> spawnp) { this(List.of(entity), spawnp); }
     public EntitySpawnAction(List<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
         super(Type.ENTITY_SPAWN_ACTION, spawnp);
+        if (spawnp.isEmpty()) throw new IllegalArgumentException("Spawn locations cannot be null");
         this.entities = entities;
-        this.cgui = new ItemListGUI(getName(), List.of(ent_spaw_c, entity_death_event));
+        this.cgui = new ItemListGUI(getName(), ent_spaw_c, entity_death_event);
     }
 
     @Override
@@ -78,6 +79,7 @@ public class EntitySpawnAction extends BlockAction {
 
     public List<Entity> getSpawnedEntities() { return spawned_entities; }
 
+    @OODPExclude
     private final ItemListGUI cgui;
     @Override
     public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { onRename.run(); cgui.setName(getName()); }); }

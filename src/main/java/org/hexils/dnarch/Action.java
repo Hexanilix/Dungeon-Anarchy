@@ -9,7 +9,7 @@ import java.util.*;
 import static org.hexils.dnarch.Main.log;
 
 
-public abstract class Action extends DAItem implements Triggerable {
+public abstract class Action extends DAItem implements Triggerable, Resetable {
 
     public final static Collection<Action> actions = new HashSet<>();
 
@@ -42,6 +42,7 @@ public abstract class Action extends DAItem implements Triggerable {
 
     protected abstract void resetAction();
 
+    @Override
     public final void reset() {
         triggered = false;
         resetAction();

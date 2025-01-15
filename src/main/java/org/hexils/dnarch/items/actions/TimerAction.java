@@ -1,5 +1,6 @@
 package org.hexils.dnarch.items.actions;
 
+import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -10,38 +11,32 @@ import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
-public class TimerAction extends Action implements Booled {
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.hetils.mpdl.GeneralUtil.msToTicks;
+import static org.hetils.mpdl.ItemUtil.newItemStack;
+
+public class TimerAction extends Action {
+    private boolean t = false;
     private int timer = 0;
-    private int start = 0;
-    private final BukkitRunnable cd = new BukkitRunnable() {
-        @Override
-        public void run() {
-            timer-=50;
-            if (timer <= 0) {
-                onTrigger();
-                cancel();
-            }
-        }
-    };
+    private Set<? extends Action> actions = new HashSet<>();
+
     public TimerAction(int time) {
         super(Type.TIMER);
-        this.start = time;
         this.timer = time;
-        this.cd.runTaskTimer(Main.plugin, 0, 0);
     }
 
     @Override
-    public void onTrigger() {
-        this.cd.runTaskTimer(Main.plugin, 0, 0);
-    }
+    public void onTrigger() { t = true; new BukkitRunnable() { @Override public void run() {  } }.runTaskLater(Main.plugin, msToTicks(timer)); }
 
     @Override
-    protected void resetAction() {
-        timer = start;
-    }
+    protected void resetAction() { t = false; actions.forEach(Action::reset); }
 
     @Override
     protected void createGUI() {
+
     }
 
     @Override
@@ -51,21 +46,7 @@ public class TimerAction extends Action implements Booled {
 
     @Override
     protected ItemStack genItemStack() {
-        return null;
+        return newItemStack(Material.CLOCK, getName(), List.of(String.valueOf(timer)));
     }
 
-    @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
-
-    }
-
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
-
-    }
-
-    @Override
-    public boolean isSatisfied() {
-        return timer <= 0;
-    }
 }

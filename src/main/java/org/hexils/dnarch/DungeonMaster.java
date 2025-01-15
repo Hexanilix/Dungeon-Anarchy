@@ -13,6 +13,7 @@ import org.bukkit.conversations.ConversationAbandonedEvent;
 import org.bukkit.entity.*;
 import org.bukkit.entity.memory.MemoryKey;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.*;
 import org.bukkit.map.MapView;
@@ -42,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
+import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.W;
 
 public class DungeonMaster {
@@ -179,6 +181,7 @@ public class DungeonMaster {
             if (this.current_dungeon != null) this.current_dungeon.removeEditor(this);
         } else dungeon.addEditor(this);
         this.current_dungeon = dungeon;
+        this.sendMessage(DungeonMaster.Sender.CREATOR, OK + "Editing dungeon " + current_dungeon.getName());
     }
     public Dungeon getCurrentDungeon() { return current_dungeon; }
 
@@ -341,7 +344,73 @@ public class DungeonMaster {
     public boolean hideSelection(Object o) { return select_thread.clearSelection(o); }
     public void hideSelections() { select_thread.clearSelected(); }
 
+    public void promptRemove(Manageable m) {
+        Manageable mg = new Manageable() {
+            private final Manageable man = m;
 
+            @Override
+            protected void createGUI() {
+                setSize(27);
+                setItem(4, newItemStack(Material.PAPER, "Are you sure you want to remove:"));
+                ItemStack di;
+                if (m instanceof DAItem da) di = da.getItem();
+                else di = newItemStack(Material.GREEN_CONCRETE, m.getName());
+                setItem(13, di);
+                setItem(11, newItemStack(Material.GREEN_CONCRETE, ChatColor.GREEN + "Yes", ITEM_ACTION, "delete"));
+                setItem(15, newItemStack(Material.RED_CONCRETE, ChatColor.RED + "No", ITEM_ACTION, "cancel"));
+            }
+
+            @Override
+            protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
+                if (Objects.equals(action, "delete")) {
+                    if (DAItem.get(DungeonMaster.this.getInventory().getItemInMainHand()) == m) DungeonMaster.this.getInventory().setItemInMainHand(null);
+                    m.delete();
+                }
+                DungeonMaster.this.closeInventory();
+            }
+        };
+        mg.manage(this, m);
+    }
+
+
+    public void sendMessage(@Nullable UUID sender, @NotNull String... messages) {
+        p.sendMessage(sender, messages);
+    }
+
+    public void sendMessage(@NotNull String... messages) { p.sendMessage(messages); }
+
+    public void sendMessage(@Nullable UUID sender, @NotNull String message) { p.sendMessage(sender, message); }
+
+    public static ChatColor IF = ChatColor.AQUA;
+    public static ChatColor OK = ChatColor.GREEN;
+    public static ChatColor W = ChatColor.YELLOW;
+    public static ChatColor ER = ChatColor.RED;
+    private ChatColor DBG = ChatColor.LIGHT_PURPLE;
+
+    public enum Sender {
+        CREATOR(ChatColor.GOLD),
+        DEBUG(ChatColor.LIGHT_PURPLE);
+
+        private ChatColor color;
+        Sender(ChatColor c) { color = c; }
+
+        @Override
+        public @NotNull String toString() {
+            return this.name().charAt(0) + this.name().toLowerCase().substring(1);
+        }
+    }
+
+    public void sendMessage(@NotNull String message) { p.sendMessage("[DA] " + ChatColor.RESET + message); }
+    public void sendMessage(Sender s, @NotNull String message) { p.sendMessage((s != null ? s.color + "[DA->" + s + "] " : "[DA->Unknown] ") + ChatColor.RESET + message); }
+    public void sendMessage(Object s, @NotNull String message) { p.sendMessage((s != null ? "[DA->" + s.getClass().getName() + "] " : "[DA->Unknown] ") + ChatColor.RESET + message); }
+
+
+    public void sendInfo(@NotNull String message) { this.sendMessage(IF + "[DA] " + message); }
+    public void sendWarning(@NotNull String message) { this.sendMessage(W + "[DA] " + message); }
+    public void sendError(@NotNull String message) { this.sendMessage(ER + "[DA] " + message); }
+    public void sendInfo(Sender s, @NotNull String message) { this.sendMessage(s, IF + message); }
+    public void sendWarning(Sender s, @NotNull String message) { this.sendMessage(s, W + message); }
+    public void sendError(Sender s, @NotNull String message) {this.sendMessage(s, ER + message); }
 
     //<editor-fold defaultstate="collapsed" desc="Player (p) delegations">
     @NotNull
@@ -540,10 +609,6 @@ public class DungeonMaster {
         return p.isSprinting();
     }
 
-    public void sendMessage(@Nullable UUID sender, @NotNull String... messages) {
-        p.sendMessage(sender, messages);
-    }
-
     @Nullable
     public String getPlayerListHeader() {
         return p.getPlayerListHeader();
@@ -622,13 +687,7 @@ public class DungeonMaster {
     }
 
     @NotNull
-    public Set<UUID> getCollidableExemptions() {
-        return p.getCollidableExemptions();
-    }
-
-    public void sendMessage(@NotNull String... messages) {
-        p.sendMessage(messages);
-    }
+    public Set<UUID> getCollidableExemptions() { return p.getCollidableExemptions(); }
 
     public void showDemoScreen() {
         p.showDemoScreen();
@@ -1581,17 +1640,6 @@ public class DungeonMaster {
 
     public void sendExperienceChange(float progress, int level) {
         p.sendExperienceChange(progress, level);
-    }
-
-    public void sendMessage(@Nullable UUID sender, @NotNull String message) {
-        p.sendMessage(sender, message);
-    }
-
-    public void sendMessage(@NotNull String message) {
-        p.sendMessage("[DA] " + message);
-    }
-    public void sendMessage(ChatColor c, String message) {
-        p.sendMessage(c + "[DA] " + message);
     }
 
     public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count) {

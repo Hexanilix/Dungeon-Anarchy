@@ -1,6 +1,7 @@
 package org.hexils.dnarch.items;
 
-import org.hexils.dnarch.Dungeon;
+import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.Trigger;
 import org.hexils.dnarch.items.actions.ModifyBlock;
 import org.hexils.dnarch.items.actions.ReplaceBlock;
 import org.hexils.dnarch.items.actions.ResetAction;
@@ -71,7 +72,7 @@ public enum Type {
     }
 
     @Contract(pure = true)
-    public @NotNull Class<?> getDAClass() {
+    public @NotNull Class<? extends DAItem> getDAClass() {
         return switch (this) {
             case DESTROY_BLOCK -> ReplaceBlock.DestroyBlock.class;
             case ENTITY_MOD -> ModifyEntity.class;
@@ -79,18 +80,17 @@ public enum Type {
             case DOOR -> Door.class;
             case ENTITY_SPAWN_ACTION -> EntitySpawnAction.class;
             case MODIFY_BLOCK -> ModifyBlock.class;
-            case DUNGEON_START -> Dungeon.class;
             case WITHIN_DISTANCE -> WithinDistance.class;
             case WITHIN_BOUNDS -> WithinBoundsCondition.class;
             case NOT -> NOTCondition.class;
             case ENTITY_DEATH_EVENT -> EntitySpawnAction.EntityDeathCondition.class;
             case ENTITY_SPAWN_EVENT -> EntitySpawnAction.EntitySpawnCondition.class;
-            case BLOCK_CHANGE_EVENT -> null;
             case TIMER -> TimerAction.class;
             case TRIGGER -> Trigger.class;
             case RESET_ACTION -> ResetAction.class;
             case MULTIPLIER -> Multiplier.class;
             case ENTITY_SPAWN -> EntitySpawn.class;
+            case DUNGEON_START, BLOCK_CHANGE_EVENT -> DAItem.class;
         };
     }
 

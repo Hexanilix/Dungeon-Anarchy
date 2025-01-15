@@ -2,7 +2,6 @@ package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.generator.WorldInfo;
@@ -17,11 +16,8 @@ import org.hetils.mpdl.*;
 import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
 import org.hexils.dnarch.commands.DungeonCommandExecutor;
-import org.hexils.dnarch.items.Trigger;
 import org.hexils.dnarch.items.Type;
-import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -46,36 +42,28 @@ public final class Main extends JavaPlugin {
     public static class Debug {
         public boolean auto_exclude_fields = true;
         public boolean log_converting_process = false;
+
+        public void logConvertingProcess(boolean b) { log_converting_process = b; dp.logConversions(b); }
     }
     public static Config config = new Config();
     public static Debug debug = new Debug();
 
     static {
-        dp.convertClassExtendingFunc(Manageable.NameGetter.class, ng -> Map.of("name", ng.getName()));
+        dp.convertClassExtending(Getter.class, Getter::get);
+        dp.createClass(String.class, Getter.class, s -> () -> s);
 
-        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".CraftWorld", World.class);
-        dp.convertClassFunc(World.class, WorldInfo::getUID);
-        dp.createClassFunc(World.class, om -> Bukkit.getWorld(om.getUUID("id")));
+        dp.processClasAs("org.bukkit.craftbukkit."+minecraft_version+".CraftWorld", World.class);
+        dp.convertClass(World.class, WorldInfo::getUID);
+        dp.createClass(World.class, om -> Bukkit.getWorld(om.getUUID("id")));
 
-        dp.convertClassFunc(Manageable.NameGetter.class, Manageable.NameGetter::getName);
-        dp.createClassFunc(Manageable.NameGetter.class, om -> {
-            String s = om.getString("name");
-            return () -> s;
-        });
+        dp.convertClass(NSK.class, nsk -> Map.of("key", nsk.key.toString(), "type", NSK.getDataTypeName(nsk.type)));
+        dp.createClass(NSK.class, om -> new NSK<>(new NamespacedKey(Main.plugin, om.getString("key").split(":")[1]), NSK.getDataType(om.getString("type"))));
 
-        dp.hashConvertClassFunc(NSK.class, nsk -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("key", nsk.key.toString());
-            map.put("type", NSK.getDataTypeName(nsk.type));
-            return map;
-        });
-        dp.createClassFunc(NSK.class, om -> new NSK<>(new NamespacedKey(Main.plugin, om.getString("key").split(":")[1]), NSK.getDataType(om.getString("type"))));
+        dp.convertClassExtending(Entity.class, Entity::getUniqueId);
 
-        dp.convertClassExtendingFunc(Entity.class, Entity::getUniqueId);
-
-        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".inventory.CraftItemStack", ItemStack.class);
+        dp.processClasAs("org.bukkit.craftbukkit."+minecraft_version+".inventory.CraftItemStack", ItemStack.class);
         //TODO enchants
-        dp.hashConvertClassFunc(ItemStack.class, (item) -> {
+        dp.convertClass(ItemStack.class, (item) -> {
             HashMap<String, Object> map = new HashMap<>();
             map.put("amount", item.getAmount());
             map.put("material", item.getType());
@@ -99,7 +87,7 @@ public final class Main extends JavaPlugin {
             }
             return map;
         });
-        dp.createClassFunc(ItemStack.class, om -> {
+        dp.createClass(ItemStack.class, om -> {
             ItemStack item = new ItemStack(om.get("mat", Material.class), om.get("amount", int.class, 1));
             ItemMeta m = item.getItemMeta();
             if (m != null) {
@@ -112,7 +100,7 @@ public final class Main extends JavaPlugin {
                 }
                 if (om.has("nsks")) {
                     //TODO use getAs instead of map
-                    Map<NSK, Object> nskm = om.getObjectiveMap("nsks").asHashMap(NSK.class, Object.class);
+                    Map<NSK, Object> nskm = om.toMap("nsks").asHashMap(NSK.class, Object.class);
                     for (Map.Entry<NSK, Object> e : nskm.entrySet())
                         NSK.setNSK(m, e.getKey(), e.getValue().getClass() == UUID.class ? e.getValue().toString() : e.getValue());
                 }
@@ -121,84 +109,72 @@ public final class Main extends JavaPlugin {
             return item;
         });
 
-        dp.convertClassFunc(LocationUtil.BoundingBox.class, bb -> new double[]{bb.getMinX(), bb.getMinY(), bb.getMinZ(), bb.getMaxX(), bb.getMaxY(), bb.getMaxZ()});
+        dp.convertClass(LocationUtil.BoundingBox.class, bb -> new double[]{bb.getMinX(), bb.getMinY(), bb.getMinZ(), bb.getMaxX(), bb.getMaxY(), bb.getMaxZ()});
 
-//        dp.convertClassFunc(Type.class, t -> t.getClass().getName());
+//        dp.convertClass(Type.class, t -> t.getClass().getName());
 
-        dp.hashConvertClassExtendingFunc(Location.class, l -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("world", l.getWorld());
-            map.put("x", l.getX());
-            map.put("y", l.getY());
-            map.put("z", l.getZ());
-            map.put("yaw", l.getYaw());
-            map.put("pitch", l.getPitch());
-            return map;
-        });
-        dp.createClassFunc(Location.class, om -> new Location(Bukkit.getWorld(om.getUUID("world")), om.getDouble("x"), om.getDouble("y"), om.getDouble("z"), om.getFloat("yaw"), om.getFloat("pitch")));
-        dp.processAs("org.bukkit.craftbukkit."+minecraft_version+".block.CraftBlock", Block.class);
-        dp.convertClassFunc(Block.class, b -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("world", b.getWorld());
-            map.put("x", b.getX());
-            map.put("y", b.getY());
-            map.put("z", b.getZ());
-            return map;
-        });
-        dp.createClassFunc(Block.class, om -> Bukkit.getWorld(om.getUUID("world")).getBlockAt(om.getInt("x"), om.getInt("y"), om.getInt("z")));
+        dp.convertClass(Location.class, l -> Map.of("world", l.getWorld(),"x", l.getX(),"y", l.getY(),"z", l.getZ(),"yaw", l.getYaw(),"pitch", l.getPitch()));
+        dp.createClass(Location.class, om -> new Location(Bukkit.getWorld(om.getUUID("world")), om.getDouble("x"), om.getDouble("y"), om.getDouble("z"), om.getFloat("yaw"), om.getFloat("pitch")));
+        dp.processClasAs("org.bukkit.craftbukkit."+minecraft_version+".block.CraftBlock", Block.class);
+        dp.convertClass(Block.class, b -> Map.of("world", b.getWorld(),"x", b.getX(),"y", b.getY(), "z", b.getZ()));
 
-        dp.hashConvertClassFunc(Dungeon.Section.class, s -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("id", s.getId());
-            map.put("name", s.getName());
-            map.put("bounds", s.getBounds());
-            map.put("section_enter_id", s.getWhithinBoundCondition().getId());
-            //TODO figure out how to check if class is List<?>
-            map.put("items", s.getItems());
-            return map;
-        });
-        dp.hashConvertClassFunc(Dungeon.class, d -> {
-            HashMap<String, Object> map = new HashMap<>();
-            map.put("world", d.getWorld().getUID());
-            map.put("name", d.getName());
-            map.put("dungeon_start_id", d.getDungeonStart().getId());
-            map.put("bounding_box", d.getBoundingBox());
-            map.put("dungeon_info", d.getDungeonInfo());
-            map.put("mains_id", d.getMains().getId());
-            map.put("sections", d.getSections());
-            return map;
+        dp.convertClass(Trigger.class, t -> Map.of("id", t.getId(), "name", t.getName(), "actions", t.getActions().stream().map(DAItem::getId).toList(), "conditions", t.getConditions().stream().map(DAItem::getId).toList()));
+        dp.createClass(Trigger.class, om -> {
+            Trigger t = new Trigger(
+                    om.getList("actions", new OODP.Converter<>(UUID.class, Action.class, id -> (Action) DAItem.get(id))),
+                    om.getList("conditions", new OODP.Converter<>(UUID.class, Condition.class, id -> (Condition) DAItem.get(id)))
+            );
+            t.setId(om.getUUID("id"));
+            t.setName(om.getString("name"));
+            t.updateGUI();
+            return t;
         });
 
-        dp.processFieldsExtendingClass(DAItem.class, item -> item.getId().toString());
+        dp.createClass(Block.class, om -> Bukkit.getWorld(om.getUUID("world")).getBlockAt(om.getInt("x"), om.getInt("y"), om.getInt("z")));
 
-        dp.createClassFunc(Dungeon.class, om -> {
+        dp.convertFieldsExtending(DAItem.class, DAItem::getId);
+        dp.createFields(UUID.class, DAItem.class, DAItem::get);
+
+        dp.convertFields(Dungeon.Section.class, Dungeon.Section::getId);
+        dp.convertFieldsExtending(DAItem.class, DAItem::getId);
+
+        dp.excludeFieldsFor(Dungeon.Section.class, "renameable", "og_name");
+
+        dp.createClass(Dungeon.class, om -> {
             if (om.isEmpty()) return null;
             World w = Bukkit.getWorld(om.getUUID("world"));
             double[] ar = om.getDoubleArr("bounding_box");
             Dungeon d = null;
             try {
                 d = new Dungeon(om.getString("name"), w, new LocationUtil.BoundingBox(new Pair<>(new Location(w, ar[0], ar[1], ar[2]), new Location(w, ar[3], ar[4], ar[5]))), om.get("dungeon_info", Dungeon.DungeonInfo.class));
-                d.getDungeonStart().setId(om.getUUID("dungeon_start_id"));
+                d.getDungeonStart().setId(om.getUUID("dungeon_start"));
                 Dungeon finalD = d;
-                dp.createClassFunc(Dungeon.Section.class, som -> {
+                om.getList("sections", Dungeon.Section.class, som -> {
                     try {
                         double[] a = som.getDoubleArr("bounds");
                         LocationUtil.BoundingBox bb = new LocationUtil.BoundingBox(new Pair<>(new Location(w, a[0], a[1], a[2]), new Location(w, a[3], a[4], a[5])));
-                        List<DAItem> items = new ArrayList<>();
-                        for (OODP.ObjectiveMap objectiveMapm : som.getObjectiveList("items"))
-                            items.add((DAItem) objectiveMapm.as(Type.get(objectiveMapm.getString("type")).getDAClass()));
-                        items.forEach(i -> {
-                            if (i instanceof BlockAction ba) ba.updateBlockData();
-                            if (i instanceof RunnableDA rda) rda.start();
-                        });
-                        Dungeon.Section s = finalD.newSection(som.getUUID("id"), som.getString("name"), items, bb);
+                        Dungeon.Section s = finalD.newSection(som.getUUID("id"), som.getString("name"), bb);
                         DAItem i = s.getWhithinBoundCondition();
-                        i.setId(som.getUUID("section_enter_id"));
+                        i.setId(som.getUUID("section_enter"));
                         return s;
                     } catch (Exception e) { throw new RuntimeException(e); }
                 });
-                om.getList("sections", Dungeon.Section.class);
-                d.setMains(d.getSection(om.getUUID("mains_id")));
+                dp.createFields(UUID.class, Dungeon.Section.class, finalD::getSection);
+                Set<DAItem> items = new HashSet<>();
+                for (OODP.ObjectiveMap obm : om.getObjectiveList("items")) {
+                    DAItem da = obm.as(Type.get(obm.getString("type")).getDAClass());
+                    Dungeon.Section s = d.getSection(obm.getUUID("section"));
+                    da.setSection(s);
+                    items.add(da);
+                }
+                items.forEach(i -> {
+                    if (i instanceof BlockAction ba) ba.updateBlockData();
+                    if (i instanceof RunnableDA rda) rda.start();
+                });
+                d.setItems(items);
+                Set<Trigger> ts = om.getSet("triggers", Trigger.class);
+                d.setTriggers(ts);
+                d.setMains(d.getSection(om.getUUID("mains")));
             } catch (Exception e) {
                 Dungeon.dungeons.remove(d);
                 throw new RuntimeException(e);
@@ -257,6 +233,7 @@ public final class Main extends JavaPlugin {
         loadCommands();
         FileManager.loadData();
 
+        dp.pretty(config.readable_file_data);
         dp.autoExcludeFields(debug.auto_exclude_fields);
         dp.logConversions(debug.log_converting_process);
     }

@@ -4,22 +4,23 @@ import org.hetils.jgl17.oodp.OODP;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Level;
 
 import static org.hexils.dnarch.Main.log;
 
-public class FileManager {
+public final class FileManager {
     public static String EXT = ".oodp";
     public static File dungeon_dir = new File(Main.plugin.getDataFolder() + "/dungeons/");
     public static File permitted_player_f = new File(Main.plugin.getDataFolder() + "/permitted_players.txt");
     public static File config_file = new File(Main.plugin.getDataFolder() + "/config" + EXT);
     public static File debug_config_file = new File(Main.plugin.getDataFolder() + "/debug_config" + EXT);
+    public static File dungeon_log_dir = new File(dungeon_dir + "/logs/");
 
     @Contract("_ -> param1")
     public static File create(@NotNull File f) {
@@ -72,18 +73,33 @@ public class FileManager {
         else create(debug_config_file);
     }
 
+    public static final DateTimeFormatter file_df = DateTimeFormatter.ofPattern("HHmmss_ddMMyyyy");
+
     public static void loadDungeons() {
         if (!FileManager.dungeon_dir.exists()) FileManager.dungeon_dir.mkdir();
         Dungeon.dungeons.clear();
         mapped_dungeon_files.clear();
         for (File f : dungeon_dir.listFiles()) {
-            try {
-                OODP.ObjectiveMap m = Main.dp.map(f);
-                mapped_dungeon_files.put(f.toPath(), m);
-                m.as(Dungeon.class);
-            } catch (Exception e) {
-                log(Level.SEVERE, "Error occurred while loading dungeon from file " + f + ", reason:");
-                e.printStackTrace();
+            if (f.isFile()) {
+                try {
+                    OODP.ObjectiveMap m = Main.dp.map(f);
+                    if (m.has("name")) {
+                        mapped_dungeon_files.put(f.toPath(), m);
+                        m.as(Dungeon.class);
+                    } else if (m.isEmpty())
+                        f.delete();
+                } catch (Exception e) {
+                    //TODO add error reports
+                    if (!dungeon_log_dir.exists()) dungeon_log_dir.mkdir();
+                    File ef = new File(dungeon_log_dir + "/" + LocalDateTime.now().format(file_df) + ".txt");
+                    create(ef);
+                    try (FileWriter fileWriter = new FileWriter(ef, true)) {
+                        e.printStackTrace(new PrintWriter(fileWriter));
+                    } catch (IOException ioe) {
+                        ioe.printStackTrace();
+                    }
+                    log(Level.SEVERE, "Error occurred while loading dungeon from file " + f + ". Saved error to " + ef.getName());
+                }
             }
         }
     }
@@ -112,7 +128,9 @@ public class FileManager {
         saveDungeons();
     }
 
-    public static void saveDungeon(Dungeon dungeon) { Main.dp.saveToFile(dungeon, FileManager.getFile(dungeon), Main.config.readable_file_data); }
+    public static void saveDungeon(Dungeon dungeon) {
+        Main.dp.saveToFile(dungeon, FileManager.getFile(dungeon));
+    }
     public static void saveDungeons() { for (Dungeon d : Dungeon.dungeons) d.save(); }
 
     public static void savePermittedPlayers() {

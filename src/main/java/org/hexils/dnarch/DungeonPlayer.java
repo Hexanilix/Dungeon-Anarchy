@@ -1,4 +1,4 @@
 package org.hexils.dnarch;
 
-public class DungeonPlayer {
+public final class DungeonPlayer {
 }
