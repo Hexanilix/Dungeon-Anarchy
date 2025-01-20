@@ -10,6 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -59,8 +60,7 @@ public final class Trigger extends DAItem implements Booled, Triggerable, Reseta
     }
 
     public static <T> T getMostFrequentValue(Collection<T> c, T def) {
-        if (c == null || c.isEmpty())
-            throw new IllegalArgumentException("Collection cannot be null or empty.");
+        if (c == null || c.isEmpty()) return def;
 
         Map<T, Integer> m = new HashMap<>();
         for (T item : c) m.put(item, m.getOrDefault(item, 0) + 1);
@@ -79,11 +79,12 @@ public final class Trigger extends DAItem implements Booled, Triggerable, Reseta
 
     @Override
     public void setSection(Dungeon.Section s) {
-        if (s == section)
-            if (s.getItems().contains(this)) return;
-            else if (section != null) section.removeTrigger(this);
+        if (section != null) {
+            if (s == section && s.getDungeon().getTriggers().contains(this)) return;
+            else section.removeTrigger(this);
+        }
         section = s;
-        section.addTrigger(this);
+        if (section != null) section.addTrigger(this);
     }
 
     public void updateSec() {
@@ -171,5 +172,15 @@ public final class Trigger extends DAItem implements Booled, Triggerable, Reseta
     @Override
     public void reset() {
         actions.forEach(Action::reset);
+    }
+
+    @Override
+    public @Nullable DAItem create(@NotNull DungeonMaster dm, String[] args) {
+        if (dm.isEditing())
+            return dm.getCurrentDungeon().newTrigger();
+        else {
+            dm.sendError(DungeonMaster.Sender.CREATOR, "You must be editing a dungeon to create triggers");
+            return null;
+        }
     }
 }

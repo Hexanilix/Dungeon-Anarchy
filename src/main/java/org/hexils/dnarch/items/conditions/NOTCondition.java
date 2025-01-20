@@ -2,15 +2,22 @@ package org.hexils.dnarch.items.conditions;
 
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
+import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.InnerItemClass;
 import org.hexils.dnarch.items.Type;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @InnerItemClass
 public class NOTCondition extends Condition {
-    private List<Condition> conditions = new ArrayList<>();
+
+    private final Set<Condition> conditions = new HashSet<>();
+
+
     public NOTCondition() {
         super(Type.NOT);
     }
@@ -33,4 +40,7 @@ public class NOTCondition extends Condition {
     protected ItemStack genItemStack() {
         return null;
     }
+
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) { return new NOTCondition(); }
 }

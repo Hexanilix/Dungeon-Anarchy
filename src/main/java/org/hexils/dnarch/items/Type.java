@@ -1,7 +1,6 @@
 package org.hexils.dnarch.items;
 
-import org.hexils.dnarch.DAItem;
-import org.hexils.dnarch.Trigger;
+import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.actions.ModifyBlock;
 import org.hexils.dnarch.items.actions.ReplaceBlock;
 import org.hexils.dnarch.items.actions.ResetAction;
@@ -19,24 +18,27 @@ import static org.hexils.dnarch.Action.toReadableFormat;
 
 public enum Type {
     //Actions
-    DESTROY_BLOCK,
-    ENTITY_MOD,
-    REPLACE_BLOCK,
-    DOOR,
-    ENTITY_SPAWN_ACTION,
-    MODIFY_BLOCK,
+    TIMER(TimerAction.class),
+    DESTROY_BLOCK(ReplaceBlock.DestroyBlock.class),
+    ENTITY_MOD(ModifyEntity.class),
+    REPLACE_BLOCK(ReplaceBlock.class),
+    DOOR(Door.class),
+    ENTITY_SPAWN_ACTION(EntitySpawnAction.class),
+    MODIFY_BLOCK(ModifyBlock.class),
 
     //Conditions
-    DUNGEON_START,
-    WITHIN_DISTANCE,
-    WITHIN_BOUNDS,
-    NOT,
-    ENTITY_DEATH_EVENT,
-    ENTITY_SPAWN_EVENT,
-    BLOCK_CHANGE_EVENT,
+    NOT(NOTCondition.class),
+    DUNGEON_START(Condition.class),
+    WITHIN_DISTANCE((WithinDistance.class)),
+    WITHIN_BOUNDS(WithinBoundsCondition.class),
+    ENTITY_DEATH_EVENT(EntitySpawnAction.EntityDeathCondition.class),
+    ENTITY_SPAWN_EVENT(EntitySpawnAction.class),
 
     //Other
-    TIMER, TRIGGER, RESET_ACTION, ENTITY_SPAWN,  MULTIPLIER;
+    TRIGGER(Trigger.class),
+    RESET_ACTION(ResetAction.class),
+    ENTITY_SPAWN(EntitySpawn.class),
+    MULTIPLIER(Multiplier.class);
 
     public static @Nullable Type get(@NotNull String arg) {
         for (Type t : Type.values())
@@ -45,53 +47,34 @@ public enum Type {
         return null;
     }
 
-    public String getName() { return toReadableFormat(this.name()); }
-
-    public boolean isAction() {
+    public boolean isCreatable() {
         return switch (this) {
-            case DESTROY_BLOCK,
-                 ENTITY_MOD,
-                 REPLACE_BLOCK,
-                 DOOR,
-                 ENTITY_SPAWN_ACTION,
-                 MODIFY_BLOCK -> true;
-            default -> false;
+            case DUNGEON_START,
+                 ENTITY_DEATH_EVENT,
+                 ENTITY_SPAWN_ACTION -> false;
+            default -> true;
         };
     }
 
-    public boolean isCondition() {
-        return switch (this) {
-            case DUNGEON_START,
-                 WITHIN_DISTANCE,
-                 WITHIN_BOUNDS,
-                 NOT,
-                 ENTITY_DEATH_EVENT,
-                 ENTITY_SPAWN_EVENT -> true;
-            default -> false;
-        };
+    public boolean isAction() { return Action.class.isAssignableFrom(da_class); }
+
+    public boolean isCondition() { return Condition.class.isAssignableFrom(da_class); }
+
+    private final Class<? extends DAItem> da_class;
+
+    Type(Class<? extends DAItem> da_class) { this.da_class = da_class; }
+
+    public DAItem create(DungeonMaster dm, String[] args) {
+        if (args == null) args = new String[0];
+        try {
+            return da_class.getDeclaredConstructor().newInstance().create(dm, args);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create DAItem for " + name(), e);
+        }
     }
 
     @Contract(pure = true)
-    public @NotNull Class<? extends DAItem> getDAClass() {
-        return switch (this) {
-            case DESTROY_BLOCK -> ReplaceBlock.DestroyBlock.class;
-            case ENTITY_MOD -> ModifyEntity.class;
-            case REPLACE_BLOCK -> ReplaceBlock.class;
-            case DOOR -> Door.class;
-            case ENTITY_SPAWN_ACTION -> EntitySpawnAction.class;
-            case MODIFY_BLOCK -> ModifyBlock.class;
-            case WITHIN_DISTANCE -> WithinDistance.class;
-            case WITHIN_BOUNDS -> WithinBoundsCondition.class;
-            case NOT -> NOTCondition.class;
-            case ENTITY_DEATH_EVENT -> EntitySpawnAction.EntityDeathCondition.class;
-            case ENTITY_SPAWN_EVENT -> EntitySpawnAction.EntitySpawnCondition.class;
-            case TIMER -> TimerAction.class;
-            case TRIGGER -> Trigger.class;
-            case RESET_ACTION -> ResetAction.class;
-            case MULTIPLIER -> Multiplier.class;
-            case ENTITY_SPAWN -> EntitySpawn.class;
-            case DUNGEON_START, BLOCK_CHANGE_EVENT -> DAItem.class;
-        };
-    }
+    public @NotNull Class<? extends DAItem> getDAClass() { return da_class; }
 
+    public @NotNull String readableName() { return toReadableFormat(this.name()); }
 }

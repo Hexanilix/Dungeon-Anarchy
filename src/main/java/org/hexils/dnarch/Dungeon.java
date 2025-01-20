@@ -29,6 +29,10 @@ import static org.hexils.dnarch.commands.DungeonCreatorCommandExecutor.W;
 
 public class Dungeon extends Manageable implements Savable, Deletable {
 
+    public Set<Trigger> getTriggers() {
+        return triggers;
+    }
+
     public static class DuplicateNameException extends Exception {  public DuplicateNameException(String s) { super(s); } }
     public static class DungeonIntersectViolation extends Exception {  public DungeonIntersectViolation(String s) { super(s); } }
 
@@ -180,7 +184,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         }
 
         @Override
-        public void delete() {
+        public void onDelete() {
             sections.remove(this);
             super.delete();
         }
@@ -222,6 +226,15 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     @OODPExclude
     private List<DungeonMaster> editors = new ArrayList<>();
     public final Condition dungeon_start = new Condition(Type.DUNGEON_START, false) {
+        @Override
+        protected void createGUI() {
+
+        }
+
+        @Contract(pure = true)
+        @Override
+        public @Nullable DAItem create(DungeonMaster dm, String[] args) { return null; }
+
         { this.setName(Dungeon.this::getName); }
         @Override
         public boolean isSatisfied() { return Dungeon.this.isRunning(); }
@@ -486,6 +499,9 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     @OODPExclude
     private final Manageable sector_gui_list = new Manageable(()->Dungeon.this.getName() + " sections", false, 54) {
         @Override
+        protected void createGUI() {}
+
+        @Override
         protected void updateGUI() { this.fillBox(10, 7, 4, sections.stream().map(Section::toItem).toList()); }
 
         @Override
@@ -545,7 +561,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     }
 
     @Override
-    public void delete() {
+    public void onDelete() {
         viewers.forEach(dm -> {
             dm.hideSelection(this);
             sections.forEach(dm::hideSelection);
@@ -554,6 +570,5 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         });
         dungeons.remove(this);
         FileManager.deleteFile(this);
-        super.delete();
     }
 }

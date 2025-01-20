@@ -3,15 +3,14 @@ package org.hexils.dnarch.items.conditions;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hexils.dnarch.Main;
-import org.hexils.dnarch.Condition;
-import org.hexils.dnarch.RunnableDA;
+import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,13 +22,6 @@ import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
 public class WithinDistance extends Condition implements RunnableDA {
-    public static boolean hasPlayers(Collection<Entity> c) {
-        if (c == null) return false;
-        for (Entity e : c)
-            if (e instanceof Player)
-                return true;
-        return false;
-    }
 
     @Override
     public void onTrigger() { this.satisfied = true; }
@@ -49,9 +41,18 @@ public class WithinDistance extends Condition implements RunnableDA {
     private TriggerShape shape;
     private double rad;
     @OODPExclude
-    private BukkitRunnable runnable;
-    @OODPExclude
     private boolean satisfied = false;
+    @OODPExclude
+    private BukkitRunnable runnable;
+
+    @Override
+    public DAItem create(@NotNull DungeonMaster dm, String[] args) {
+        Location l = null;
+        if (dm.hasBlocksSelected())
+            l = org.hetils.mpdl.LocationUtil.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
+        if (l == null) l = dm.getLocation();
+        return new WithinDistance(l);
+    }
 
     public WithinDistance() { super(Type.WITHIN_DISTANCE); }
     public WithinDistance(@NotNull Location loc) {
@@ -64,12 +65,10 @@ public class WithinDistance extends Condition implements RunnableDA {
 
     @Override
     public void start() {
-        this.runnable = new BukkitRunnable() {
-            Collection<Entity> c;
+        runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                c = loc.getWorld().getNearbyEntities(loc, rad, rad, rad);
-                if (hasPlayers(c)) {
+                if (check(loc.getWorld().getNearbyEntities(loc, rad, rad, rad))) {
                     if (!satisfied) {
                         satisfied = true;
                         WithinDistance.this.trigger();
@@ -77,7 +76,20 @@ public class WithinDistance extends Condition implements RunnableDA {
                 } else satisfied = false;
             }
         };
-        this.runnable.runTaskTimer(Main.plugin, 0, 2);
+        runnable.runTaskTimer(Main.plugin, 0, 2);
+    }
+
+    public boolean check(Collection<Entity> c) {
+        if (c == null) return false;
+        for (Entity e : c)
+            if (e instanceof Player)
+                return true;
+        return false;
+    }
+
+    @Override
+    public void stop() {
+        runnable.cancel();
     }
 
     public void setLoc(Location loc) {

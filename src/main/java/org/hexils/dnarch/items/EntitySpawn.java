@@ -4,6 +4,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.DungeonMaster;
 import org.jetbrains.annotations.NotNull;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
@@ -15,8 +16,8 @@ public class EntitySpawn extends DAItem {
     public final String name;
     public final double health;
 
+    public EntitySpawn(EntityType type) { this(type, toReadableFormat(type.name()), 20); }
     public EntitySpawn(EntityType type, String name) { this(type, name, 10); }
-    public EntitySpawn(EntityType type) { this(type, toReadableFormat(type.name()), 0); }
     public EntitySpawn(@NotNull EntityType type, String name, double health) {
         super(Type.ENTITY_SPAWN);
         this.type = type;
@@ -39,5 +40,10 @@ public class EntitySpawn extends DAItem {
     @Override
     protected ItemStack genItemStack() {
         return newItemStack(Material.getMaterial(type.name()+"_SPAWN_EGG"), getName());
+    }
+
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) {
+        return new EntitySpawn(EntityType.ZOMBIE);
     }
 }

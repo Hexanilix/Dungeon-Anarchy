@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.oodp.OODPExclude;
@@ -22,7 +23,7 @@ import static org.hexils.dnarch.Main.log;
 
 public class EntitySpawnAction extends BlockAction {
 
-    private List<org.hexils.dnarch.items.EntitySpawn> entities;
+    private final List<org.hexils.dnarch.items.EntitySpawn> entities = new ArrayList<>();
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition();
     private final EntityDeathCondition entity_death_event = new EntityDeathCondition();
     @OODPExclude
@@ -34,7 +35,7 @@ public class EntitySpawnAction extends BlockAction {
     public EntitySpawnAction(List<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
         super(Type.ENTITY_SPAWN_ACTION, spawnp);
         if (spawnp.isEmpty()) throw new IllegalArgumentException("Spawn locations cannot be null");
-        this.entities = entities;
+        this.entities.addAll(entities);
         this.cgui = new ItemListGUI(getName(), ent_spaw_c, entity_death_event);
     }
 
@@ -121,10 +122,22 @@ public class EntitySpawnAction extends BlockAction {
                 '}';
     }
 
-    public class EntitySpawnCondition extends Condition {
-        public EntitySpawnCondition() {
-            super(Type.ENTITY_SPAWN_EVENT);
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) {
+        EntityType et = args.length >= 1 ? getEnum(EntityType.class, args[0]) : null;
+        if (et != null) {
+            return new EntitySpawnAction(new org.hexils.dnarch.items.EntitySpawn(et), dm.getSelectedBlocks());
+        } else {
+            dm.sendMessage(ChatColor.RED + "Please select a valid entity type");
+            return null;
         }
+    }
+
+    public class EntitySpawnCondition extends Condition {
+        public EntitySpawnCondition() { super(Type.ENTITY_SPAWN_EVENT); }
+
+        @Override
+        protected void createGUI() {}
 
         @Override
         public boolean isSatisfied() { return EntitySpawnAction.this.isTriggered(); }
@@ -132,10 +145,12 @@ public class EntitySpawnAction extends BlockAction {
         @Override
         protected ItemStack genItemStack() { return newItemStack(entities.get(0).getItem().getType(), "Entity Death Condition"); }
 
+        @Override
+        public DAItem create(DungeonMaster dm, String[] args) { return null; }
     }
 
     public class EntityDeathCondition extends Condition {
-        public static List<EntityDeathCondition> instances = new ArrayList<>();
+        public static Set<EntityDeathCondition> instances = new HashSet<>();
 
         public EntitySpawnAction getAction() { return EntitySpawnAction.this; }
 
@@ -155,5 +170,8 @@ public class EntitySpawnAction extends BlockAction {
             this.setSize(54);
             this.setItem(24, null);
         }
+
+        @Override
+        public DAItem create(DungeonMaster dm, String[] args) { return null; }
     }
 }

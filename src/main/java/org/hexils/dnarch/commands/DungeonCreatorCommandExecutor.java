@@ -80,6 +80,7 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
             }
             case "create" -> {
                 if (args.length > 1) {
+                    String[] i_args = args.length < 3 ? new String[0] : Arrays.copyOfRange(args, 3, args.length);
                     if (args[1].equalsIgnoreCase("dungeon")) {
                         if (dm.isEditing()) return ER + "You can't create dungeon while editing!";
                         if (dm.hasAreaSelected()) {
@@ -91,41 +92,37 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                                         d = new Dungeon(dm.getUniqueId(), args.length == 3 ? args[2] : String.join("_", Arrays.copyOfRange(args, 2, args.length)), dm.getSelectedArea());
                                     } catch (Dungeon.DuplicateNameException ignore) {
                                         return ER + "Dungeon " + args[2] + " already exists.";
-                                    } catch (Dungeon.DungeonIntersectViolation e) { throw new RuntimeException(e); }
+                                    } catch (Dungeon.DungeonIntersectViolation e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 } else d = Dungeon.create(dm.getUniqueId(), dm.getSelectedArea());
                                 dm.clearSelection();
                                 d.showDungeonFor(dm);
                                 dm.sendMessage(DungeonMaster.Sender.CREATOR, OK + "Created new dungeon " + d.getName());
                                 dm.setCurrentDungeon(d);
-                            } else return ER + "Cannot create dungeon, selection intersects sector \"" + si.getName() + "\" in dungeon \"" + si.getDungeon().getDungeonInfo().display_name;
-                        } else dm.sendError(DungeonMaster.Sender.CREATOR, "You must select a section to create a dungeon");
+                            } else
+                                return ER + "Cannot create dungeon, selection intersects sector \"" + si.getName() + "\" in dungeon \"" + si.getDungeon().getDungeonInfo().display_name;
+                        } else
+                            dm.sendError(DungeonMaster.Sender.CREATOR, "You must select a section to create a dungeon");
                     } else {
                         if (dm.isEditing()) {
                             switch (args[1].toLowerCase()) {
-                                case "section" -> { return dm.getCurrentDungeon().commandNewSection(dm, Arrays.copyOfRange(args, 2, args.length)); }
-                                case "action"  -> {
-                                    if (args.length == 2) return ER + "Please specify the action type!";
+                                case "section" -> {
+                                    return dm.getCurrentDungeon().commandNewSection(dm, Arrays.copyOfRange(args, 2, args.length));
+                                }
+                                case "action", "condition" -> {
+                                    if (args.length == 2) return ER + "Please specify the type!";
                                     else {
                                         Type t = Type.get(args[2]);
-                                        if (t != null && t.isAction()) dm.giveItem(DAItem.commandNew(t, dm, Arrays.copyOfRange(args, 3, args.length)));
+                                        if (t != null) dm.giveItem(DAItem.commandNew(t, dm, i_args));
                                         else return ER + "Unknown type " + ChatColor.ITALIC + args[2].toLowerCase();
                                     }
                                 }
-                                case "condition" -> {
-                                    if (args.length == 2) return ER + "Please specify the action type!";
-                                    else {
-                                        Type t = Type.get(args[2]);
-                                        if (t != null && t.isCondition()) dm.giveItem(DAItem.commandNew(t, dm, Arrays.copyOfRange(args, 3, args.length)));
-                                        else return ER + "Unknown type " + ChatColor.ITALIC + args[2].toLowerCase();
-                                    }
-                                }
-                                case "trigger" -> {
-                                    p.getInventory().addItem(dm.getCurrentDungeon().newTrigger().getItem());
-                                }
+                                case "trigger" -> dm.giveItem(dm.getCurrentDungeon().newTrigger());
                                 default -> dm.sendError(DungeonMaster.Sender.CREATOR, "Unknown type " + args[1]);
                             }
                         } else switch (args[1].toLowerCase()) {
-                            case "section", "action", "condition", "trigger" -> dm.sendError(DungeonMaster.Sender.CREATOR, "You must be currently editing a dungeon to create elements");
+                            case "section", "action", "condition", "trigger" -> dm.sendError(DungeonMaster.Sender.CREATOR, "You must be editing a dungeon to create elements!");
                             default -> dm.sendError(DungeonMaster.Sender.CREATOR, "Unknown argument " + ChatColor.ITALIC + args[1]);
                         }
                     }
@@ -332,13 +329,6 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
         return r;
     }
 
-    public interface TabCompleteRunnable { List<String> complete(); }
-    public static final Map<Type, TabCompleteRunnable> acTabMap;
-    static {
-        acTabMap = new HashMap<>();
-        acTabMap.put(Type.MODIFY_BLOCK, () -> Arrays.stream(ModifyBlock.ModType.values()).map(Enum::name).toList());
-    }
-
     public static @NotNull List<String> complete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
         final List<String> s = new ArrayList<>();
         if (sender instanceof ConsoleCommandSender console) {
@@ -348,7 +338,10 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
         DungeonMaster dm = DungeonMaster.getOrNew(p);
         if (args.length <= 1) {
             s.addAll(List.of("wand", "pos1", "pos2", "hide", "show", "create", "delete", "deselect", "edit", "tp"));
-            if (dm.isEditing()) s.addAll(List.of("run", "reset", "rename", "save", "manage", "exit", "build"));
+            if (dm.isEditing()) {
+                s.addAll(List.of("run", "reset", "rename", "save", "exit", "build"));
+            }
+            if (dm.isEditing() || Dungeon.get(p) != null) s.add("manage");
         } else switch (args[0].toLowerCase()) {
             case "pos1", "pos2" -> {
                 Block b = p.getTargetBlockExact(50);
@@ -371,8 +364,8 @@ public final class DungeonCreatorCommandExecutor implements CommandExecutor {
                             Type at = Type.get(args[2]);
                             if (at != null) return DAItem.getTabCompleteFor(at, Arrays.copyOfRange(args, 3, args.length));
                         } else switch (args[1].toLowerCase()) {
-                            case "action" -> { return Arrays.stream(Type.values()).filter(Type::isAction).map(e -> e.name().toLowerCase()).toList(); }
-                            case "condition" -> { return Arrays.stream(Type.values()).filter(Type::isCondition).map(e -> e.name().toLowerCase()).toList(); }
+                            case "action" -> { return Arrays.stream(Type.values()).filter(t -> t.isAction() && t.isCreatable()).map(e -> e.name().toLowerCase()).toList(); }
+                            case "condition" -> { return Arrays.stream(Type.values()).filter(t -> t.isCondition() && t.isCreatable()).map(e -> e.name().toLowerCase()).toList(); }
                         }
                     }
                 } else if (args.length == 2) s.add("dungeon");

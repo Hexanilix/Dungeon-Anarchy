@@ -44,10 +44,9 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.commands.DungeonCommandExecutor.W;
 
 public class DungeonMaster {
-    public static final Collection<DungeonMaster> dms = new HashSet<>();
+    public static final Set<DungeonMaster> dms = new HashSet<>();
     public static @NotNull DungeonMaster getOrNew(Player p) {
         for (DungeonMaster m : dms)
             if (m.p == p)
@@ -55,7 +54,7 @@ public class DungeonMaster {
         return new DungeonMaster(p);
     }
 
-    public static Collection<UUID> permittedPlayers = new HashSet<>();
+    public static Set<UUID> permittedPlayers = new HashSet<>();
 
 
     private final Pair<Location, Location> selected_area = new Pair<>();
@@ -101,12 +100,8 @@ public class DungeonMaster {
             return true;
         }
     }
-    public Location getSelectionA() {
-        return getSelectedArea().key();
-    }
-    public Location getSelectionB() {
-        return getSelectedArea().value();
-    }
+    public Location getSelectionA() { return getSelectedArea().key(); }
+    public Location getSelectionB() { return getSelectedArea().value(); }
     public void clearSelectionA() {
         raw_selected_area.setKey(null);
         selected_area.set(org.hetils.mpdl.LocationUtil.toMaxMin(raw_selected_area));
@@ -122,9 +117,7 @@ public class DungeonMaster {
         this.selected_area.setKey(null);
         this.selected_area.setValue(null);
     }
-    public boolean hasAreaSelected() {
-        return selected_area.key() != null && selected_area.value() != null;
-    }
+    public boolean hasAreaSelected() { return selected_area.key() != null && selected_area.value() != null; }
 
     public List<Block> getSelectedBlocks() {
         List<Block> l = new ArrayList<>();
@@ -147,9 +140,7 @@ public class DungeonMaster {
         }
         return false;
     }
-    public boolean deselectBlock(Block b) {
-        return slb.remove(b);
-    }
+    public boolean deselectBlock(Block b) { return slb.remove(b); }
     public void deselectBlocks() {
         this.slb.clear();
         this.clearSelection();
@@ -177,11 +168,11 @@ public class DungeonMaster {
 
     public boolean isEditing() { return current_dungeon != null; }
     public void setCurrentDungeon(Dungeon dungeon) {
-        if (dungeon == null) {
-            if (this.current_dungeon != null) this.current_dungeon.removeEditor(this);
-        } else dungeon.addEditor(this);
-        this.current_dungeon = dungeon;
-        this.sendMessage(DungeonMaster.Sender.CREATOR, OK + "Editing dungeon " + current_dungeon.getName());
+        if (dungeon != null && dungeon != this.current_dungeon) {
+            dungeon.addEditor(this);
+            this.current_dungeon = dungeon;
+            this.sendMessage(DungeonMaster.Sender.CREATOR, OK + "Editing dungeon " + current_dungeon.getName());
+        }
     }
     public Dungeon getCurrentDungeon() { return current_dungeon; }
 
@@ -335,18 +326,13 @@ public class DungeonMaster {
 
         public void setPar(Particle par) { this.par = par; }
     }
-    public void select(Object o, Pair<Location, Location> sec) {
-        this.select_thread.addSelect(o, new SectionSelect(sec));
-    }
-    public void select(Object o, Pair<Location, Location> sec, Particle p) {
-        this.select_thread.addSelect(o, new SectionSelect(sec, p));
-    }
+    public void select(Object o, Pair<Location, Location> sec) { this.select_thread.addSelect(o, new SectionSelect(sec)); }
+    public void select(Object o, Pair<Location, Location> sec, Particle p) { this.select_thread.addSelect(o, new SectionSelect(sec, p)); }
     public boolean hideSelection(Object o) { return select_thread.clearSelection(o); }
     public void hideSelections() { select_thread.clearSelected(); }
 
     public void promptRemove(Manageable m) {
         Manageable mg = new Manageable() {
-            private final Manageable man = m;
 
             @Override
             protected void createGUI() {
@@ -373,19 +359,14 @@ public class DungeonMaster {
     }
 
 
-    public void sendMessage(@Nullable UUID sender, @NotNull String... messages) {
-        p.sendMessage(sender, messages);
-    }
-
-    public void sendMessage(@NotNull String... messages) { p.sendMessage(messages); }
-
+    public void sendMessage(@Nullable UUID sender, @NotNull String... messages) { p.sendMessage(sender, messages); }
     public void sendMessage(@Nullable UUID sender, @NotNull String message) { p.sendMessage(sender, message); }
+    public void sendMessage(@NotNull String... messages) { p.sendMessage(messages); }
 
     public static ChatColor IF = ChatColor.AQUA;
     public static ChatColor OK = ChatColor.GREEN;
     public static ChatColor W = ChatColor.YELLOW;
     public static ChatColor ER = ChatColor.RED;
-    private ChatColor DBG = ChatColor.LIGHT_PURPLE;
 
     public enum Sender {
         CREATOR(ChatColor.GOLD),
@@ -400,17 +381,22 @@ public class DungeonMaster {
         }
     }
 
-    public void sendMessage(@NotNull String message) { p.sendMessage("[DA] " + ChatColor.RESET + message); }
-    public void sendMessage(Sender s, @NotNull String message) { p.sendMessage((s != null ? s.color + "[DA->" + s + "] " : "[DA->Unknown] ") + ChatColor.RESET + message); }
-    public void sendMessage(Object s, @NotNull String message) { p.sendMessage((s != null ? "[DA->" + s.getClass().getName() + "] " : "[DA->Unknown] ") + ChatColor.RESET + message); }
+    public static String ABREV = "DA";
 
+    @Contract(pure = true)
+    public static @NotNull String getMessage(@NotNull String message) { return ("["+ABREV+"] " + ChatColor.RESET + message); }
+    @Contract(pure = true)
+    public static @NotNull String getMessage(Sender s, @NotNull String message) { return ((s != null ? s.color + "["+ABREV+"->" + s + "] " : "["+ABREV+"] ") + ChatColor.RESET + message); }
+    public static @NotNull String getMessage(Object s, @NotNull String message) { return ((s != null ? "["+ABREV+"->" + s.getClass().getName() + "] " : "["+ABREV+"->Unknown] ") + ChatColor.RESET + message); }
 
-    public void sendInfo(@NotNull String message) { this.sendMessage(IF + "[DA] " + message); }
-    public void sendWarning(@NotNull String message) { this.sendMessage(W + "[DA] " + message); }
-    public void sendError(@NotNull String message) { this.sendMessage(ER + "[DA] " + message); }
-    public void sendInfo(Sender s, @NotNull String message) { this.sendMessage(s, IF + message); }
-    public void sendWarning(Sender s, @NotNull String message) { this.sendMessage(s, W + message); }
-    public void sendError(Sender s, @NotNull String message) {this.sendMessage(s, ER + message); }
+    public void sendMessage(String message) { p.sendMessage(getMessage(message)); }
+    public void sendMessage(Sender s, String message) { p.sendMessage(getMessage(s, message)); }
+    public void sendInfo(@NotNull String message) { p.sendMessage(getMessage(IF + message)); }
+    public void sendWarning(@NotNull String message) { p.sendMessage(getMessage(W + message)); }
+    public void sendError(@NotNull String message) { p.sendMessage(getMessage(ER + message)); }
+    public void sendInfo(Sender s, @NotNull String message) { p.sendMessage(getMessage(s, IF + message)); }
+    public void sendWarning(Sender s, @NotNull String message) { p.sendMessage(getMessage(s, W + message)); }
+    public void sendError(Sender s, @NotNull String message) { p.sendMessage(getMessage(s, ER + message)); }
 
     //<editor-fold defaultstate="collapsed" desc="Player (p) delegations">
     @NotNull

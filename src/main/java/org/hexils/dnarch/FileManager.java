@@ -78,6 +78,11 @@ public final class FileManager {
     public static void loadDungeons() {
         if (!FileManager.dungeon_dir.exists()) FileManager.dungeon_dir.mkdir();
         Dungeon.dungeons.clear();
+        Trigger.instances.clear();
+        Action.instances.clear();
+        Condition.instances.clear();
+        DAItem.instances.clear();
+        Manageable.instances.clear();
         mapped_dungeon_files.clear();
         for (File f : dungeon_dir.listFiles()) {
             if (f.isFile()) {
@@ -86,10 +91,9 @@ public final class FileManager {
                     if (m.has("name")) {
                         mapped_dungeon_files.put(f.toPath(), m);
                         m.as(Dungeon.class);
-                    } else if (m.isEmpty())
+                    } else if (Main.config.auto_delete_empty_files && m.isEmpty())
                         f.delete();
                 } catch (Exception e) {
-                    //TODO add error reports
                     if (!dungeon_log_dir.exists()) dungeon_log_dir.mkdir();
                     File ef = new File(dungeon_log_dir + "/" + LocalDateTime.now().format(file_df) + ".txt");
                     create(ef);
@@ -99,15 +103,27 @@ public final class FileManager {
                         ioe.printStackTrace();
                     }
                     log(Level.SEVERE, "Error occurred while loading dungeon from file " + f + ". Saved error to " + ef.getName());
+                    if (Main.debug.log_dungeon_error_stacktrace)
+                        for (String s : sttss(e.getStackTrace()))
+                            log(Level.SEVERE, "\t"+s);
                 }
             }
         }
+    }
+    public static String @NotNull [] sttss(StackTraceElement @NotNull [] st) {
+        String[] ss = new String[st.length];
+        for (int i = 0; i < st.length; i++) {
+            StackTraceElement s = st[i];
+            ss[i] = "at " + s.getClassName()+ "." +s.getMethodName() + "("+s.getFileName()+":"+s.getLineNumber()+")";
+        }
+        return ss;
     }
 
     public static void loadPermittedPlayers() {
 //        OODP.ObjectiveMap m = Main.dp.map(permitted_player_f);
 //        HashMap<UUID, String> p = m.asHashMap(UUID.class, String.class);
 //        DungeonMaster.permittedPlayers.addAll(p.keySet());
+        DungeonMaster.dms.clear();
         if (permitted_player_f.exists()) {
             try {
                 List<String> str = Files.readAllLines(permitted_player_f.toPath());

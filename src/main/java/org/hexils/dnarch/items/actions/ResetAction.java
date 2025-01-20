@@ -5,14 +5,17 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ResetAction extends Action {
-    private final List<Action> actions = new ArrayList<>();
+    private final Set<Action> actions = new HashSet<>();
 
     public ResetAction() {
         super(Type.RESET_ACTION);
@@ -47,6 +50,9 @@ public class ResetAction extends Action {
 
     @Override
     public void onTrigger() {
-//        for (Item)
+        actions.forEach(Action::reset);
     }
+
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) { return new ResetAction(); }
 }

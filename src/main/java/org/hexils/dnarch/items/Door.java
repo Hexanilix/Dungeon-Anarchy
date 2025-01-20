@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
 import org.hexils.dnarch.DungeonMaster;
@@ -15,6 +16,11 @@ import java.util.Collection;
 import java.util.List;
 
 public class Door extends Action {
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) {
+        return new Door();
+    }
+
     public enum Facing {
         N,
         S,
@@ -35,6 +41,7 @@ public class Door extends Action {
     private Location[][][] matrix;
 
     //TODO: Convert block list to matrix
+    public Door() { this(null, null); }
     public Door(List<Block> blocks, Facing face) {
         super(Type.DOOR);
         this.blocks = blocks;
@@ -53,11 +60,6 @@ public class Door extends Action {
     @Override
     protected ItemStack genItemStack() {
         return null;
-    }
-
-    @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
-
     }
 
     @Override

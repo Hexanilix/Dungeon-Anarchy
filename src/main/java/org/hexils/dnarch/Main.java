@@ -30,7 +30,7 @@ public final class Main extends JavaPlugin {
         String[] vs = v.split("-");
         minecraft_version = "v" + vs[0].substring(0, vs[0].length()-1) + vs[1].charAt(0) + vs[0].substring(vs[0].length()-1);
     }
-    public static JavaPlugin plugin;
+    public static Main plugin;
     public static final String name = "dungeon_anarchy";
     public static final Logger logger = new Logger("Dungeon Anarchy");
 
@@ -38,10 +38,12 @@ public final class Main extends JavaPlugin {
 
     public static class Config {
         public boolean readable_file_data = false;
+        public boolean auto_delete_empty_files = true;
     }
     public static class Debug {
         public boolean auto_exclude_fields = true;
         public boolean log_converting_process = false;
+        public boolean log_dungeon_error_stacktrace = true;
 
         public void logConvertingProcess(boolean b) { log_converting_process = b; dp.logConversions(b); }
     }
@@ -111,10 +113,11 @@ public final class Main extends JavaPlugin {
 
         dp.convertClass(LocationUtil.BoundingBox.class, bb -> new double[]{bb.getMinX(), bb.getMinY(), bb.getMinZ(), bb.getMaxX(), bb.getMaxY(), bb.getMaxZ()});
 
-//        dp.convertClass(Type.class, t -> t.getClass().getName());
-
-        dp.convertClass(Location.class, l -> Map.of("world", l.getWorld(),"x", l.getX(),"y", l.getY(),"z", l.getZ(),"yaw", l.getYaw(),"pitch", l.getPitch()));
-        dp.createClass(Location.class, om -> new Location(Bukkit.getWorld(om.getUUID("world")), om.getDouble("x"), om.getDouble("y"), om.getDouble("z"), om.getFloat("yaw"), om.getFloat("pitch")));
+        dp.convertClass(Location.class, l -> Map.of("world", l.getWorld(),"xyzyp", new double[]{l.getX(), l.getY(), l.getZ(), l.getYaw(), l.getPitch()}));
+        dp.createClass(Location.class, om -> {
+            double[] a = om.getDoubleArr("xyzyp");
+            return new Location(Bukkit.getWorld(om.getUUID("world")), a[0], a[1], a[2], (float) a[3], (float) a[4]);
+        });
         dp.processClasAs("org.bukkit.craftbukkit."+minecraft_version+".block.CraftBlock", Block.class);
         dp.convertClass(Block.class, b -> Map.of("world", b.getWorld(),"x", b.getX(),"y", b.getY(), "z", b.getZ()));
 
@@ -132,17 +135,17 @@ public final class Main extends JavaPlugin {
 
         dp.createClass(Block.class, om -> Bukkit.getWorld(om.getUUID("world")).getBlockAt(om.getInt("x"), om.getInt("y"), om.getInt("z")));
 
-        dp.convertFieldsExtending(DAItem.class, DAItem::getId);
-        dp.createFields(UUID.class, DAItem.class, DAItem::get);
+        dp.convertClassExtending(DAItem.class, DAItem::getId);
+        dp.createClassExtending(UUID.class, DAItem.class, DAItem::get);
 
         dp.convertFields(Dungeon.Section.class, Dungeon.Section::getId);
-        dp.convertFieldsExtending(DAItem.class, DAItem::getId);
-
         dp.excludeFieldsFor(Dungeon.Section.class, "renameable", "og_name");
 
+        dp.convertField(Dungeon.class, "items", Set.class, l -> ((Set<DAItem>) l).stream().map(da -> dp.toOodp(da, config.readable_file_data, true)).toList());
+        dp.convertField(Dungeon.class, "triggers", Set.class, l -> ((Set<Trigger>) l).stream().map(tr -> dp.toOodp(tr, config.readable_file_data, true)).toList());
         dp.createClass(Dungeon.class, om -> {
             if (om.isEmpty()) return null;
-            World w = Bukkit.getWorld(om.getUUID("world"));
+            World w = om.get("world", World.class);
             double[] ar = om.getDoubleArr("bounding_box");
             Dungeon d = null;
             try {
@@ -162,9 +165,10 @@ public final class Main extends JavaPlugin {
                 dp.createFields(UUID.class, Dungeon.Section.class, finalD::getSection);
                 Set<DAItem> items = new HashSet<>();
                 for (OODP.ObjectiveMap obm : om.getObjectiveList("items")) {
-                    DAItem da = obm.as(Type.get(obm.getString("type")).getDAClass());
+                    Type ty = Type.get(obm.getString("type"));
+                    DAItem da = obm.as(ty.getDAClass(), true);
                     Dungeon.Section s = d.getSection(obm.getUUID("section"));
-                    da.setSection(s);
+                    if (s != null) da.setSection(s);
                     items.add(da);
                 }
                 items.forEach(i -> {
@@ -231,6 +235,11 @@ public final class Main extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new GeneralListener(), this);
         Bukkit.getPluginManager().registerEvents(new Manageable.ManagableListener(), this);
         loadCommands();
+
+        load();
+    }
+
+    public static void load() {
         FileManager.loadData();
 
         dp.pretty(config.readable_file_data);
@@ -239,19 +248,22 @@ public final class Main extends JavaPlugin {
     }
 
     public static void reload() {
-        Dungeon.dungeons.clear();
-        Trigger.triggers.clear();
-        DungeonMaster.permittedPlayers.clear();
-        FileManager.loadConfig();
-        plugin.onDisable();
-        FileManager.loadData();
+        plugin.onDisable(true);
         plugin.onEnable();
     }
 
     @Override
-    public void onDisable() {
-        PluginThread.finish();
-        FileManager.saveData();
-        super.onDisable();
+    public void onDisable() { onDisable(true); }
+
+    public void onDisable(boolean save_data) {
+        Dungeon.dungeons.clear();
+        Trigger.instances.clear();
+        Action.instances.clear();
+        Condition.instances.clear();
+        DAItem.instances.clear();
+        if (save_data) {
+            PluginThread.finish();
+            FileManager.saveData();
+        }
     }
 }

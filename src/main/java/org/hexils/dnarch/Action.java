@@ -1,8 +1,11 @@
 package org.hexils.dnarch;
 
+import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.oodp.OODPExclude;
+import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
@@ -11,7 +14,18 @@ import static org.hexils.dnarch.Main.log;
 
 public abstract class Action extends DAItem implements Triggerable, Resetable {
 
-    public final static Collection<Action> actions = new HashSet<>();
+    public final static Set<Action> actions = new HashSet<>();
+    public static @Nullable Action get(String id) { return get(UUID.fromString(id)); }
+    public static @Nullable Action get(ItemStack it) {
+        String s = (String) NSK.getNSK(it, ITEM_UUID);
+        return s == null ? null : get(UUID.fromString(s));
+    }
+    public static @Nullable Action get(UUID id) {
+        for (Action d : actions)
+            if (d.getId().equals(id))
+                return d;
+        return null;
+    }
 
     public static String toReadableFormat(String in) {
         if (in == null) return null;
@@ -32,9 +46,9 @@ public abstract class Action extends DAItem implements Triggerable, Resetable {
         actions.add(this);
     }
 
-    public static <E extends Enum<E>> E getEnum(Class<E> enumList, String name) {
-        if (name == null || enumList == null) return null;
-        for (E e : enumList.getEnumConstants())
+    public static <E extends Enum<E>> E getEnum(Class<E> eclazz, String name) {
+        if (name == null || eclazz == null) return null;
+        for (E e : eclazz.getEnumConstants())
             if (e.name().equalsIgnoreCase(name))
                 return e;
         return null;

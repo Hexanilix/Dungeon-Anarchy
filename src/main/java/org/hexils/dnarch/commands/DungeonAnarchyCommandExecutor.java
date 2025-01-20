@@ -6,8 +6,10 @@ import org.bukkit.Material;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.hetils.jgl17.oodp.OODP;
 import org.hetils.mpdl.NSK;
+import org.hetils.mpdl.PluginThread;
 import org.hexils.dnarch.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,7 +42,7 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                 if (args.length == 1) {
                     log(Level.INFO, "Reloading...");
                     if (dm != null) dm.sendMessage(IF + "Reloading...");
-                    Main.reload();
+                    FileManager.loadData();
                     log(Level.INFO, "Done.");
                     if (dm != null) dm.sendMessage(OK + "Done.");
                 } else switch (args[1]) {
@@ -85,14 +87,24 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             return true;
         }
         if (dm != null) switch (args[0]) {
-            case "help" -> {
-                dm.sendMessage(HELP_MSG);
-            }
+            case "help" -> dm.sendMessage(HELP_MSG);
             case "test" -> {
-
+                ItemStack is = new ItemStack(Material.BEDROCK);
+                dm.getInventory().addItem(is);
+                new PluginThread(() -> {
+                    log("test????");
+                    ItemMeta m = is.getItemMeta();
+                    m.setDisplayName("uy0nh9v437");
+                }).start(1500);
             }
             case "load" -> {
-                FileManager.loadDungeons();
+                if (args.length == 1) {
+                    FileManager.loadData();
+                } else switch (args[1]) {
+                    case "config" -> FileManager.loadConfig();
+                    case "dungeon" -> FileManager.loadDungeons();
+                    case "permissions" -> FileManager.loadPermittedPlayers();
+                }
             }
             //TODO make a permissions plugin
             case "permitted_players" -> {
@@ -136,34 +148,31 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             }
             case "debug" -> {
                 if (DungeonMaster.permittedPlayers.contains(p.getUniqueId())) {
-                    if (args.length > 1) {
-                        switch (args[1]) {
-                            case "loc_dungeon_saving_process" -> {
-                                if (args.length > 2) {
-                                    if (args[2].equalsIgnoreCase("true")) {
-                                        Main.debug.logConvertingProcess(true);
-                                        dm.sendInfo(DungeonMaster.Sender.DEBUG, "Enabled logging of the dungeon saving process");
-                                    }
-                                    else if (args[2].equalsIgnoreCase("false")) {
-                                        Main.debug.logConvertingProcess(false);
-                                        dm.sendInfo(DungeonMaster.Sender.DEBUG, "Disabled logging of the dungeon saving process");
-                                    }
+                    if (args.length > 1) switch (args[1]) {
+                        case "logOodp" -> {
+                            if (args.length > 2) {
+                                if (args[2].equalsIgnoreCase("true")) {
+                                    Main.debug.logConvertingProcess(true);
+                                    dm.sendInfo(DungeonMaster.Sender.DEBUG, "Enabled logging of the dungeon saving process");
+                                } else if (args[2].equalsIgnoreCase("false")) {
+                                    Main.debug.logConvertingProcess(false);
+                                    dm.sendInfo(DungeonMaster.Sender.DEBUG, "Disabled logging of the dungeon saving process");
                                 }
                             }
-                            case "get_item" -> {
-                                if (args.length >= 3) {
-                                    try {
-                                        DAItem da = DAItem.get(UUID.fromString(args[2]));
-                                        if (da != null) {
-                                            dm.giveItem(da);
-                                            dm.sendInfo(DungeonMaster.Sender.DEBUG, "Found " + da.getName());
-                                        }
-                                        else dm.sendError(DungeonMaster.Sender.DEBUG,"No item with id " + args[2]);
-                                    } catch (Exception e) {
-                                        dm.sendError(DungeonMaster.Sender.DEBUG, "Invalid UUID");
+                        }
+                        case "item" -> {
+                            if (args.length > 2) {
+                                try {
+                                    DAItem da = DAItem.get(UUID.fromString(args[2]));
+                                    if (da != null) {
+                                        dm.giveItem(da);
+                                        dm.sendInfo(DungeonMaster.Sender.DEBUG, "Found " + da.getName());
                                     }
+                                    else dm.sendError(DungeonMaster.Sender.DEBUG,"No item with id " + args[2]);
+                                } catch (Exception e) {
+                                    dm.sendError(DungeonMaster.Sender.DEBUG, "Invalid UUID");
                                 }
-                            }
+                            } else dm.sendWarning(DungeonMaster.Sender.DEBUG, "Provide a UUID");
                         }
                     }
                 } else dm.sendMessage(ER + "No permission.");

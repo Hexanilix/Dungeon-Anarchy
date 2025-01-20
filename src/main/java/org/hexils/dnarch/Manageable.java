@@ -7,6 +7,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
@@ -47,7 +48,7 @@ public abstract class Manageable implements Deletable {
     public static final NSK<Byte, Boolean> SIGN_CHANGEABLE = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-sign_changeable"), PersistentDataType.BOOLEAN);
     public static final NSK<Byte, Boolean> ITEM_RENAME = new NSK<>(new NamespacedKey(Main.plugin, "gui_item-prompt_rename"), PersistentDataType.BOOLEAN);
 
-    public static void setField(ItemStack i, String field, String value) { NSK.setNSK(i, ITEM_FIELD_VALUE, field + " " + value); }
+    public static void changeField(ItemStack i, String field, String value) { NSK.setNSK(i, ITEM_FIELD_VALUE, field + " " + value); }
 
     public static void setGuiAction(ItemStack i, String action) { NSK.setNSK(i, ITEM_ACTION, action); }
 
@@ -94,7 +95,7 @@ public abstract class Manageable implements Deletable {
                                 if (m == null) mg.rename(dm, () -> dm.openInventory(opi));
                                 else mg.rename(dm, () -> mg.manage(dm));
                             }
-                            if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) mg.setField(dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
+                            if (NSK.hasNSK(it, ITEM_FIELD_VALUE)) mg.changeField(event, dm, (String) NSK.getNSK(event.getCurrentItem(), ITEM_FIELD_VALUE));
                             if (NSK.hasNSK(it, ITEM_ACTION)) mg.doAction(dm, (String) NSK.getNSK(it, ITEM_ACTION), event);
                             if (NSK.hasNSK(it, ITEM_LIST_GUI)) ItemListGUI.get(UUID.fromString((String) NSK.getNSK(it, ITEM_LIST_GUI))).manage(dm, mg);
                         }
@@ -226,19 +227,24 @@ public abstract class Manageable implements Deletable {
         }
     }
 
-    protected void createGUI() {}
+    protected abstract void createGUI();
 
     protected void updateGUI() {}
 
-    public final void setField(DungeonMaster dm, String value) {
+    public final void setField(int index, ItemStack item, String field) {
+        NSK.setNSK(item, ITEM_FIELD_VALUE, field);
+        this.setItem(index, item);
+    }
+
+    public final void changeField(InventoryClickEvent event, DungeonMaster dm, String value) {
         if (value != null) {
             String[] v = value.split(" ", 2);
             if (v.length > 1)
-                changeField(dm, v[0], v[1]);
+                changeField(dm, v[0], event.getClick());
         }
     }
 
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {}
+    protected void changeField(DungeonMaster dm, @NotNull String field, ClickType click) {}
 
     protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {}
 
@@ -266,11 +272,14 @@ public abstract class Manageable implements Deletable {
         }
     }
 
-    public void delete() {
+    public final void delete() {
+        onDelete();
         instances.remove(this);
         gui = null;
         System.gc();
     }
+
+    protected void onDelete() {}
 
     protected final void fillBox(int i, int i1, int i2, List<ItemStack> list) { InventoryUtil.fillBox(gui, i, i1, i2, list); }
     protected final void fillBox(int i, int i1, int i2, ItemStack... items) { InventoryUtil.fillBox(gui, i, i1, i2, items); }

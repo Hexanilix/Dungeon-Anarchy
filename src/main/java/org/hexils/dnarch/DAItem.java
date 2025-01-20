@@ -28,7 +28,7 @@ import static org.hexils.dnarch.Action.toReadableFormat;
 import static org.hexils.dnarch.Main.log;
 import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
 
-public abstract class DAItem extends Manageable implements Idable, Deletable {
+public abstract class DAItem extends Manageable implements Idable, Deletable, DAItemFactory {
     public static final NSK<String, String> ITEM_UUID = new NSK<>(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DAItem> instances = new ArrayList<>();
     public static @Nullable DAItem get(String id) { return get(UUID.fromString(id)); }
@@ -44,52 +44,17 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
     }
 
     public static @Nullable DAItem commandNew(@NotNull Type t, DungeonMaster dm, @NotNull String[] args) {
-        DAItem da = null;
-        switch (t) {
-            case REPLACE_BLOCK -> {
-                Material mat = args.length >= 1 ? Material.getMaterial(args[0].toUpperCase()) : null;
-                if (mat != null) {
-                    da = new ReplaceBlock(dm.getSelectedBlocks(), mat);
-                } else dm.sendMessage(ChatColor.RED + "Please select a valid material!");
-            }
-            case DESTROY_BLOCK -> {
-                da = new ReplaceBlock.DestroyBlock(dm.getSelectedBlocks());
-            }
-            case ENTITY_SPAWN_ACTION -> {
-                EntityType et = args.length >= 1 ? getEnum(EntityType.class, args[0]) : null;
-                if (et != null) {
-                    da = new EntitySpawnAction(new org.hexils.dnarch.items.EntitySpawn(et), dm.getSelectedBlocks());
-                } else dm.sendMessage(ChatColor.RED + "Please select a valid entity type");
-            }
-            case MODIFY_BLOCK -> {
-                ModifyBlock.ModType mt = args.length >= 1 ? ModifyBlock.ModType.get(args[0]) : null;
-                if (mt != null) {
-                    da = new ModifyBlock(dm.getSelectedBlocks(), mt);
-                } else dm.sendMessage(ChatColor.RED + "Please select a valid mod type!");
-            }
-
-
-
-            case WITHIN_DISTANCE -> {
-                Location l = null;
-                if (dm.hasBlocksSelected())
-                    l = org.hetils.mpdl.LocationUtil.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
-                if (l == null) l = dm.getLocation();
-                da = new WithinDistance(l);
-            }
-            case WITHIN_BOUNDS -> {
-
-            }
-            default -> {
-
-            }
+        if (!t.isCreatable()) {
+            dm.sendError(DungeonMaster.Sender.CREATOR, t.readableName() + " is not a creatable class");
+            return null;
         }
+        DAItem da = t.create(dm, args);
         if (da == null) {
             dm.sendError(ER + "Couldn't create " + toReadableFormat(t.name()));
             return null;
         }
         Dungeon d = dm.getCurrentDungeon();
-        Dungeon.Section s = d.getSection(dm.p);
+        Dungeon.Section s = null;
         if (da instanceof Action a) {
             if (a instanceof BlockAction b) {
                 dm.deselectBlocks();
@@ -107,6 +72,8 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
         } else if (da instanceof Condition c) {
 
         }
+        if (s == null) s = d.getSection(dm.p);
+        log("Section@DAItem: " + s);
         if (s != null) da.setSection(s);
         d.addItem(da);
         return da;
@@ -129,9 +96,9 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
     private final List<ItemStack> items = new ArrayList<>();
     Dungeon.Section section = null;
 
-    public DAItem(Type type) { this(type, type.getName()); }
+    public DAItem(Type type) { this(type, type.readableName()); }
     public DAItem(Type type, String name) { this(type, name, true); }
-    public DAItem(Type type, boolean renameable) { this(type, type.getName(), renameable); }
+    public DAItem(Type type, boolean renameable) { this(type, type.readableName(), renameable); }
     public DAItem(Type type, String name, boolean renameable) {
         super(name, renameable);
         this.type = type;
@@ -144,7 +111,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
             if (s.getItems().contains(this)) return;
         else if (section != null) section.removeItem(this);
         section = s;
-        section.addItem(this);
+        if (section != null) section.addItem(this);
     }
 
     @Override
@@ -176,7 +143,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable {
     }
 
     @Override
-    public void delete() {
+    public void onDelete() {
         instances.remove(this);
     }
 

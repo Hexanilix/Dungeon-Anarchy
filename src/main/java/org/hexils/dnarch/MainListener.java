@@ -62,23 +62,23 @@ public final class MainListener implements org.bukkit.event.Listener {
         } else {
             DAItem da = DAItem.get(item);
             if (da != null) {
-                if (da instanceof Trigger trig && p.isSneaking()) {
-                    event.setCancelled(true);
-                    if (ac == Action.LEFT_CLICK_AIR || ac == Action.LEFT_CLICK_BLOCK) {
-                        trig.trigger(true);
-                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Executed " + trig.getName());
-                    } else {
-                        trig.reset();
-                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Reset " + trig.getName());
+                if (p.isSneaking()) {
+                    if ((ac == Action.LEFT_CLICK_AIR || ac == Action.LEFT_CLICK_BLOCK) && da instanceof Triggerable tr) {
+                        tr.trigger();
+                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Running " + da.getName());
+                        return;
+                    } else if ((ac == Action.RIGHT_CLICK_AIR || ac == Action.RIGHT_CLICK_BLOCK) && da instanceof Resetable re) {
+                        re.reset();
+                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "Reseting " + da.getName());
+                        return;
                     }
-                } else {
-                    String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
-                    if (s != null) {
-                        DAItem di = DAItem.get(UUID.fromString(s));
-                        if (di != null) {
-                            di.manage(dm);
-                            event.setCancelled(true);
-                        }
+                }
+                String s = (String) NSK.getNSK(event.getItem(), ITEM_UUID);
+                if (s != null) {
+                    DAItem di = DAItem.get(UUID.fromString(s));
+                    if (di != null) {
+                        di.manage(dm);
+                        event.setCancelled(true);
                     }
                 }
             }

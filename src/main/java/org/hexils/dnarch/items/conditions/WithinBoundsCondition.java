@@ -12,9 +12,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
-import org.hexils.dnarch.Condition;
-import org.hexils.dnarch.Main;
-import org.hexils.dnarch.DungeonMaster;
+import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,34 +22,17 @@ import java.util.List;
 
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
-public class WithinBoundsCondition extends Condition {
+public class WithinBoundsCondition extends Condition implements RunnableDA {
     private LocationUtil.BoundingBox bounds;
-    @OODPExclude
     private BukkitRunnable runnable;
     @OODPExclude
     private boolean satisfied = false;
 
-    public WithinBoundsCondition(LocationUtil.@NotNull BoundingBox bounds) {
+    public WithinBoundsCondition() { this(null); }
+    public WithinBoundsCondition(LocationUtil.BoundingBox bounds) {
         super(Type.WITHIN_BOUNDS);
-        this.bounds = bounds.clone();
-        this.runnable = new BukkitRunnable() {
-            Collection<Entity> c;
-            final World w = WithinBoundsCondition.this.bounds.getWorld();
-            final @NotNull Location loc = LocationUtil.join(w, bounds.getCenter());
-            final double rad = bounds.getMax().distance(VectorUtil.from(loc));
-            @Override
-            public void run() {
-                c = w.getNearbyEntities(loc, rad, rad, rad).stream().filter(e -> e instanceof Player).toList();
-                if (!c.isEmpty()) {
-                    if (check(c)) {
-                        boolean h = satisfied;
-                        satisfied = true;
-                        if (!h) WithinBoundsCondition.this.onTrigger();
-                    } else satisfied = false;
-                } else satisfied = false;
-            }
-        };
-        this.runnable.runTaskTimer(Main.plugin, 0, 2);
+        this.bounds = bounds == null ? null : bounds.clone();
+        if (bounds != null) start();
     }
 
     private boolean check(@NotNull Collection<Entity> c) {
@@ -77,12 +58,37 @@ public class WithinBoundsCondition extends Condition {
     }
 
     @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
+    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
 
     @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
+    public DAItem create(DungeonMaster dm, String[] args) {
+        return new WithinBoundsCondition();
+    }
 
+    @Override
+    public void start() {
+        runnable = new BukkitRunnable() {
+            final World w = WithinBoundsCondition.this.bounds.getWorld();
+            final @NotNull Location loc = LocationUtil.join(w, bounds.getCenter());
+            final double rad = bounds.getMax().distance(VectorUtil.from(loc));
+
+            @Override
+            public void run() {
+                Collection<Entity> c = w.getNearbyEntities(loc, rad, rad, rad).stream().filter(e -> e instanceof Player).toList();
+                if (check(c)) {
+                    boolean h = satisfied;
+                    satisfied = true;
+                    if (!h) WithinBoundsCondition.this.onTrigger();
+                } else satisfied = false;
+            }
+        };
+        runnable.runTaskTimer(Main.plugin, 0, 2);
+    }
+
+    @Override
+    public void stop() {
+        runnable.cancel();
     }
 }

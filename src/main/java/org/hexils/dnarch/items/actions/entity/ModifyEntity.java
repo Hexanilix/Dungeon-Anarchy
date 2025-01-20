@@ -61,11 +61,6 @@ public class ModifyEntity extends Action {
     }
 
     @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, String value) {
-
-    }
-
-    @Override
     protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
 
     }
@@ -81,4 +76,7 @@ public class ModifyEntity extends Action {
                 "spawns=" + spawns.stream().map(s -> getId()) +
                 '}';
     }
+
+    @Override
+    public DAItem create(DungeonMaster dm, String[] args) { return new ModifyEntity(); }
 }

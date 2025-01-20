@@ -6,6 +6,8 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Openable;
 import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.BlockAction;
+import org.hexils.dnarch.DAItem;
+import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +20,16 @@ import java.util.Map;
 import static org.hetils.mpdl.ItemUtil.newItemStack;
 
 public class ModifyBlock extends BlockAction {
+    @Override
+    public DAItem create(DungeonMaster dm, String @NotNull [] args) {
+        if (args.length > 0) {
+            return new ModifyBlock(dm.getSelectedBlocks(), ModType.get(args[0]));
+        } else {
+            dm.sendError(DungeonMaster.Sender.CREATOR, "Please select a valid modification type!");
+            return null;
+        }
+    }
+
     public interface Modify { void modify(Block b); }
     public enum ModType {
         OPEN, CLOSE;
