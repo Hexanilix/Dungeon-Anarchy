@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.Main;
 import org.hexils.dnarch.Action;
@@ -15,10 +16,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static org.hexils.dnarch.Main.noimpl;
+
 public class Door extends Action {
     @Override
     public DAItem create(DungeonMaster dm, String[] args) {
-        return new Door();
+        return noimpl(dm);
     }
 
     public enum Facing {
@@ -62,15 +65,10 @@ public class Door extends Action {
         return null;
     }
 
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
-
-    }
-
+    @OODPExclude
     private BukkitRunnable openr = null;
-    private Collection<Block> mdblocks = new ArrayList<>();
     @Override
-    public void onTrigger() {
+    public void trigger() {
         if (isopen) return;
         openr = new BukkitRunnable() {
             private float ca = 0;
@@ -92,7 +90,7 @@ public class Door extends Action {
                 }
             }
         };
-        openr.runTaskTimer(Main.plugin, 0, 0);
+        openr.runTaskTimer(Main.plugin(), 0, 0);
     }
 
     public void halt() {

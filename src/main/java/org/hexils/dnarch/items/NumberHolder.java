@@ -4,17 +4,18 @@ import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.DungeonMaster;
 
-public class Multiplier extends DAItem {
+@Type.NotCreatable
+public class NumberHolder extends DAItem {
     @Override
-    public DAItem create(DungeonMaster dm, String[] args) {
-        return new Multiplier();
-    }
+    public DAItem create(DungeonMaster dm, String[] args) { return null; }
 
-    public static interface DoubleGetter { double get(); }
+    public interface DoubleGetter { double get(); }
 
     private DoubleGetter multi = () -> 1;
-    public Multiplier() {
-        super(Type.MULTIPLIER);
+    private DAItem root;
+    public NumberHolder(DAItem root) {
+        super(Type.NUMBER_HOLDER);
+
     }
 
     @Override

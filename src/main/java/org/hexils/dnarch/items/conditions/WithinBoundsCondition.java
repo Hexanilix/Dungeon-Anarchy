@@ -10,7 +10,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hetils.mpdl.LocationUtil;
+import org.hetils.mpdl.location.BoundingBox;
+import org.hetils.mpdl.location.LocationUtil;
 import org.hetils.mpdl.VectorUtil;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Type;
@@ -20,16 +21,17 @@ import java.util.Collection;
 import java.util.List;
 
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
 public class WithinBoundsCondition extends Condition implements RunnableDA {
-    private LocationUtil.BoundingBox bounds;
+    private BoundingBox bounds;
+    @OODPExclude
     private BukkitRunnable runnable;
     @OODPExclude
     private boolean satisfied = false;
 
     public WithinBoundsCondition() { this(null); }
-    public WithinBoundsCondition(LocationUtil.BoundingBox bounds) {
+    public WithinBoundsCondition(BoundingBox bounds) {
         super(Type.WITHIN_BOUNDS);
         this.bounds = bounds == null ? null : bounds.clone();
         if (bounds != null) start();
@@ -37,34 +39,25 @@ public class WithinBoundsCondition extends Condition implements RunnableDA {
 
     private boolean check(@NotNull Collection<Entity> c) {
         for (Entity e : c)
-            if (WithinBoundsCondition.this.bounds.contains(e.getLocation()))
+            if (this.bounds.contains(e.getLocation()))
                 return true;
         return false;
     }
 
     @Override
-    public boolean isSatisfied() {
-        return satisfied;
-    }
-
-    @Override
-    protected void createGUI() {
-
-    }
+    public boolean isSatisfied() { return satisfied; }
 
     @Override
     protected ItemStack genItemStack() {
         return newItemStack(Material.LIGHT_WEIGHTED_PRESSURE_PLATE, ChatColor.GOLD + "Area Condition", List.of(ChatColor.GRAY + "This condition triggers whenever a player enters"));
     }
 
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
-
-    }
 
     @Override
-    public DAItem create(DungeonMaster dm, String[] args) {
-        return new WithinBoundsCondition();
+    public DAItem create(@NotNull DungeonMaster dm, String[] args) {
+        if (dm.hasAreaSelected()) this.bounds = new BoundingBox(dm.getSelectedArea());
+        dm.clearSelection();
+        return this;
     }
 
     @Override
@@ -84,11 +77,14 @@ public class WithinBoundsCondition extends Condition implements RunnableDA {
                 } else satisfied = false;
             }
         };
-        runnable.runTaskTimer(Main.plugin, 0, 2);
+        runnable.runTaskTimer(Main.plugin(), 0, 2);
     }
 
     @Override
     public void stop() {
         runnable.cancel();
     }
+
+    @Override
+    public void onTrigger() {}
 }

@@ -4,22 +4,17 @@ import org.bukkit.inventory.ItemStack;
 import org.hexils.dnarch.Condition;
 import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.DungeonMaster;
-import org.hexils.dnarch.items.InnerItemClass;
 import org.hexils.dnarch.items.Type;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
-@InnerItemClass
 public class NOTCondition extends Condition {
 
-    private final Set<Condition> conditions = new HashSet<>();
-
+    private final List<Condition> conditions = new ArrayList<>();
 
     public NOTCondition() {
         super(Type.NOT);
+
     }
 
     @Override
@@ -34,6 +29,13 @@ public class NOTCondition extends Condition {
     protected void createGUI() {
         this.setSize(54);
         this.fillBox(10, 7, 4, (ItemStack) null);
+    }
+
+    @Override
+    public void onInvClose() {
+        for (DAItem da : DAItem.get(this.getBox(27, 9, 3)))
+            if (da instanceof Condition c)
+                conditions.add(c);
     }
 
     @Override

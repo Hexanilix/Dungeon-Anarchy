@@ -3,16 +3,17 @@ package org.hexils.dnarch;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
+import org.hetils.jgl17.Getter;
 import org.hetils.jgl17.Pair;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hetils.mpdl.LocationUtil;
-import org.hetils.mpdl.VectorUtil;
-import org.hetils.mpdl.GeneralListener;
+import org.hetils.mpdl.*;
+import org.hetils.mpdl.location.BoundingBox;
+import org.hetils.mpdl.location.LocationUtil;
 import org.hexils.dnarch.items.Type;
 import org.hexils.dnarch.items.conditions.WithinBoundsCondition;
 import org.jetbrains.annotations.Contract;
@@ -23,15 +24,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.commands.DungeonCommandExecutor.*;
-import static org.hexils.dnarch.commands.DungeonCreatorCommandExecutor.W;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
-public class Dungeon extends Manageable implements Savable, Deletable {
-
-    public Set<Trigger> getTriggers() {
-        return triggers;
-    }
+public class Dungeon extends DAManageable implements Savable {
 
     public static class DuplicateNameException extends Exception {  public DuplicateNameException(String s) { super(s); } }
     public static class DungeonIntersectViolation extends Exception {  public DungeonIntersectViolation(String s) { super(s); } }
@@ -55,9 +50,9 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     @Contract(pure = true)
     public static @Nullable Dungeon get(Entity e) { return e != null ? get(e.getLocation()) : null; }
 
-    public class Section extends Manageable {
+    public class Section extends DAManageable {
         private UUID id;
-        private final LocationUtil.BoundingBox bounds;
+        private final BoundingBox bounds;
         private final WithinBoundsCondition section_enter;
         private Material displ_mat = Material.GREEN_CONCRETE;
         @OODPExclude
@@ -66,14 +61,12 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         private final ItemListGUI item_gui;
         @OODPExclude
         private final ItemListGUI trigger_gui;
-//        @OODPExclude
-//        private Set<DAItem> items = new HashSet<>();
-//        @OODPExclude
-//        private Set<Trigger> triggers = new HashSet<>();
+        @OODPExclude
+        private final Getter<Set<DAItem>> get_items = () -> items.stream().filter(da -> da.section == this).collect(Collectors.toSet());
 
         public Section(Pair<Location, Location> selection) { this(selection, "Section" + sections.size()); }
-        public Section(Pair<Location, Location> selection, String name) { this(UUID.randomUUID(), name, new LocationUtil.BoundingBox(selection)); }
-        Section(UUID id, String name, LocationUtil.BoundingBox bounds) {
+        public Section(Pair<Location, Location> selection, String name) { this(UUID.randomUUID(), name, new BoundingBox(selection)); }
+        Section(UUID id, String name, BoundingBox bounds) {
             super(name, true, 54);
             this.id = id;
             this.bounds = bounds;
@@ -89,21 +82,36 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                     Material.ENDER_CHEST,
                     ChatColor.GREEN + "Items",
                     List.of(ChatColor.GRAY + "Shows the list of items this section contains")),
-                    () -> items.stream().filter(da -> da.section == this).collect(Collectors.toSet())
+                    get_items
             );
             this.trigger_gui = new ItemListGUI(() -> getName() + " triggers", () -> newItemStack(
                     Material.COMPARATOR, ChatColor.YELLOW + "Triggers"),
                     () -> triggers.stream().filter(da -> da.section == this).collect(Collectors.toSet())
             );
+            this.onRename(() -> {
+                event_gui.setName(getName());
+                item_gui.setName(getName());
+            });
             sections.add(this);
         }
 
-        @Override
-        public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { if (onRename != null) onRename.run(); event_gui.setName(getName()); item_gui.setName(getName());}); }
-
         public UUID getId() { return id; }
 
-        public LocationUtil.BoundingBox getBounds() { return bounds; }
+        public Set<DAItem> getItems() { return get_items.get(); }
+
+        public boolean addItem(@NotNull DAItem i) {
+            boolean r = Dungeon.this.addItem(i);
+            if (r) i.setSection(this);
+            return r;
+        }
+
+        public boolean removeItem(DAItem i) {
+            boolean r = Dungeon.this.removeItem(i);
+            if (r) i.setSection(null);
+            return r;
+        }
+
+        public BoundingBox getBounds() { return bounds; }
 
         @Override
         protected void createGUI() {
@@ -116,35 +124,25 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                     Material.ENDER_EYE,
                     ChatColor.AQUA + "Show/Hide Section",
                     List.of(ChatColor.GRAY + "Click to display or hide the bounding area of the section"),
-                    ITEM_ACTION, "displaySection")
+                    Manageable.ITEM_ACTION_NSK, "displaySection")
             );
             this.setItem(24, newItemStack(
                     Material.TNT,
                     ChatColor.RED + "Delete Section",
                     List.of(ChatColor.DARK_RED + "Click to delete this section from \"" + dungeon_info.display_name + "\""),
-                    ITEM_ACTION, "deleteSection")
+                    Manageable.ITEM_ACTION_NSK, "deleteSection")
             );
         }
 
         public WithinBoundsCondition getWhithinBoundCondition() { return section_enter; }
 
-        public Set<DAItem> getItems() { return items; }
-
-        public void addItem(@NotNull DAItem i) { items.add(i); }
-
-        public boolean removeItem(DAItem i) { return items.remove(i); }
-
-        boolean addTrigger(Trigger t) { return triggers.add(t); }
-
-        boolean removeTrigger(Trigger t) { return triggers.add(t); }
-
         public @NotNull Location getCenter() { return LocationUtil.join(bounds.getWorld(), bounds.getCenter()); }
 
         @Override
-        protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
+        protected void action(DungeonMaster dm, @NotNull String action, String[] args, ClickType click) {
             switch (action) {
-                case "showEvents" -> event_gui.manage(dm, this);
-                case "showItems" -> item_gui.manage(dm, this);
+                case "showEvents" -> dm.manage(event_gui);
+                case "showItems" -> dm.manage(item_gui);
                 case "displaySection" -> {
                     if (!dm.hideSelection(this)) {
                         if (viewers.contains(dm)) viewers.add(dm);
@@ -159,33 +157,36 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             Manageable m;
             if (dm.isManaging()) {
                 m = dm.getCurrentManageable();
-                dm.closeInventory();
+                dm.holdManagement(true);
             } else m = null;
-            GeneralListener.confirmWithPlayer(dm.p, W + "Are you sure you want to delete section \"" + getName() + W + "\"? (yes/no)", text -> {
+            GeneralListener.promptPlayer(dm, W + "Are you sure you want to delete section \"" + getName() + W + "\"? (yes/no)", text -> {
                 if (text.equalsIgnoreCase("yes")) {
                     if (sections.size() == 1) {
                         dm.sendMessage(ER + "You can't delete the main sector of a dungeon! Use \"/dc delete\" to delete the dungeon");
-                        return true;
+                    } else {
+                        this.delete();
+                        if (mains == this) {
+                            mains = sections.get(0);
+                            dm.sendMessage(W + "Set the main dungeon sector to \"" + mains.getName() + "\"");
+                        }
+                        updateBoundingBox();
+                        viewers.forEach(v -> v.hideSelection(this));
+                        dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Deleted section \"" + getName() + "\"!.");
                     }
-                    this.delete();
-                    if (mains == this) {
-                        mains = sections.get(0);
-                        dm.sendMessage(W + "Set the main dungeon sector to \"" + mains.getName() + "\"");
-                    }
-                    updateBoundingBox();
-                    viewers.forEach(v -> v.hideSelection(this));
-                    dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Deleted section \"" + getName() + "\"!.");
                 } else {
                     dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Cancelled.");
-                    if (m != null) m.manage(dm);
+                    dm.manage(m);
                 }
-                return true;
-            }, () -> dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Cancelled."));
+            }, () -> {
+                dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Cancelled.");
+                dm.holdManagement(false);
+            });
         }
 
         @Override
         public void onDelete() {
             sections.remove(this);
+            this.get_items.get().forEach(DAItem::delete);
             super.delete();
         }
 
@@ -193,7 +194,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
         public ItemStack toItem() {
             ItemStack i = newItemStack(displ_mat, getName());
-            Manageable.setGuiAction(i, "open", id.toString());
+            DAManageable.setAction(i, "open", id.toString());
             return i;
         }
 
@@ -209,7 +210,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         }
     }
 
-    private final LocationUtil.BoundingBox bounding_box;
+    private final BoundingBox bounding_box;
     private final World world;
     private List<Section> sections = new ArrayList<>();
     private Section mains;
@@ -224,12 +225,11 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     @OODPExclude
     private final List<DungeonMaster> viewers = new ArrayList<>();
     @OODPExclude
-    private List<DungeonMaster> editors = new ArrayList<>();
+    private Set<DungeonMaster> editors = new HashSet<>();
     public final Condition dungeon_start = new Condition(Type.DUNGEON_START, false) {
-        @Override
-        protected void createGUI() {
 
-        }
+        @Override
+        protected void createGUI() {}
 
         @Contract(pure = true)
         @Override
@@ -267,7 +267,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             throw new RuntimeException(e.getCause());
         }
     }
-    public Dungeon(String name, World w, LocationUtil.BoundingBox bounds, DungeonInfo dg_info) throws DuplicateNameException, DungeonIntersectViolation {
+    public Dungeon(String name, World w, BoundingBox bounds, DungeonInfo dg_info) throws DuplicateNameException, DungeonIntersectViolation {
         super(name);
         if (get(name) != null) throw new DuplicateNameException("Dungeon " + name + "already exists");
         Section si = getIntersectedSection(bounds);
@@ -279,16 +279,6 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         this.dungeon_info = dg_info;
         dungeons.add(this);
     }
-
-    public DAItem newTrigger() {
-        Trigger t = new Trigger();
-        triggers.add(t);
-        return t;
-    }
-
-    public void setItems(Set<DAItem> s) { items.addAll(s); }
-
-    public void setTriggers(Set<Trigger> s) { triggers.addAll(s); }
 
     public Dungeon(UUID creator, String name, @NotNull Pair<Location, Location> sec) throws DuplicateNameException, DungeonIntersectViolation {
         super(name, true,  54);
@@ -305,7 +295,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         this.entrance_location.setY(mains.bounds.getMinY());
         while (entrance_location.getBlock().getType() != Material.AIR)
             entrance_location.add(0, 1, 0);
-        bounding_box = new LocationUtil.BoundingBox(sec);
+        bounding_box = new BoundingBox(sec);
         dungeons.add(this);
     }
 
@@ -324,7 +314,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         return null;
     }
 
-    public static @Nullable Section getIntersectedSection(LocationUtil.BoundingBox bb) {
+    public static @Nullable Section getIntersectedSection(BoundingBox bb) {
         for (Dungeon d : dungeons)
             if (d.bounding_box.intersects(bb))
                 for (Section s : d.sections)
@@ -333,7 +323,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         return null;
     }
 
-    Section newSection(UUID id, String name, LocationUtil.BoundingBox bounds) { return new Section(id, name, bounds); }
+    Section newSection(UUID id, String name, BoundingBox bounds) { return new Section(id, name, bounds); }
     public @NotNull String commandNewSection(@NotNull DungeonMaster dm, @NotNull String[] args) {
         if (dm.hasAreaSelected()) {
             if (dm.isEditing()) {
@@ -350,17 +340,32 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         } else return ER + "You need to first select an area to create a section!";
     }
 
-    public void addItem(DAItem da) { items.add(da); }
-    public void removeItem(DAItem da) { items.remove(da); }
+    public boolean addItem(@NotNull DAItem i) {
+        if (i instanceof Trigger t) return triggers.add(t);
+        else return items.add(i);
+    }
+
+    public boolean removeItem(DAItem i) {
+        if (i instanceof Trigger t) return triggers.remove(t);
+        else return items.remove(i);
+    }
+
+    public DAItem newTrigger() {
+        Trigger t = new Trigger();
+        triggers.add(t);
+        return t;
+    }
+
+    public Set<Trigger> getTriggers() { return triggers; }
 
     public Location getEntranceLocation() { return entrance_location; }
 
     public void addPlayer(Player p) { this.players.add(p); }
     public void removePlayer(Player p) { this.players.remove(p); }
 
-    public void addEditor(DungeonMaster dm) { if (!this.editors.contains(dm)) this.editors.add(dm); }
+    public void addEditor(DungeonMaster dm) { this.editors.add(dm); }
     public void removeEditor(DungeonMaster dm) { this.editors.remove(dm); }
-    public List<DungeonMaster> getEditors() { return editors; }
+    public Set<DungeonMaster> getEditors() { return editors; }
 
     public void setOpen(boolean b) { this.open = b && editors.isEmpty(); }
     public boolean isOpen() { return this.open; }
@@ -449,20 +454,22 @@ public class Dungeon extends Manageable implements Savable, Deletable {
         dm.hideSelection(this);
         sections.forEach(dm::hideSelection);
         if (dm.isEditing() && dm.getCurrentDungeon() == this)
-            dm.setCurrentDungeon(this);
+            dm.editDungeon(this);
     }
 
     public void attemptRemove(@NotNull DungeonMaster dm) {
         String name = this.getDungeonInfo().display_name;
-        GeneralListener.confirmWithPlayer(dm.p, W + "Are you sure you want to delete dungeon \"" + name + "\"? (yes/no)", text -> {
+        GeneralListener.promptPlayer(dm, W + "Are you sure you want to delete dungeon \"" + name + "\"? (yes/no)", text -> {
             if (text.equalsIgnoreCase("yes")) {
                 this.delete();
                 this.removeViewer(dm);
-                dm.setCurrentDungeon(null);
-                dm.sendMessage(IF + "Deleted dungeon \"" + name + "\"!");
+                dm.editDungeon(null);
+                dm.clearOfDeletedDAItems();
+                dm.sendMessage(DungeonMaster.Sender.CREATOR, IF + "Deleted dungeon \"" + name + "\"!");
+            } else {
+                dm.sendInfo(DungeonMaster.Sender.CREATOR, "Cancelled");
             }
-            return true;
-        });
+        }, () -> dm.sendInfo(DungeonMaster.Sender.CREATOR, "Cancelled"));
     }
 
     public Section getSection(UUID id) {
@@ -497,15 +504,13 @@ public class Dungeon extends Manageable implements Savable, Deletable {
 
     //Manageable
     @OODPExclude
-    private final Manageable sector_gui_list = new Manageable(()->Dungeon.this.getName() + " sections", false, 54) {
-        @Override
-        protected void createGUI() {}
+    private final DAManageable sector_gui_list = new DAManageable(()->Dungeon.this.getName() + " sections", false, 54) {
 
         @Override
         protected void updateGUI() { this.fillBox(10, 7, 4, sections.stream().map(Section::toItem).toList()); }
 
         @Override
-        protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
+        protected void action(DungeonMaster dm, @NotNull String action, String[] args, ClickType click) {
             if (action.equalsIgnoreCase("open") && args.length > 0) {
                 Section s = null;
                 UUID id = UUID.fromString(args[0]);
@@ -514,7 +519,7 @@ public class Dungeon extends Manageable implements Savable, Deletable {
                         s = sc;
                         break;
                     }
-                if (s != null) s.manage(dm, this);
+                if (s != null) dm.manage(s);
             }
         }
     };
@@ -528,16 +533,14 @@ public class Dungeon extends Manageable implements Savable, Deletable {
     
     @Override
     protected void updateGUI() {
-        if (sections != null) {
-            this.setItem(20, dungeon_event_list.toItem());
-            this.setItem(21, newItemStack(Material.SHULKER_BOX, ChatColor.GREEN + "Sections", sections.stream().map(s -> ChatColor.GRAY + s.getName()).toList(), ITEM_ACTION, "showDungeonSections"));
-        }
+        this.setItem(20, dungeon_event_list.toItem());
+        this.setAction(21, newItemStack(Material.SHULKER_BOX, ChatColor.GREEN + "Sections", sections.stream().map(s -> ChatColor.GRAY + s.getName()).toList()), "showDungeonSections");
     }
 
     @Override
-    protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
+    protected void action(DungeonMaster dm, @NotNull String action, String[] args, ClickType click) {
         switch (action) {
-            case "showDungeonSections" -> sector_gui_list.manage(dm, this);
+            case "showDungeonSections" -> dm.manage(sector_gui_list);
         }
     }
 
@@ -566,8 +569,10 @@ public class Dungeon extends Manageable implements Savable, Deletable {
             dm.hideSelection(this);
             sections.forEach(dm::hideSelection);
             if (dm.isEditing() && dm.getCurrentDungeon() == this)
-                dm.setCurrentDungeon(this);
+                dm.editDungeon(this);
         });
+        items.forEach(DAItem::delete);
+        triggers.forEach(Trigger::delete);
         dungeons.remove(this);
         FileManager.deleteFile(this);
     }

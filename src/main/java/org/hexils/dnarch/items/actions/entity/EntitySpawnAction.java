@@ -6,11 +6,11 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
-import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.oodp.OODPExclude;
 import org.hexils.dnarch.*;
-import org.hexils.dnarch.items.Multiplier;
+import org.hexils.dnarch.items.EntitySpawn;
+import org.hexils.dnarch.items.NumberHolder;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,29 +18,38 @@ import java.util.*;
 import java.util.logging.Level;
 
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
 public class EntitySpawnAction extends BlockAction {
 
+    static {
+        setTabComplete(args -> {
+            if (args.length == 1) return Arrays.stream(EntityType.values()).map(e -> e.name().toLowerCase()).toList();
+            else return null;
+        });
+    }
+
     private final List<org.hexils.dnarch.items.EntitySpawn> entities = new ArrayList<>();
+    @OODPExclude
     private final EntitySpawnCondition ent_spaw_c = new EntitySpawnCondition();
+    @OODPExclude
     private final EntityDeathCondition entity_death_event = new EntityDeathCondition();
     @OODPExclude
     private List<Entity> spawned_entities = null;
-    private Multiplier multiplier = null;
+    private NumberHolder multiplier = null;
 
+    public EntitySpawnAction() { super(Type.ENTITY_SPAWN_ACTION); }
     public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn e, Block sp) { this(List.of(e), List.of(sp)); }
     public EntitySpawnAction(org.hexils.dnarch.items.EntitySpawn entity, List<Block> spawnp) { this(List.of(entity), spawnp); }
     public EntitySpawnAction(List<org.hexils.dnarch.items.EntitySpawn> entities, List<Block> spawnp) {
         super(Type.ENTITY_SPAWN_ACTION, spawnp);
         if (spawnp.isEmpty()) throw new IllegalArgumentException("Spawn locations cannot be null");
         this.entities.addAll(entities);
-        this.cgui = new ItemListGUI(getName(), ent_spaw_c, entity_death_event);
     }
 
     @Override
-    public void onTrigger() {
+    public void trigger() {
         if (!triggered) {
             List<Entity> spawnede = new ArrayList<>();
             Random r = new Random();
@@ -52,11 +61,11 @@ public class EntitySpawnAction extends BlockAction {
                     ent.setCustomNameVisible(true);
                     ent.setCustomName(e.name);
                 } else
-                    log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.LocationUtil.toReadableFormat(l));
+                    log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.location.LocationUtil.toReadableFormat(l));
             }
             this.spawned_entities = spawnede;
             this.triggered = true;
-            ent_spaw_c.onTrigger();
+            ent_spaw_c.trigger();
         }
     }
 
@@ -81,9 +90,7 @@ public class EntitySpawnAction extends BlockAction {
     public List<Entity> getSpawnedEntities() { return spawned_entities; }
 
     @OODPExclude
-    private final ItemListGUI cgui;
-    @Override
-    public void rename(@NotNull DungeonMaster dm, Runnable onRename) { super.rename(dm, () -> { onRename.run(); cgui.setName(getName()); }); }
+    private final ItemListGUI cgui = new ItemListGUI(getName(), ent_spaw_c, entity_death_event);;
 
     @Override
     protected void createGUI() {
@@ -100,12 +107,6 @@ public class EntitySpawnAction extends BlockAction {
         this.fillBox(27, 9, 3, entities.stream().map(DAItem::getItem).toList());
     }
 
-    @Override
-    protected void action(DungeonMaster dm, @NotNull String action, String[] args, InventoryClickEvent event) {
-        switch (action) {
-
-        }
-    }
 
     public EntitySpawnCondition getEntitySpawnCondition() { return ent_spaw_c; }
     public EntityDeathCondition getEntityDeathCondition() { return entity_death_event; }
@@ -123,14 +124,13 @@ public class EntitySpawnAction extends BlockAction {
     }
 
     @Override
-    public DAItem create(DungeonMaster dm, String[] args) {
-        EntityType et = args.length >= 1 ? getEnum(EntityType.class, args[0]) : null;
-        if (et != null) {
-            return new EntitySpawnAction(new org.hexils.dnarch.items.EntitySpawn(et), dm.getSelectedBlocks());
-        } else {
-            dm.sendMessage(ChatColor.RED + "Please select a valid entity type");
-            return null;
+    public DAItem create(@NotNull DungeonMaster dm, String[] args) {
+        if (dm.hasBlocksSelected())
+            affected_blocks.addAll(dm.getSelectedBlocks());
+        if (args.length > 0) {
+            this.entities.add(new EntitySpawn(EntityType.valueOf(args[0].toUpperCase())));
         }
+        return this;
     }
 
     public class EntitySpawnCondition extends Condition {
@@ -172,6 +172,6 @@ public class EntitySpawnAction extends BlockAction {
         }
 
         @Override
-        public DAItem create(DungeonMaster dm, String[] args) { return null; }
+        public DAItem create(@NotNull DungeonMaster dm, String[] args) { return this; }
     }
 }

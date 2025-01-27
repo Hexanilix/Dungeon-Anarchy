@@ -2,14 +2,12 @@ package org.hexils.dnarch;
 
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hetils.mpdl.NSK;
+import org.hetils.mpdl.item.NSK;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-
-import static org.hexils.dnarch.Main.log;
 
 
 public abstract class Action extends DAItem implements Triggerable, Resetable {
@@ -17,7 +15,7 @@ public abstract class Action extends DAItem implements Triggerable, Resetable {
     public final static Set<Action> actions = new HashSet<>();
     public static @Nullable Action get(String id) { return get(UUID.fromString(id)); }
     public static @Nullable Action get(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
+        String s = NSK.getNSK(it, ITEM_UUID);
         return s == null ? null : get(UUID.fromString(s));
     }
     public static @Nullable Action get(UUID id) {
@@ -25,17 +23,6 @@ public abstract class Action extends DAItem implements Triggerable, Resetable {
             if (d.getId().equals(id))
                 return d;
         return null;
-    }
-
-    public static String toReadableFormat(String in) {
-        if (in == null) return null;
-        String[] spl = in.toLowerCase().replace(" ", "_").split("_");
-        StringBuilder s = new StringBuilder().append((char) (spl[0].charAt(0) - 32)).append(spl[0], 1, spl[0].length());
-        for (int i = 1; i < spl.length; i++) {
-            String st = spl[i];
-            s.append(' ').append(((char) (st.charAt(0) - 32))).append(st, 1, st.length());
-        }
-        return s.toString();
     }
 
     @OODPExclude
@@ -62,7 +49,5 @@ public abstract class Action extends DAItem implements Triggerable, Resetable {
         resetAction();
     }
 
-    public final boolean isTriggered() {
-        return triggered;
-    }
+    public final boolean isTriggered() { return triggered; }
 }

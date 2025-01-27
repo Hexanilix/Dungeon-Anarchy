@@ -7,7 +7,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.hetils.mpdl.NSK;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,19 +14,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 
-import static org.hetils.mpdl.InventoryUtil.*;
-import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.Main.log;
+import static org.hetils.jgl17.General.getMostFrequentValue;
+import static org.hetils.mpdl.inventory.InventoryUtil.BACKGROUND;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
 public final class Trigger extends DAItem implements Booled, Triggerable, Resetable {
     public static Collection<Trigger> triggers = new HashSet<>();
 
-    private final List<Action> actions = new ArrayList<>();
-    private final List<Condition> conditions = new ArrayList<>();
+    private final HashSet<Action> actions = new LinkedHashSet<>();
+    private final HashSet<Condition> conditions = new LinkedHashSet<>();
 
     public Trigger() {
         super(Type.TRIGGER);
-        triggers.add(this); }
+        triggers.add(this);
+    }
     public Trigger(List<Action> actions, List<Condition> conditions) {
         super(Type.TRIGGER);
         this.actions.addAll(actions);
@@ -36,55 +36,27 @@ public final class Trigger extends DAItem implements Booled, Triggerable, Reseta
         triggers.add(this);
     }
 
-    public List<Action> getActions() { return actions; }
+    public HashSet<Action> getActions() { return actions; }
 
-    public List<Condition> getConditions() { return conditions; }
+    public HashSet<Condition> getConditions() { return conditions; }
 
     @Override
     protected void updateGUI() {
-        fillBox(18, 4, 4, conditions.stream().map(DAItem::getItem).toList());
-        fillBox(23, 4, 4, actions.stream().map(DAItem::getItem).toList());
+        fillBox(18, 4, 4, conditions);
+        fillBox(23, 4, 4, actions);
     }
 
     @Override
     public boolean isSatisfied() { return conditions.stream().allMatch(Booled::isSatisfied); }
 
     @Override
-    protected ItemStack genItemStack() {
+    protected @NotNull ItemStack genItemStack() {
         ItemStack i = new ItemStack(Material.COMPARATOR);
         ItemMeta m = i.getItemMeta();
         assert m != null;
         m.setDisplayName(getName());
         i.setItemMeta(m);
         return i;
-    }
-
-    public static <T> T getMostFrequentValue(Collection<T> c, T def) {
-        if (c == null || c.isEmpty()) return def;
-
-        Map<T, Integer> m = new HashMap<>();
-        for (T item : c) m.put(item, m.getOrDefault(item, 0) + 1);
-
-        T mf = null;
-        int amnt = 0;
-
-        for (Map.Entry<T, Integer> entry : m.entrySet())
-            if (entry.getValue() > amnt) {
-                amnt = entry.getValue();
-                mf = entry.getKey();
-            }
-
-        return mf != null ? mf : def;
-    }
-
-    @Override
-    public void setSection(Dungeon.Section s) {
-        if (section != null) {
-            if (s == section && s.getDungeon().getTriggers().contains(this)) return;
-            else section.removeTrigger(this);
-        }
-        section = s;
-        if (section != null) section.addTrigger(this);
     }
 
     public void updateSec() {
@@ -133,33 +105,25 @@ public final class Trigger extends DAItem implements Booled, Triggerable, Reseta
 
     @Override
     public void onInvClose() {
+        conditions.forEach(c -> c.unbind(this));
         conditions.clear();
         actions.clear();
-        for (ItemStack it : this.getBox(18, 4, 4)) addCondition(it);
-        for (ItemStack it : this.getBox(23, 4, 4)) addAction(it);
+        for (ItemStack it : this.getBox(18, 4, 4))
+            if (DAItem.get(it) instanceof Condition c)
+                conditions.add(c);
+        for (ItemStack it : this.getBox(23, 4, 4))
+            if (DAItem.get(it) instanceof Action a)
+                actions.add(a);
+        bindConditions();
         updateSec();
     }
-
-    private boolean addCondition(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DAItem.get(UUID.fromString(s)) instanceof Condition condition && !conditions.contains(condition)) {
-            return conditions.add(condition);
-        }
-        return false;
-    }
-
-    private boolean addAction(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        if (s != null && DAItem.get(UUID.fromString(s)) instanceof Action action && !actions.contains(action))
-            return actions.add(action);
-        return false;
-    }
+    void bindConditions() { conditions.forEach(c -> c.bind(this)); }
 
     @Override
-    public void onTrigger() {
+    public void trigger() {
         if (isSatisfied())
             for (Action a : actions)
-                a.onTrigger();
+                a.trigger();
     }
 
     public void trigger(boolean force) {

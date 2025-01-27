@@ -13,19 +13,12 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
 public class ModifyEntity extends Action {
     private List<EntitySpawnAction> spawns = new ArrayList<>();
 
-    public ModifyEntity() {
-        super(Type.ENTITY_MOD);
-    }
-
-    @Override
-    public void onTrigger() {
-
-    }
+    public ModifyEntity() { super(Type.ENTITY_MOD); }
 
     @Override
     protected void resetAction() {
@@ -60,11 +53,6 @@ public class ModifyEntity extends Action {
         return true;
     }
 
-    @Override
-    protected void action(DungeonMaster dm, String action, String[] args, InventoryClickEvent event) {
-
-    }
-
     @Contract(pure = true)
     public static @NotNull String commandNew(@NotNull DungeonMaster dm, @NotNull String[] args) {
         return "";
@@ -79,4 +67,9 @@ public class ModifyEntity extends Action {
 
     @Override
     public DAItem create(DungeonMaster dm, String[] args) { return new ModifyEntity(); }
+
+    @Override
+    public void trigger() {
+
+    }
 }

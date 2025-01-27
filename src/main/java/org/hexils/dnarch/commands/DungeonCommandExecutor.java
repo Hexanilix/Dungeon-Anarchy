@@ -25,13 +25,13 @@ public class DungeonCommandExecutor implements CommandExecutor {
         if (sender instanceof ConsoleCommandSender console) {
             return true;
         }
-        DungeonMaster dm = DungeonMaster.getOrNew((Player) sender);
+        DungeonMaster dm = DungeonMaster.get((Player) sender);
         if (!sender.isOp()) {
             //TODO dungeon cmd briefing
             if (args.length == 1) return true;
             else switch (args[0].toLowerCase()) {
                 case "info" -> {
-                    Dungeon d = Dungeon.get(dm.p);
+                    Dungeon d = Dungeon.get(dm);
                     if (d != null) {
                         Dungeon.DungeonInfo di = d.getDungeonInfo();
                         dm.sendMessage(String.format(
@@ -46,7 +46,7 @@ public class DungeonCommandExecutor implements CommandExecutor {
             if (args.length == 1) return true;
             else switch (args[0].toLowerCase()) {
                 case "info" -> {
-                    Dungeon d = Dungeon.get(dm.p);
+                    Dungeon d = Dungeon.get(dm);
                     if (d != null) {
                         Dungeon.DungeonInfo di = d.getDungeonInfo();
                         dm.sendMessage(String.format(
@@ -95,7 +95,7 @@ public class DungeonCommandExecutor implements CommandExecutor {
                 return s;
             }
             Player p = (Player) sender;
-            DungeonMaster dm = DungeonMaster.getOrNew(p);
+            DungeonMaster dm = DungeonMaster.get(p);
             if (sender.isOp()) {
                 if (args.length == 1) {
                     s.addAll(DungeonCreatorCommandExecutor.getDungeonNames());

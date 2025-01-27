@@ -1,5 +1,6 @@
 package org.hexils.dnarch;
 
+import org.bukkit.entity.Player;
 import org.hetils.jgl17.oodp.OODP;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -12,19 +13,24 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Level;
 
+import static org.hexils.dnarch.Main.dp;
 import static org.hexils.dnarch.Main.log;
 
 public final class FileManager {
     public static String EXT = ".oodp";
-    public static File dungeon_dir = new File(Main.plugin.getDataFolder() + "/dungeons/");
-    public static File permitted_player_f = new File(Main.plugin.getDataFolder() + "/permitted_players.txt");
-    public static File config_file = new File(Main.plugin.getDataFolder() + "/config" + EXT);
-    public static File debug_config_file = new File(Main.plugin.getDataFolder() + "/debug_config" + EXT);
+
+    public static File df = Main.plugin().getDataFolder();
+
+    public static File dungeon_dir = new File(df + "/dungeons/");
+    public static File permitted_player_f = new File(df + "/permitted_players.txt");
+    public static File config_file = new File(df + "/config" + EXT);
+    public static File debug_config_file = new File(df + "/debug_config" + EXT);
     public static File dungeon_log_dir = new File(dungeon_dir + "/logs/");
+    public static File player_configs = new File(df + "/player_configs/");
 
     @Contract("_ -> param1")
     public static File create(@NotNull File f) {
-        try { f.createNewFile(); } catch (IOException e) { throw new RuntimeException(e); }
+        try { new File(f.getParent()).mkdirs(); f.createNewFile(); } catch (IOException e) { throw new RuntimeException(e); }
         return f;
     }
 
@@ -58,7 +64,7 @@ public final class FileManager {
 
 
     public static void loadData() {
-        if (!Main.plugin.getDataFolder().exists()) Main.plugin.getDataFolder().mkdir();
+        if (!df.exists()) df.mkdir();
         else {
             loadConfig();
             loadDungeons();
@@ -82,7 +88,7 @@ public final class FileManager {
         Action.instances.clear();
         Condition.instances.clear();
         DAItem.instances.clear();
-        Manageable.instances.clear();
+        DAManageable.instances.clear();
         mapped_dungeon_files.clear();
         for (File f : dungeon_dir.listFiles()) {
             if (f.isFile()) {
@@ -95,14 +101,25 @@ public final class FileManager {
                         f.delete();
                 } catch (Exception e) {
                     if (!dungeon_log_dir.exists()) dungeon_log_dir.mkdir();
+                    File lef = new File(dungeon_log_dir + "/latest.txt");
                     File ef = new File(dungeon_log_dir + "/" + LocalDateTime.now().format(file_df) + ".txt");
                     create(ef);
-                    try (FileWriter fileWriter = new FileWriter(ef, true)) {
-                        e.printStackTrace(new PrintWriter(fileWriter));
+                    create(lef);
+                    try {
+                        FileWriter w = new FileWriter(ef, true);
+                        e.printStackTrace(new PrintWriter(w));
+                        w.close();
+                        w = new FileWriter(lef);
+                        w.write("");
+                        w.close();
+                        w = new FileWriter(lef, true);
+                        w.flush();
+                        e.printStackTrace(new PrintWriter(w));
+                        w.close();
                     } catch (IOException ioe) {
                         ioe.printStackTrace();
                     }
-                    log(Level.SEVERE, "Error occurred while loading dungeon from file " + f + ". Saved error to " + ef.getName());
+                    log(Level.SEVERE, "Error occurred while loading dungeon from file " + f + ". Saved error to /dungeons/logs/latest.txt");
                     if (Main.debug.log_dungeon_error_stacktrace)
                         for (String s : sttss(e.getStackTrace()))
                             log(Level.SEVERE, "\t"+s);
@@ -110,6 +127,12 @@ public final class FileManager {
             }
         }
     }
+
+//    public static void write(File f, String data) {}
+//    public static void write(File f, char mode, String data) {
+//
+//    }
+
     public static String @NotNull [] sttss(StackTraceElement @NotNull [] st) {
         String[] ss = new String[st.length];
         for (int i = 0; i < st.length; i++) {
@@ -134,10 +157,20 @@ public final class FileManager {
         }
     }
 
+    @Contract("_ -> new")
+    public static @NotNull DungeonMaster loadMaster(Player p) {
+        if (player_configs.isDirectory()) {
+            for (File f : player_configs.listFiles())
+                if (f.getName().equals(p.getUniqueId().toString()))
+                    return new DungeonMaster(p, dp.map(f));
+        }
+        return new DungeonMaster(p);
+    }
+
 
 
     public static void saveData() {
-        if (!Main.plugin.getDataFolder().exists()) Main.plugin.getDataFolder().mkdir();
+        if (!df.exists()) df.mkdir();
         savePermittedPlayers();
         saveConfig();
         if (!FileManager.dungeon_dir.exists()) FileManager.dungeon_dir.mkdir();

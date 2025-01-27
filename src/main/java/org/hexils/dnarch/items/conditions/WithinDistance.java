@@ -1,30 +1,29 @@
 package org.hexils.dnarch.items.conditions;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.hetils.jgl17.oodp.OODPExclude;
+import org.hetils.mpdl.GeneralListener;
+import org.hetils.mpdl.location.LocationUtil;
 import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Random;
 
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
 
 public class WithinDistance extends Condition implements RunnableDA {
-
-    @Override
-    public void onTrigger() { this.satisfied = true; }
 
     @Override
     public boolean isSatisfied() {
@@ -37,52 +36,63 @@ public class WithinDistance extends Condition implements RunnableDA {
         CIRCLE
     }
 
-    private Location loc;
+    private Location center;
     private TriggerShape shape;
     private double rad;
     @OODPExclude
     private boolean satisfied = false;
     @OODPExclude
     private BukkitRunnable runnable;
+    @OODPExclude
+    private boolean relocating = false;
 
     @Override
     public DAItem create(@NotNull DungeonMaster dm, String[] args) {
         Location l = null;
         if (dm.hasBlocksSelected())
-            l = org.hetils.mpdl.LocationUtil.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
+            l = org.hetils.mpdl.location.LocationUtil.getCenter(dm.getSelectedBlocks().stream().map(Block::getLocation).toList());
         if (l == null) l = dm.getLocation();
         return new WithinDistance(l);
     }
 
     public WithinDistance() { super(Type.WITHIN_DISTANCE); }
-    public WithinDistance(@NotNull Location loc) {
+    public WithinDistance(@NotNull Location center) {
         super(Type.WITHIN_DISTANCE);
-        this.loc = loc;
+        this.center = center;
         this.rad = 1;
         this.shape = TriggerShape.SPHERE;
         start();
     }
 
-    @Override
-    public void start() {
+    private void assignRunnable() {
         runnable = new BukkitRunnable() {
             @Override
             public void run() {
-                if (check(loc.getWorld().getNearbyEntities(loc, rad, rad, rad))) {
+                if (check(center.getWorld().getNearbyEntities(center, rad, rad, rad))) {
                     if (!satisfied) {
                         satisfied = true;
-                        WithinDistance.this.trigger();
+                        trigger();
                     }
-                } else satisfied = false;
+                } else {
+                    if (satisfied) {
+                        satisfied = false;
+                        trigger();
+                    }
+                }
             }
         };
-        runnable.runTaskTimer(Main.plugin, 0, 2);
+    }
+
+    @Override
+    public void start() {
+        assignRunnable();
+        runnable.runTaskTimer(Main.plugin(), 0, 2);
     }
 
     public boolean check(Collection<Entity> c) {
         if (c == null) return false;
         for (Entity e : c)
-            if (e instanceof Player)
+            if (e instanceof Player p && p.getGameMode() != GameMode.SPECTATOR)
                 return true;
         return false;
     }
@@ -92,12 +102,12 @@ public class WithinDistance extends Condition implements RunnableDA {
         runnable.cancel();
     }
 
-    public void setLoc(Location loc) {
-        this.loc = loc;
+    public void setCenter(Location center) {
+        this.center = center;
     }
 
-    public Location getLoc() {
-        return loc;
+    public Location getCenter() {
+        return center;
     }
 
     public void setRad(double rad) {
@@ -112,7 +122,43 @@ public class WithinDistance extends Condition implements RunnableDA {
 
     @Override
     protected void createGUI() {
+        this.setAction(21, newItemStack(Material.ARROW, "Location", List.of(LocationUtil.toReadableFormat(this.center))), "change_center");
+    }
 
+    @Override
+    protected void action(DungeonMaster dm, @NotNull String action, String[] args, ClickType click) {
+        switch (action) {
+            case "change_center" -> {
+                dm.holdManagement(true);
+                runnable.cancel();
+                GeneralListener.selectLocation(dm, "Select a new location", l -> {
+                    spawnParticlesInSphere(l, rad, (int) Math.pow(4, rad), Particle.COMPOSTER);
+                } ,l -> {
+                    center = l;
+                    start();
+                    dm.holdManagement(false);
+                });
+            }
+        }
+    }
+
+    public void spawnParticlesInSphere(@NotNull Location center, double radius, int particleCount, Particle particleType) {
+        World world = center.getWorld();
+        if (world == null) return;
+
+        Random random = new Random();
+        for (int i = 0; i < particleCount; i++) {
+            double phi = random.nextDouble() * 2 * Math.PI;
+            double theta = random.nextDouble() * Math.PI;
+
+            double x = radius * Math.sin(theta) * Math.cos(phi);
+            double y = radius * Math.cos(theta);
+            double z = radius * Math.sin(theta) * Math.sin(phi);
+
+            Location particleLocation = center.clone().add(x, y, z);
+
+            world.spawnParticle(particleType, particleLocation, 1, 0, 0, 0, 0);
+        }
     }
 
     @Override

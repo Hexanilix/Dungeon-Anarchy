@@ -12,14 +12,24 @@ import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
+import static org.hexils.dnarch.Main.log;
 
 public class ModifyBlock extends BlockAction {
+
+    static {
+        setTabComplete(args -> {
+            if (args.length == 1) return Arrays.stream(ModifyBlock.ModType.values()).map(e -> e.name().toLowerCase()).toList();
+            else return null;
+        });
+    }
+
     @Override
     public DAItem create(DungeonMaster dm, String @NotNull [] args) {
         if (args.length > 0) {
@@ -46,6 +56,7 @@ public class ModifyBlock extends BlockAction {
     private List<Block> modify;
     private List<BlockData> og_data;
     private ModType type;
+    public ModifyBlock() { super(Type.MODIFY_BLOCK); }
     public ModifyBlock(@NotNull List<Block> blocks, ModType type) {
         super(Type.MODIFY_BLOCK, blocks);
         this.modify = blocks;
@@ -54,7 +65,7 @@ public class ModifyBlock extends BlockAction {
     }
 
     @Override
-    public void onTrigger() {
+    public void trigger() {
         modify.forEach(b -> mod.get(type).modify(b));
     }
 
@@ -80,7 +91,7 @@ public class ModifyBlock extends BlockAction {
     @Override
     protected void updateGUI() {
         for (int i = 0; i < 27; i++)
-            this.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
+            this.setItem(i+27, i < og_data.size() ? org.hetils.mpdl.block.BlockUtil.b2i(modify.get(i), og_data.get(i)) : null);
     }
 
 

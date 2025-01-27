@@ -1,15 +1,11 @@
 package org.hexils.dnarch.commands;
 
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.command.*;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.hetils.jgl17.oodp.OODP;
-import org.hetils.mpdl.NSK;
-import org.hetils.mpdl.PluginThread;
 import org.hexils.dnarch.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,9 +13,7 @@ import java.io.File;
 import java.util.*;
 import java.util.logging.Level;
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
 import static org.hexils.dnarch.Main.log;
-import static org.hexils.dnarch.Manageable.ITEM_ACTION;
 
 public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
     public static ChatColor IF = ChatColor.AQUA;
@@ -36,8 +30,9 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             return true;
         }
         Player p = sender instanceof Player ? (Player) sender : null;
-        DungeonMaster dm = p != null ? DungeonMaster.getOrNew(p) : null;
+        DungeonMaster dm = p != null ? DungeonMaster.get(p) : null;
         switch (args[0]) {
+            //TODO VERY glitchy, especially with manageables
             case "reload" -> {
                 if (args.length == 1) {
                     log(Level.INFO, "Reloading...");
@@ -65,38 +60,29 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
             }
         }
         if (sender instanceof ConsoleCommandSender console) {
-            switch (args[0]) {
-                case "dptest" -> {
-                    OODP dp = Main.dp;
-                    ItemStack it1 = newItemStack(Material.SPRUCE_WOOD, "wood haha", 847356, List.of("lad", "shsbavahddhfahdfambnla", "shalala"));
-                    NSK.setNSK(it1, ITEM_ACTION, "lalalhggjnm.,kgala");
-                    String dpd = dp.toOodp(it1);
-                    ItemStack it2 = dp.map(dpd).as(ItemStack.class);
-                    log(it1);
-                    log(it2);
-                    log(it1.equals(it2));
-                }
-                case "nsk" -> {
-                    ItemStack i = new ItemStack(Material.COMPARATOR);
-                    NSK[] nsks = new NSK[]{ITEM_ACTION, Manageable.MODIFIABLE};
-                    Object[] vals = new Object[]{"yuh", false};
-                    NSK.setNSK(i, nsks, vals);
-                    log(i);
-                }
-            }
+//            switch (args[0]) {
+//                case "dptest" -> {
+//                    OODP dp = Main.dp;
+//                    ItemStack it1 = newItemStack(Material.SPRUCE_WOOD, "wood haha", 847356, List.of("lad", "shsbavahddhfahdfambnla", "shalala"));
+//                    NSK.setNSK(it1, Manageable.ITEM_ACTION_NSK, "lalalhggjnm.,kgala");
+//                    String dpd = dp.toOodp(it1);
+//                    ItemStack it2 = dp.map(dpd).as(ItemStack.class);
+//                    log(it1);
+//                    log(it2);
+//                    log(it1.equals(it2));
+//                }
+//                case "nsk" -> {
+//                    ItemStack i = new ItemStack(Material.COMPARATOR);
+//                    NSK[] nsks = new NSK[]{Manageable.nsk(Manageable.NSKType.ITEM_ACTION), Manageable.nsk(Manageable.NSKType.MODIFIABLE)};
+//                    Object[] vals = new Object[]{"yuh", false};
+//                    NSK.setNSK(i, nsks, vals);
+//                    log(i);
+//                }
+//            }
             return true;
         }
         if (dm != null) switch (args[0]) {
             case "help" -> dm.sendMessage(HELP_MSG);
-            case "test" -> {
-                ItemStack is = new ItemStack(Material.BEDROCK);
-                dm.getInventory().addItem(is);
-                new PluginThread(() -> {
-                    log("test????");
-                    ItemMeta m = is.getItemMeta();
-                    m.setDisplayName("uy0nh9v437");
-                }).start(1500);
-            }
             case "load" -> {
                 if (args.length == 1) {
                     FileManager.loadData();
@@ -115,13 +101,10 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                     return n;
                 }).toList()));
             }
-            case "save" -> {
-                DAItem da = DAItem.get(p.getInventory().getItemInMainHand());
-                if (da != null) {
-                    log(Main.dp.toOodp(da));
-                } else dm.sendMessage("it aint a da item niga");
-            }
             case "file_manager" -> {
+            }
+            case "config" -> {
+                //TODO config
             }
             case "permit" -> {
                 if (p.isOp()) {
@@ -142,9 +125,6 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                         }
                     }
                 }
-            }
-            case "id" -> {
-                dm.sendMessage(p.getUniqueId().toString());
             }
             case "debug" -> {
                 if (DungeonMaster.permittedPlayers.contains(p.getUniqueId())) {
@@ -181,8 +161,7 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
         return true;
     }
 
-
-    public static final class tab implements TabCompleter {
+    public static final class Tab implements TabCompleter {
 
         @Override
         public @NotNull List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {

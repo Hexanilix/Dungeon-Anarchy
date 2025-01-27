@@ -1,40 +1,38 @@
 package org.hexils.dnarch;
 
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
-import org.bukkit.entity.EntityType;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hetils.mpdl.ItemUtil;
-import org.hetils.mpdl.NSK;
+import org.hetils.mpdl.item.ItemObtainable;
+import org.hetils.mpdl.item.ItemUtil;
+import org.hetils.mpdl.item.NSK;
+import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
 import org.hexils.dnarch.items.Type;
-import org.hexils.dnarch.items.actions.ModifyBlock;
-import org.hexils.dnarch.items.actions.ReplaceBlock;
-import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
-import org.hexils.dnarch.items.conditions.WithinDistance;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Function;
 
+import static org.hetils.jgl17.StringUtil.readableEnum;
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.Action.getEnum;
-import static org.hexils.dnarch.Action.toReadableFormat;
-import static org.hexils.dnarch.Main.log;
-import static org.hexils.dnarch.commands.DungeonCommandExecutor.ER;
-
-public abstract class DAItem extends Manageable implements Idable, Deletable, DAItemFactory {
-    public static final NSK<String, String> ITEM_UUID = new NSK<>(new NamespacedKey(Main.plugin, "item-uuid"), PersistentDataType.STRING);
+public abstract class DAItem extends DAManageable implements Idable, ItemObtainable, DAItemFactory {
+    public static final NSK<String, String> ITEM_UUID = new NSK<>(new NamespacedKey(Main.plugin(), "item-uuid"), PersistentDataType.STRING);
     public static final Collection<DAItem> instances = new ArrayList<>();
     public static @Nullable DAItem get(String id) { return get(UUID.fromString(id)); }
     public static @Nullable DAItem get(ItemStack it) {
-        String s = (String) NSK.getNSK(it, ITEM_UUID);
-        return s == null ? null : DAItem.get(UUID.fromString(s));
+        String s;
+        return (s = NSK.getNSK(it, ITEM_UUID)) == null ? null : DAItem.get(UUID.fromString(s));
+    }
+    public static @NotNull List<DAItem> get(ItemStack @NotNull [] it) { return get(List.of(it)); }
+    public static @NotNull List<DAItem> get(@NotNull Iterable<ItemStack> it) {
+        List<DAItem> l = new ArrayList<>();
+        for (ItemStack i : it)
+            l.add(get(i));
+        return l;
     }
     public static @Nullable DAItem get(UUID id) {
         for (DAItem d : instances)
@@ -50,7 +48,7 @@ public abstract class DAItem extends Manageable implements Idable, Deletable, DA
         }
         DAItem da = t.create(dm, args);
         if (da == null) {
-            dm.sendError(ER + "Couldn't create " + toReadableFormat(t.name()));
+            dm.sendError("Couldn't create " + readableEnum(t));
             return null;
         }
         Dungeon d = dm.getCurrentDungeon();
@@ -72,20 +70,38 @@ public abstract class DAItem extends Manageable implements Idable, Deletable, DA
         } else if (da instanceof Condition c) {
 
         }
-        if (s == null) s = d.getSection(dm.p);
-        log("Section@DAItem: " + s);
+        if (s == null) s = d.getSection(dm);
         if (s != null) da.setSection(s);
-        d.addItem(da);
+        da.setDungeon(d);
         return da;
     }
 
-    public static List<String> getTabCompleteFor(@NotNull Type t, String[] args) {
-        List<String> s = new ArrayList<>();
-        switch (t) {
-            case ENTITY_SPAWN_ACTION -> { if (args.length == 1) s = Arrays.stream(EntityType.values()).map(e -> e.name().toLowerCase()).toList(); }
-            case MODIFY_BLOCK -> { if (args.length == 1) s = Arrays.stream(ModifyBlock.ModType.values()).map(e -> e.name().toLowerCase()).toList(); }
+    @SuppressWarnings("unchecked")
+    public static void setTabComplete(Function<String[], List<String>> r) {
+        Class<?> c = getCallerClass();
+        if (c != null && DAItem.class.isAssignableFrom(c)) {
+            DungeonCreatorCommandExecutor.tabCompletions.put((Class<? extends DAItem>) c, r);
         }
-        return s;
+    }
+
+    public static @Nullable Class<?> getCallerClass() {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (int i = 2; i < stackTrace.length; i++) {
+            try {
+                Class<?> c = Class.forName(stackTrace[i].getClassName());
+                if (c != DAItem.class && DAItem.class.isAssignableFrom(c))
+                    return c;
+            } catch (ClassNotFoundException ignore) {}
+        }
+        return null;
+    }
+
+    public static void clearOfDeletedDAItems(@NotNull Inventory inv) {
+        for (int i = 0; i < inv.getSize(); i++) {
+            String id = NSK.getNSK(inv.getItem(i), DAItem.ITEM_UUID);
+            if (id != null && DAItem.get(id) == null)
+                inv.setItem(i, null);
+        }
     }
 
     private UUID id;
@@ -95,45 +111,44 @@ public abstract class DAItem extends Manageable implements Idable, Deletable, DA
     @OODPExclude
     private final List<ItemStack> items = new ArrayList<>();
     Dungeon.Section section = null;
+    @OODPExclude
+    private Dungeon dungeon = null;
 
     public DAItem(Type type) { this(type, type.readableName()); }
     public DAItem(Type type, String name) { this(type, name, true); }
     public DAItem(Type type, boolean renameable) { this(type, type.readableName(), renameable); }
     public DAItem(Type type, String name, boolean renameable) {
         super(name, renameable);
+        super.onRename(() -> {
+            items.forEach(i -> ItemUtil.setName(i, getName()));
+            item = this.genItemStack();
+        });
         this.type = type;
         this.id = UUID.randomUUID();
         instances.add(this);
     }
 
-    public void setSection(Dungeon.Section s) {
-        if (s == section)
+    public final void setSection(Dungeon.Section s) {
+        if (s != null && s == section) {
             if (s.getItems().contains(this)) return;
-        else if (section != null) section.removeItem(this);
+        } else if (section != null && section.getItems().contains(this)) section.removeItem(this);
         section = s;
         if (section != null) section.addItem(this);
     }
 
-    @Override
-    public void rename(@NotNull DungeonMaster dm) { rename(dm, null); }
-    @Override
-    public void rename(@NotNull DungeonMaster dm, Runnable onRename) {
-        super.rename(dm, () -> {
-            if (onRename != null) onRename.run();
-            items.forEach(i -> ItemUtil.setName(i, getName()));
-            item = this.genItemStack();
-        });
+    public final Dungeon getDungeon() { return dungeon; }
+    final void setDungeon(@NotNull Dungeon d) {
+        this.dungeon = d;
+        d.addItem(this);
     }
 
-    void setId(UUID id) { this.id = id; }
-
-    public Type getType() { return type; }
-
     public final UUID getId() { return id; }
+    final void setId(UUID id) { this.id = id; }
 
-    public Dungeon.Section getSection() { return section; }
+    public final Type getType() { return type; }
 
-    protected abstract ItemStack genItemStack();
+    public final Dungeon.Section getSection() { return section; }
+
     public final ItemStack getItem() {
         if (item == null) this.item = this.genItemStack();
         ItemUtil.setName(item, getName());
@@ -141,11 +156,16 @@ public abstract class DAItem extends Manageable implements Idable, Deletable, DA
         items.add(item);
         return item;
     }
+    protected abstract ItemStack genItemStack();
 
     @Override
-    public void onDelete() {
+    public final void onDelete() {
+        onDeletion();
         instances.remove(this);
+        dungeon.removeItem(this);
     }
+
+    public void onDeletion() {}
 
     @Override
     public String toString() {

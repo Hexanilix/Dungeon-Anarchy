@@ -2,24 +2,32 @@ package org.hexils.dnarch.items.actions;
 
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.hetils.jgl17.oodp.OODPExclude;
-import org.hetils.mpdl.MaterialUtil;
+import org.hetils.mpdl.material.MaterialUtil;
 import org.hexils.dnarch.BlockAction;
 import org.hexils.dnarch.DAItem;
 import org.hexils.dnarch.DungeonMaster;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.hetils.mpdl.ItemUtil.newItemStack;
-import static org.hexils.dnarch.Main.log;
+import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
 public class ReplaceBlock extends BlockAction {
+
+    static {
+        setTabComplete(args -> {
+            if (args.length == 1) return Arrays.stream(Material.values()).filter(Material::isBlock).map(e -> e.name().toLowerCase()).toList();
+            else return null;
+        });
+    }
+
     @Override
-    public DAItem create(DungeonMaster dm, String[] args) {
+    public DAItem create(DungeonMaster dm, String @NotNull [] args) {
         Material mat = args.length >= 1 ? Material.getMaterial(args[0].toUpperCase()) : null;
         if (mat != null) {
             this.change_material = mat;
@@ -35,7 +43,7 @@ public class ReplaceBlock extends BlockAction {
         public DestroyBlock() { super(null, Material.AIR); }
         public DestroyBlock(List<Block> blocks) { super(blocks, Material.AIR); }
         @Override
-        public DAItem create(@NotNull DungeonMaster dm, String[] args) {
+        public DAItem create(@NotNull DungeonMaster dm, String @NotNull [] args) {
             setBlocks(dm.getSelectedBlocks());
             return this;
         }
@@ -52,7 +60,7 @@ public class ReplaceBlock extends BlockAction {
         this.setItem(22, newItemStack(Material.OAK_SIGN, "Affected blocks:"));
     }
 
-    public ReplaceBlock() { super(Type.REPLACE_BLOCK); }
+    public ReplaceBlock() { this(new ArrayList<>(), Material.AIR); }
     public ReplaceBlock(List<Block> blocks, Material mat) {
         super(Type.REPLACE_BLOCK);
         this.change_material = mat;
@@ -72,7 +80,7 @@ public class ReplaceBlock extends BlockAction {
     }
 
     @Override
-    public void onTrigger() {
+    public void trigger() {
         if (!triggered && !affected_blocks.isEmpty()) {
             if (world == null) world = affected_blocks.get(0).getWorld();
             if (original_block_data.isEmpty()) setBlocks(affected_blocks.stream().toList());
@@ -95,11 +103,11 @@ public class ReplaceBlock extends BlockAction {
 
     @Override
     protected void updateGUI() {
-        ItemStack cm = newItemStack(MaterialUtil.validMetaSubstitution(change_material), "Change Material: " + change_material.name());
-        changeField(cm, "material", change_material.name());
+        ItemStack cm = newItemStack(MaterialUtil.validMetaSubstitution(change_material), "Material: " + change_material.name());
+//        changeField(cm, "material", change_material.name());
         this.setItem(13, cm);
         for (int i = 0; i < 27; i++)
-            this.setItem(i + 27, i < original_block_data.size() ? org.hetils.mpdl.BlockUtil.b2i(affected_blocks.get(i), original_block_data.get(i)) : null);
+            this.setItem(i + 27, i < original_block_data.size() ? org.hetils.mpdl.block.BlockUtil.b2i(affected_blocks.get(i), original_block_data.get(i)) : null);
     }
 
     @Override
@@ -107,14 +115,4 @@ public class ReplaceBlock extends BlockAction {
         return new ItemStack(Material.DIAMOND_PICKAXE);
     }
 
-    @Override
-    protected void changeField(DungeonMaster dm, @NotNull String field, ClickType click) {
-//        switch (field) {
-//            case "material" -> {
-//                Material m = Material.getMaterial(value);
-//                if (m != null)
-//                    this.change_material = m;
-//            }
-//        }
-    }
 }
