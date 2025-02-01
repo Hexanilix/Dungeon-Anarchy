@@ -2,6 +2,7 @@ package org.hexils.dnarch;
 
 import org.bukkit.*;
 import org.bukkit.block.*;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.*;
@@ -12,15 +13,21 @@ import org.hetils.mpdl.WrappedPlayer;
 import org.hetils.mpdl.item.NSK;
 import org.hetils.mpdl.plugin.PluginThread;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 import static org.hetils.mpdl.item.ItemUtil.newItemStack;
-import static org.hexils.dnarch.Main.log;
 
 public class DungeonMaster extends WrappedPlayer {
 
     public static final Set<DungeonMaster> dms = new HashSet<>();
+    public static @Nullable DungeonMaster get(CommandSender sender) {
+        if (sender instanceof Player p) {
+            if (WrappedPlayer.get(p) instanceof DungeonMaster dm) return dm;
+            else return FileManager.loadMaster(p);
+        } else return null;
+    }
     public static @NotNull DungeonMaster get(@NotNull Player p) {
         if (WrappedPlayer.get(p) instanceof DungeonMaster dm) return dm;
         else return FileManager.loadMaster(p);
@@ -166,10 +173,15 @@ public class DungeonMaster extends WrappedPlayer {
 
     public boolean hasBlocksSelected() { return !slb.isEmpty(); }
 
-    public void clearOfDeletedDAItems() { DAItem.clearOfDeletedDAItems(this.getInventory()); }
+    public void clearOfDeletedDAItems() { DAItem.updateItems(this.getInventory()); }
 
     public double getPPM() {
         return ppm;
+    }
+
+    public Dungeon.Section getSection() {
+        if (isEditing()) return current_dungeon.getSection(this);
+        else return null;
     }
 
     private final class SelectThread extends PluginThread {
@@ -366,19 +378,18 @@ public class DungeonMaster extends WrappedPlayer {
         CREATOR(ChatColor.GOLD),
         DEBUG(ChatColor.LIGHT_PURPLE);
 
-        private ChatColor color;
+        private final ChatColor color;
         Sender(ChatColor c) { color = c; }
 
         @Override
-        public @NotNull String toString() {
-            return this.name().charAt(0) + this.name().toLowerCase().substring(1);
-        }
+        public @NotNull String toString() { return this.name().charAt(0) + this.name().toLowerCase().substring(1); }
     }
 
     public void sendMessage(@NotNull Sender s, String message) { super.sendMessage(s.color, s.toString(), message); }
-    public void sendInfo(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(), message); }
-    public void sendWarning(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(), message); }
-    public void sendError(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(),  message); }
+    public void sendInfo(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(), IF + message); }
+    public void sendPass(@NotNull Sender s, @NotNull String message) { sendMessage(s.color, s.toString(), OK + message); }
+    public void sendWarning(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(), W + message); }
+    public void sendError(@NotNull Sender s, @NotNull String message) { super.sendMessage(s.color, s.toString(), ER + message); }
 
 }
 

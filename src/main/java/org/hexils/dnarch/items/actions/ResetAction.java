@@ -6,11 +6,9 @@ import org.hexils.dnarch.*;
 import org.hexils.dnarch.items.Type;
 
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 public class ResetAction extends Action {
-    private final Set<Action> actions = new LinkedHashSet<>();
+    private final HashSet<Action> actions = new DAItemNSLinkedHashSet<>();
 
     public ResetAction() {
         super(Type.RESET);

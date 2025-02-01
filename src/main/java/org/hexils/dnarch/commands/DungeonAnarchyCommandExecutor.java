@@ -172,9 +172,9 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                 if (DungeonMaster.isPermitted(p)) s.addAll(List.of("debug", "permit", "reload"));
             } else {
                 switch (args[0]) {
-                    case "dungeon_manager" -> {
-                        return DungeonCreatorCommandExecutor.complete(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
-                    }
+//                    case "dungeon_manager" -> {
+//                        return DungeonCreatorCommandExecutor.complete(sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+//                    }
                     case "reload" -> {
                         if (args.length == 2) {
                             s.addAll(List.of("from"));
@@ -183,7 +183,7 @@ public final class DungeonAnarchyCommandExecutor implements CommandExecutor {
                                 if (args.length == 3) {
                                     s.addAll(List.of("file"));
                                 } else switch (args[2]) {
-                                    case "file" -> DungeonCreatorCommandExecutor.getDungeonNames();
+                                    case "file" -> DungeonCreatorCommand.getDungeonNames();
                                 }
                             }
                         }

@@ -98,7 +98,7 @@ public class DungeonCommandExecutor implements CommandExecutor {
             DungeonMaster dm = DungeonMaster.get(p);
             if (sender.isOp()) {
                 if (args.length == 1) {
-                    s.addAll(DungeonCreatorCommandExecutor.getDungeonNames());
+                    s.addAll(DungeonCreatorCommand.getDungeonNames());
                     s.addAll(List.of("info"));
                     return s;
                 } else if (args.length == 2) s.addAll(List.of("set"));

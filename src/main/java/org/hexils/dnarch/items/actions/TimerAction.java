@@ -14,17 +14,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
 import static org.hetils.mpdl.GeneralUtil.msToTicks;
 import static org.hetils.mpdl.item.ItemUtil.newItemStack;
-import static org.hexils.dnarch.Main.log;
 
 public class TimerAction extends Action {
-    @OODPExclude
-    private boolean trigged = false;
     private int timer_time;
-    private final Set<Action> actions = new HashSet<>();
+    private final HashSet<Action> actions = new DAItemNSLinkedHashSet<>();
     @OODPExclude
     private BukkitTask active_timer;
 
@@ -37,27 +32,25 @@ public class TimerAction extends Action {
 
     @Override
     public void trigger() {
-        trigged = true;
+        triggered = true;
         active_timer = new BukkitRunnable() {
             @Override
             public void run() {
                 actions.forEach(Triggerable::trigger);
             }
-        }.runTaskLater(Main.plugin(),msToTicks(timer_time));
+        }.runTaskLater(Main.plugin(), msToTicks(timer_time));
     }
 
     @Override
     protected void resetAction() {
-        trigged = false;
+        triggered = false;
         if (active_timer != null) active_timer.cancel();
         active_timer = null;
         actions.forEach(Action::reset);
     }
 
     @Override
-    protected void createGUI() {
-        this.fillBox(27, 9, 3);
-    }
+    protected void createGUI() { this.fillBox(27, 9, 3); }
 
     @Override
     protected void updateGUI() {
@@ -67,7 +60,7 @@ public class TimerAction extends Action {
 
     private void updateTimer() {
 //        ItemUtil.setLore(this.getItem(13), List.of("Timer: " + timer_time));
-        this.setAction(13, newItemStack(Material.CLOCK, "Timer: ", List.of(String.valueOf(timer_time))), "time");
+        this.setAction(13, newItemStack(Material.CLOCK, "Timer: ", List.of(timer_time +"ms")), "time");
     }
 
     @Override
@@ -106,10 +99,8 @@ public class TimerAction extends Action {
 
     @Override
     protected ItemStack genItemStack() {
-        return newItemStack(Material.CLOCK, getName(), List.of(String.valueOf(timer_time)));
+        return newItemStack(Material.CLOCK, getName(), List.of(timer_time +"ms"));
     }
-
-
 
     @Override
     public DAItem create(DungeonMaster dm, String @NotNull [] args) {

@@ -1,13 +1,15 @@
 package org.hexils.dnarch;
 
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.item.ItemObtainable;
-import org.hetils.mpdl.item.ItemUtil;
 import org.hetils.mpdl.item.NSK;
 import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
 import org.hexils.dnarch.items.Type;
@@ -80,7 +82,7 @@ public abstract class DAItem extends DAManageable implements Idable, ItemObtaina
     public static void setTabComplete(Function<String[], List<String>> r) {
         Class<?> c = getCallerClass();
         if (c != null && DAItem.class.isAssignableFrom(c)) {
-            DungeonCreatorCommandExecutor.tabCompletions.put((Class<? extends DAItem>) c, r);
+//            DungeonCreatorCommandExecutor.tabCompletions.put((Class<? extends DAItem>) c, r);
         }
     }
 
@@ -96,20 +98,20 @@ public abstract class DAItem extends DAManageable implements Idable, ItemObtaina
         return null;
     }
 
-    public static void clearOfDeletedDAItems(@NotNull Inventory inv) {
+    public static void updateItems(@NotNull Inventory inv) {
         for (int i = 0; i < inv.getSize(); i++) {
-            String id = NSK.getNSK(inv.getItem(i), DAItem.ITEM_UUID);
-            if (id != null && DAItem.get(id) == null)
-                inv.setItem(i, null);
+            ItemStack item = inv.getItem(i);
+            String id = NSK.getNSK(item, DAItem.ITEM_UUID);
+            if (id != null) {
+                DAItem da = DAItem.get(id);
+                if (da == null) inv.setItem(i, null);
+                else inv.setItem(i, da.getItem());
+            }
         }
     }
 
     private UUID id;
     private final Type type;
-    @OODPExclude
-    private ItemStack item;
-    @OODPExclude
-    private final List<ItemStack> items = new ArrayList<>();
     Dungeon.Section section = null;
     @OODPExclude
     private Dungeon dungeon = null;
@@ -119,9 +121,9 @@ public abstract class DAItem extends DAManageable implements Idable, ItemObtaina
     public DAItem(Type type, boolean renameable) { this(type, type.readableName(), renameable); }
     public DAItem(Type type, String name, boolean renameable) {
         super(name, renameable);
-        super.onRename(() -> {
-            items.forEach(i -> ItemUtil.setName(i, getName()));
-            item = this.genItemStack();
+        super.onRename(p -> {
+            if (DAItem.get(p.getInventory().getItemInMainHand()) == this)
+                p.getInventory().setItemInMainHand(this.getItem());
         });
         this.type = type;
         this.id = UUID.randomUUID();
@@ -149,11 +151,24 @@ public abstract class DAItem extends DAManageable implements Idable, ItemObtaina
 
     public final Dungeon.Section getSection() { return section; }
 
-    public final ItemStack getItem() {
-        if (item == null) this.item = this.genItemStack();
-        ItemUtil.setName(item, getName());
-        NSK.setNSK(item, ITEM_UUID, id.toString());
-        items.add(item);
+    public final @NotNull ItemStack getItem() {
+        ItemStack item = this.genItemStack();
+        ItemMeta m;
+        if (item == null || (m = item.getItemMeta()) == null) {
+            item = new ItemStack(Material.GREEN_CONCRETE);
+            m = item.getItemMeta();
+        }
+        m.setDisplayName(getName());
+        m.setLocalizedName(getName());
+        NSK.setNSK(m, ITEM_UUID, id.toString());
+        List<String> s = new ArrayList<>();
+        s.add(ChatColor.UNDERLINE + (type.isAction()
+                ? (ChatColor.LIGHT_PURPLE + "Action: " + type.readableName())
+                : (ChatColor.AQUA + "Condition: " + type.readableName()))
+        );
+        if (m.hasLore()) s.addAll(m.getLore());
+        m.setLore(s);
+        item.setItemMeta(m);
         return item;
     }
     protected abstract ItemStack genItemStack();
@@ -172,6 +187,7 @@ public abstract class DAItem extends DAManageable implements Idable, ItemObtaina
         return "DA_item{" +
                 "id=" + id +
                 ", type=" + type +
+                ", name=" + getName() +
                 '}';
     }
 }

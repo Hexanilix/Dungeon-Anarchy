@@ -21,8 +21,8 @@ import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 public final class Trigger extends DAItem implements Booled, Triggerable, Resetable {
     public static Collection<Trigger> triggers = new HashSet<>();
 
-    private final HashSet<Action> actions = new LinkedHashSet<>();
-    private final HashSet<Condition> conditions = new LinkedHashSet<>();
+    private final DAItemNSLinkedHashSet<Action> actions = new DAItemNSLinkedHashSet<>();
+    private final DAItemNSLinkedHashSet<Condition> conditions = new DAItemNSLinkedHashSet<>();
 
     public Trigger() {
         super(Type.TRIGGER);

@@ -61,8 +61,6 @@ public class Dungeon extends DAManageable implements Savable {
         private final ItemListGUI item_gui;
         @OODPExclude
         private final ItemListGUI trigger_gui;
-        @OODPExclude
-        private final Getter<Set<DAItem>> get_items = () -> items.stream().filter(da -> da.section == this).collect(Collectors.toSet());
 
         public Section(Pair<Location, Location> selection) { this(selection, "Section" + sections.size()); }
         public Section(Pair<Location, Location> selection, String name) { this(UUID.randomUUID(), name, new BoundingBox(selection)); }
@@ -82,13 +80,13 @@ public class Dungeon extends DAManageable implements Savable {
                     Material.ENDER_CHEST,
                     ChatColor.GREEN + "Items",
                     List.of(ChatColor.GRAY + "Shows the list of items this section contains")),
-                    get_items
+                    () -> items.stream().filter(da -> da.section == this).collect(Collectors.toSet())
             );
             this.trigger_gui = new ItemListGUI(() -> getName() + " triggers", () -> newItemStack(
                     Material.COMPARATOR, ChatColor.YELLOW + "Triggers"),
                     () -> triggers.stream().filter(da -> da.section == this).collect(Collectors.toSet())
             );
-            this.onRename(() -> {
+            this.onRename((p) -> {
                 event_gui.setName(getName());
                 item_gui.setName(getName());
             });
@@ -97,7 +95,9 @@ public class Dungeon extends DAManageable implements Savable {
 
         public UUID getId() { return id; }
 
-        public Set<DAItem> getItems() { return get_items.get(); }
+        public Set<DAItem> getItems() { return items.stream().filter(da -> da.section == this).collect(Collectors.toSet()); }
+
+        public Set<Trigger> getTriggers() { return triggers.stream().filter(t -> t.getSection() == this).collect(Collectors.toSet()); }
 
         public boolean addItem(@NotNull DAItem i) {
             boolean r = Dungeon.this.addItem(i);
@@ -186,7 +186,8 @@ public class Dungeon extends DAManageable implements Savable {
         @Override
         public void onDelete() {
             sections.remove(this);
-            this.get_items.get().forEach(DAItem::delete);
+            this.getItems().forEach(DAItem::delete);
+            this.getTriggers().forEach(Trigger::delete);
             super.delete();
         }
 
@@ -324,21 +325,6 @@ public class Dungeon extends DAManageable implements Savable {
     }
 
     Section newSection(UUID id, String name, BoundingBox bounds) { return new Section(id, name, bounds); }
-    public @NotNull String commandNewSection(@NotNull DungeonMaster dm, @NotNull String[] args) {
-        if (dm.hasAreaSelected()) {
-            if (dm.isEditing()) {
-                Section is = getIntersectedSection(dm.getSelectedArea());
-                if (is == null || dm.getCurrentDungeon().getSections().contains(is)) {
-                    Dungeon d = dm.getCurrentDungeon();
-                    Section s;
-                    if (args.length > 0) s = newSection(dm.getSelectedArea(), args[0]);
-                    else s = newSection(dm.getSelectedArea());
-                    dm.clearSelection();
-                    return OK + "Created \"" + d.getName() + "\" section \"" + s.getName() + "\"";
-                } else return ER + "Cannot create section, selection intersects sector \"" + is.getName() + "\" in dungeon \"" + is.getDungeon().getDungeonInfo().display_name;
-            } else return ER + "You must be currently editing a dungeon to create sections!";
-        } else return ER + "You need to first select an area to create a section!";
-    }
 
     public boolean addItem(@NotNull DAItem i) {
         if (i instanceof Trigger t) return triggers.add(t);

@@ -71,7 +71,10 @@ public class EntitySpawnAction extends BlockAction {
 
     @Override
     protected void resetAction() {
-        this.spawned_entities.forEach(Entity::remove); spawned_entities.clear();
+        if (spawned_entities != null) {
+            this.spawned_entities.forEach(Entity::remove);
+            spawned_entities.clear();
+        }
     }
 
     private @NotNull List<String> entsToString() {

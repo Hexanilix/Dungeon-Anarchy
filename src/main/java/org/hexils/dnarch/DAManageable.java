@@ -84,18 +84,18 @@ public abstract class DAManageable extends Manageable {
         public static NSK<String, String> ITEM_LIST_GUI = new NSK<>(new NamespacedKey(Main.plugin(), "open_item_list_gui"), PersistentDataType.STRING);
 
         @OODPExclude
-        private final Getter<Set<DAItem>> items;
+        private final Getter<? extends Set<? extends DAItem>> items;
         @OODPExclude
         private final UUID id;
 
         public ItemListGUI(String name, DAItem... items) { this(() -> name, null, () -> Set.of(items)); }
-        public ItemListGUI(String name, Set<DAItem> items) { this(() -> name, null, () -> items); }
+        public ItemListGUI(String name, Getter<? extends Set<? extends DAItem>> items) { this(() -> name, null, items); }
         public ItemListGUI(String name, ItemGenerator item_gen, DAItem... items) { this(() -> name, item_gen, () -> Set.of(items)); }
-        public ItemListGUI(String name, ItemGenerator item_gen, Set<DAItem> items) { this(() -> name, item_gen, () -> items); }
+        public ItemListGUI(String name, ItemGenerator item_gen, Getter<? extends Set<? extends DAItem>> items) { this(() -> name, item_gen, items); }
         public ItemListGUI(Getter<String> name, DAItem... items) { this(name, null, () -> Set.of(items)); }
-        public ItemListGUI(Getter<String> name, Set<DAItem> items) { this(name, null, () -> items); }
+        public ItemListGUI(Getter<String> name, Getter<? extends Set<? extends DAItem>> items) { this(name, null, items); }
         public ItemListGUI(Getter<String> name, ItemGenerator item_gen, DAItem... items) { this(name, item_gen, () -> Set.of(items)); }
-        public ItemListGUI(Getter<String> name, ItemGenerator item_gen, Getter<Set<DAItem>> items) {
+        public ItemListGUI(Getter<String> name, ItemGenerator item_gen, Getter<? extends Set<? extends DAItem>> items) {
             super(name);
             this.id = UUID.randomUUID();
             this.item_gen = item_gen != null ? item_gen : () -> newItemStack(

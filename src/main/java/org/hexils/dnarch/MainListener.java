@@ -13,7 +13,6 @@ import org.bukkit.event.inventory.InventoryOpenEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import org.hetils.mpdl.item.NSK;
@@ -23,9 +22,7 @@ import org.hexils.dnarch.items.actions.entity.EntitySpawnAction;
 import org.jetbrains.annotations.NotNull;
 
 
-import java.util.UUID;
-
-import static org.hexils.dnarch.DAItem.clearOfDeletedDAItems;
+import static org.hexils.dnarch.DAItem.updateItems;
 import static org.hexils.dnarch.Main.*;
 
 public final class MainListener implements org.bukkit.event.Listener {
@@ -192,7 +189,7 @@ public final class MainListener implements org.bukkit.event.Listener {
 
     @EventHandler
     public void onOpenInventory(@NotNull InventoryOpenEvent event) {
-        clearOfDeletedDAItems(event.getInventory());
-        clearOfDeletedDAItems(event.getPlayer().getInventory());
+        updateItems(event.getInventory());
+        updateItems(event.getPlayer().getInventory());
     }
 }

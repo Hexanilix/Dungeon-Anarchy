@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
+import org.hetils.jgl17.oodp.OODPExclude;
 import org.hetils.mpdl.GeneralListener;
 import org.hetils.mpdl.item.ItemUtil;
 import org.hetils.mpdl.item.NSK;
@@ -42,7 +43,18 @@ public class SpawnParticle extends Action {
     private double offsetY = 0;
     private double offsetZ = 0;
     private double inertia = 0;
-
+    @OODPExclude
+    private DungeonMaster current_editor = null;
+    @OODPExclude
+    private final GeneralListener.LiveEditor editor = new GeneralListener.LiveEditor();
+    {
+        editor.action(2, Material.GREEN_CONCRETE, "Position", null);
+        editor.action(3, Material.FIREWORK_STAR, "Amount", a -> amount = Math.max(1, amount +((current_editor.isSneaking() ? 1 : 2) * (a.name().contains("LEFT") ? -1 : 1))));
+        editor.action(4, Material.RED_CONCRETE, "Offset X", a -> offsetX = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
+        editor.action(5, Material.GREEN_CONCRETE, "Offset Y", a -> offsetY = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
+        editor.action(6, Material.BLUE_CONCRETE, "Offset Z", a -> offsetZ = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
+        editor.action(7, Material.ARROW, "Inertia", a -> inertia = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
+    }
 
     public SpawnParticle() {
         super(Type.SPAWN_PARTICLE);
@@ -80,49 +92,21 @@ public class SpawnParticle extends Action {
         updateFields();
     }
 
-    private final NSK<String, String> MOD = new NSK<>(new NamespacedKey(Main.plugin(), "dungeon_anarchy"), PersistentDataType.STRING);
-
     @Override
     protected void action(DungeonMaster dm, @NotNull String action, String[] args, @NotNull ClickType click) {
         double v = (click.isLeftClick() ? -.1 : .1) * (click.isShiftClick() ? 1 : 2);
         switch (action) {
             case "edit" -> {
-                dm.holdManagement(true);
-                dm.sendMessage("Editing " + getName());
-                dm.getInventory().setHeldItemSlot(3);
-                registerEvents(new Listener() {
-
-                    final String pos = "00000000-1000-0000-0000-000000000000";
-                    final String amn = "00000000-2000-0000-0000-000000000000";
-                    final String ofx = "00000000-3000-0000-0000-000000000000";
-                    final String ofy = "00000000-4000-0000-0000-000000000000";
-                    final String ofz = "00000000-5000-0000-0000-000000000000";
-                    final String ine = "00000000-6000-0000-0000-000000000000";
-                    final String done = "00000000-0000-0000-0000-000000000000";
-
-                    PlayerInventory pi = dm.getInventory();
-                    final ItemStack[] items = new ItemStack[9];
-                    {
-                        for (int i = 0; i < 9; i++) {
-                            items[i] = pi.getItem(i);
-                            pi.setItem(i, null);
-                        }
-                        pi.setItem(0, newItemStack(Material.GREEN_CONCRETE, "Done", MOD, done));
-                        pi.setItem(2, newItemStack(Material.GREEN_CONCRETE, "Position", MOD, pos));
-                        pi.setItem(3, newItemStack(Material.FIREWORK_STAR, "Amount", MOD, amn));
-                        pi.setItem(4, newItemStack(Material.RED_CONCRETE, "Offset X", MOD, ofx));
-                        pi.setItem(5, newItemStack(Material.GREEN_CONCRETE, "Offset Y", MOD, ofy));
-                        pi.setItem(6, newItemStack(Material.BLUE_CONCRETE, "Offset Z", MOD, ofz));
-                        pi.setItem(7, newItemStack(Material.ARROW, "Inertia", MOD, ine));
-                    }
-
-                    String action = null;
-                    double dist = 1;
-                    boolean move = false;
+                if (current_editor == null) {
+                    current_editor = dm;
+                    dm.holdManagement(true);
+                    dm.sendMessage("Editing " + getName());
+                    dm.getInventory().setHeldItemSlot(3);
 
                     final BukkitTask runnable = runTaskTimer(()->{
-                        if (move) upl();
+//                        if (move) upl();
                         dm.spawnParticle(particle, center, amount, offsetX, offsetY, offsetZ, inertia);
+
                         double x = center.getX();
                         double y = center.getY();
                         double z = center.getZ();
@@ -156,55 +140,12 @@ public class SpawnParticle extends Action {
                         }
                     }, 0, 2);
 
-                    private void upl() { center = dm.getEyeLocation().add(dm.getEyeLocation().getDirection().multiply(dist)); }
-
-                    @EventHandler(priority = EventPriority.HIGH)
-                    public void onMove(PlayerMoveEvent event) {
-                        if (event.getPlayer() == dm.getPlayer() && move)
-                            upl();
-                    }
-
-                    @EventHandler(priority = EventPriority.HIGH)
-                    public void onSlotChange(PlayerItemHeldEvent event) {
-                        if (event.getPlayer() == dm.getPlayer() && move) {
-                            double n = event.getNewSlot() - event.getPreviousSlot();
-                            if (dm.isSneaking()) n *= .1d;
-                            dist = Math.max(1, dist + n);
-                            upl();
-                            event.setCancelled(true);
-                        }
-                    }
-
-                    @EventHandler(priority = EventPriority.HIGH)
-                    public void onInteract(@NotNull PlayerInteractEvent event) {
-                        if (event.getPlayer() == dm.getPlayer()) {
-                            action = NSK.getNSK(dm.getInventory().getItemInMainHand(), MOD);
-                            if (action == null) return;
-                            boolean l = event.getAction().name().contains("LEFT");
-                            event.setCancelled(true);
-                            double n = (dm.isSneaking() ? .1 : .2) * (l ? -1 : 1);
-                            switch (action) {
-                                case pos -> move = !move;
-                                case amn -> amount = Math.max(1, amount +((dm.isSneaking() ? 1 : 2) * (l ? -1 : 1)));
-                                case ofx -> offsetX = Math.max(0, offsetX+n);
-                                case ofy -> offsetY = Math.max(0, offsetY+n);
-                                case ofz -> offsetZ = Math.max(0, offsetZ+n);
-                                case ine -> inertia = Math.max(0, inertia+n);
-                                case done -> {
-                                    pi = dm.getInventory();
-                                    for (int i = 0; i < 9; i++)
-                                        pi.setItem(i, items[i]);
-                                    event.setCancelled(true);
-                                    deregisterEvents(this);
-                                    dm.holdManagement(false);
-                                    runnable.cancel();
-                                    System.gc();
-                                }
-                            }
-                        }
-                    }
-
-                });
+                    editor.edit(dm, () -> {
+                        runnable.cancel();
+                        current_editor.holdManagement(false);
+                        current_editor = null;
+                    });
+                } else dm.sendWarning(DungeonMaster.Sender.CREATOR, getName() + " is currently being edited by " + current_editor.getDisplayName());
 
             }
             case "amount" -> amount = (int) Math.max(1, (v*10));

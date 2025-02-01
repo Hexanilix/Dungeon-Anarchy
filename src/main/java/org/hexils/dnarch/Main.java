@@ -1,7 +1,6 @@
 package org.hexils.dnarch;
 
 import org.bukkit.*;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -14,7 +13,7 @@ import org.hetils.mpdl.location.BoundingBox;
 import org.hetils.mpdl.plugin.PluginAbbrev;
 import org.hetils.mpdl.plugin.PluginThread;
 import org.hexils.dnarch.commands.DungeonAnarchyCommandExecutor;
-import org.hexils.dnarch.commands.DungeonCreatorCommandExecutor;
+import org.hexils.dnarch.commands.DungeonCreatorCommand;
 import org.hexils.dnarch.commands.DungeonCommandExecutor;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
@@ -144,10 +143,13 @@ public final class Main extends JavaPlugin implements PluginAbbrev {
                     }
                 }
                 if (!queue.isEmpty()) {
-                    try {
-                        queue.forEach((qom, s) -> finalD.addItem(createItemFromMap(qom, finalD)));
-                    } catch (RuntimeException e) {
-                        throw new RuntimeException(e);
+                    for (Map.Entry<OODP.ObjectiveMap, Set<String>> ent : queue.entrySet()) {
+                        OODP.ObjectiveMap obm = ent.getKey();
+                        try {
+                            finalD.addItem(createItemFromMap(obm, finalD));
+                        } catch (RuntimeException e) {
+                            log(Level.WARNING, "Cannot load item " + obm.getRaw("id") + " in dungeon " + d.getName());
+                        }
                     }
                 }
 
@@ -238,7 +240,7 @@ public final class Main extends JavaPlugin implements PluginAbbrev {
         var dat = new DungeonAnarchyCommandExecutor.Tab();
         loadCommand("dungeon_anarchy", dae, dat);
         loadCommand("da", dae, dat);
-        loadCommand("dc", new DungeonCreatorCommandExecutor(), new DungeonCreatorCommandExecutor.tab());
+        loadCommand("dc", new DungeonCreatorCommand());
         var dge = new DungeonCommandExecutor();
         var dgt = new DungeonCommandExecutor.Tab();
         loadCommand("dungeon", dge, dgt);
@@ -300,6 +302,7 @@ public final class Main extends JavaPlugin implements PluginAbbrev {
     public void onDisable(boolean save_data) {
         if (save_data) {
             PluginThread.finish();
+            Trigger.instances.forEach(Manageable::onInvClose);
             FileManager.saveData();
         }
         PluginThread.finish();
