@@ -4,19 +4,23 @@ import org.bukkit.ChatColor;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.hetils.mpdl.Manageable;
 import org.hetils.mpdl.command.Command;
 import org.hexils.dnarch.*;
+import org.hexils.dnarch.items.EntitySpawn;
 import org.hexils.dnarch.items.Type;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class DungeonCreatorCommand extends Command {
     public DungeonCreatorCommand() { super("dc"); }
 
-    public static List<String> getDungeonNames() { return Dungeon.dungeons.stream().map(DAManageable::getName).toList(); }
     public static List<String> getSectionNames(Dungeon d) {  return d == null ? List.of() : d.getSections().stream().map(DAManageable::getName).toList(); }
+
+    public static List<String> getDungeonNames() { return Dungeon.dungeons.stream().map(DAManageable::getName).toList(); }
 
     private static class PosCom extends Command {
         private final boolean f;
@@ -72,6 +76,9 @@ public class DungeonCreatorCommand extends Command {
     }
 
     {
+        TabCompleteFunction getDGNames = (s, args) -> getDungeonNames();
+        TabCompleteFunction dsi = (s, a) -> List.of("dungeon", "section", "item");
+
         this.addSubCommand(new Command("wand") {
             { helpmsg = "Gives the player a wand, which is used to select block and create selections to create items, dungeon and sections"; }
             @Override
@@ -87,7 +94,9 @@ public class DungeonCreatorCommand extends Command {
                 DungeonMaster dm = DungeonMaster.get(sender);
                 switch (args[0].toLowerCase()) {
                     case "section", "action", "condition", "trigger" -> dm.sendError(DungeonMaster.Sender.CREATOR, "You must be editing a dungeon to create elements!");
-                    default -> dm.sendError(DungeonMaster.Sender.CREATOR, "Unknown argument " + ChatColor.ITALIC + args[0]);
+                    default -> {
+                        return super.execute(sender, args);
+                    }
                 }
                 return true;
             }
@@ -161,7 +170,10 @@ public class DungeonCreatorCommand extends Command {
                 new Command("entity") {
                 @Override
                 public boolean execute(CommandSender sender, String @NotNull [] args) {
-                    return super.execute(sender, args);
+                    DungeonMaster dm = DungeonMaster.get(sender);
+                    EntitySpawn es = (EntitySpawn) Type.ENTITY_SPAWN.create(dm, args);
+                    es.doAction(dm, "edit", null);
+                    return true;
                 }
             }
         );
@@ -171,7 +183,7 @@ public class DungeonCreatorCommand extends Command {
                 new PosCom("pos2", false),
                 new TelepCom("tp"),
                 new TelepCom("teleport"),
-                new Command("deselect") {
+                new Command("deselect", (s, a)->List.of("blocks", "section")) {
                     { helpmsg = "Deselects any selected blocks or area"; }
                     @Override
                     public boolean execute(CommandSender sender, String @NotNull [] args) {
@@ -187,40 +199,70 @@ public class DungeonCreatorCommand extends Command {
                     }
                 },
                 new Command("delete") {
+                    {
+                        addSubCommand(
+                                new Command("dungeon", getDGNames) {
+                                    @Override
+                                    public boolean execute(CommandSender sender, String @NotNull [] args) {
+                                        DungeonMaster dm = DungeonMaster.get(sender);
+                                        Dungeon d = dm.getCurrentDungeon();
+                                        if (args.length >= 1) {
+                                            d = Dungeon.get(args[0]);
+                                            if (d == null) dm.sendError("No dungeon named \"" + args[2] + "\"");
+                                            if (dm.getCurrentDungeon() == d) {
+                                                d.removeViewer(dm);
+                                                dm.editDungeon(null);
+                                            }
+                                            d.attemptRemove(dm);
+                                        } else {
+                                            if (dm.isEditing()) d.attemptRemove(dm);
+                                            else dm.sendWarning(DungeonMaster.Sender.CREATOR, "You're currently not editing a dungeon");
+                                        }
+                                        return false;
+                                    }
+                                    },
+                                new Command("section", (s, args)-> {
+                                    DungeonMaster dm = DungeonMaster.get(s);
+                                    return dm.isEditing() ? dm.getCurrentDungeon().getSections().stream().map(Manageable::getName).toList() : new ArrayList<>();
+                                }) {
+                                    @Override
+                                    public boolean execute(CommandSender sender, String @NotNull [] args) {
+                                        DungeonMaster dm = DungeonMaster.get(sender);
+                                        Dungeon d = dm.getCurrentDungeon();
+                                        Dungeon.Section s = d.getSection(dm);
+                                        if (args.length >= 1) {
+                                            s = d.getSection(args[0]);
+                                            if (s == null) dm.sendError("No section named \"" + args[0] + "\"");
+                                        } else if (s == null) dm.sendWarning(DungeonMaster.Sender.CREATOR, "You're currently not in a section.");
+                                        dm.promptRemove(s);
+                                        return super.execute(sender, args);
+                                    }
+                                },
+                                new Command("item") {
+                                    @Override
+                                    public boolean execute(CommandSender sender, String @NotNull [] args) {
+                                        DungeonMaster dm = DungeonMaster.get(sender);
+                                        DAItem da = DAItem.get(dm.getInventory().getItemInMainHand());
+                                        if (da != null) {
+                                            dm.promptRemove(da);
+                                        } else dm.sendError("You're currently not holding a DA item");
+                                        return true;
+                                    }
+                                }
+                                );
+                    }
                     @Override
                     public boolean execute(CommandSender sender, String @NotNull [] args) {
                         DungeonMaster dm = DungeonMaster.get(sender);
-                        Dungeon d = dm.getCurrentDungeon();
-                        if (args.length == 0) {
-                            if (d != null) d.attemptRemove(dm);
-                        } else switch (args[0]) {
-                            case "dungeon" -> {
-                                if (args.length >= 2) {
-                                    d = Dungeon.get(args[1]);
-                                    if (d == null) dm.sendError("No dungeon named \"" + args[2] + "\"");
-                                    if (dm.getCurrentDungeon() == d) {
-                                        d.removeViewer(dm);
-                                        dm.editDungeon(null);
-                                    }
-                                    d.attemptRemove(dm);
-                                } else {
-                                    if (dm.isEditing()) d.attemptRemove(dm);
-                                    else dm.sendWarning(DungeonMaster.Sender.CREATOR, "You're currently not editing a dungeon");
-                                }
-                            }
-                            case "section" -> {
+                        DAItem da = DAItem.get(dm.getInventory().getItemInMainHand());
+                        if (da != null) {
+                            dm.promptRemove(da);
+                        } else {
+                            if (dm.isEditing()) {
+                                Dungeon d = dm.getCurrentDungeon();
                                 Dungeon.Section s = d.getSection(dm);
-                                if (args.length >= 2) {
-                                    s = d.getSection(args[1]);
-                                    if (s == null) dm.sendError("No section named \"" + args[1] + "\"");
-                                } else if (s == null) dm.sendWarning(DungeonMaster.Sender.CREATOR, "You're currently not in a section.");
-                                dm.promptRemove(s);
-                            }
-                            case "item" -> {
-                                DAItem da = DAItem.get(dm.getInventory().getItemInMainHand());
-                                if (da != null) {
-                                    dm.promptRemove(da);
-                                } else dm.sendError("You're currently not holding a DA item");
+                                if (s != null) dm.promptRemove(s);
+                                else d.attemptRemove(dm);
                             }
                         }
                         return true;
@@ -347,7 +389,7 @@ public class DungeonCreatorCommand extends Command {
                         return true;
                     }
                 },
-                new Command("edit") {
+                new Command("edit", getDGNames) {
                     @Override
                     public boolean execute(CommandSender sender, String @NotNull [] args) {
                         DungeonMaster dm = DungeonMaster.get(sender);
@@ -355,10 +397,16 @@ public class DungeonCreatorCommand extends Command {
                             Dungeon d;
                             if (args.length == 1) {
                                 d = Dungeon.get(args[0]);
-                                if (d == null) dm.sendError("No dungeon named \"" + args[0] + "\"");
+                                if (d == null) {
+                                    dm.sendError("No dungeon named \"" + args[0] + "\"");
+                                    return true;
+                                }
                             } else {
                                 d = Dungeon.get(dm.getLocation());
-                                if (d == null) dm.sendError("You're currently not in a dungeon, please go into the desired dungeon or specify one.");
+                                if (d == null) {
+                                    dm.sendError("You're currently not in a dungeon, please go into the desired dungeon or specify one.");
+                                    return true;
+                                }
                             }
                             dm.editDungeon(d);
                             d.showDungeonFor(dm);
@@ -371,12 +419,14 @@ public class DungeonCreatorCommand extends Command {
                     public boolean execute(CommandSender sender, String @NotNull [] args) {
                         DungeonMaster dm = DungeonMaster.get(sender);
                         if (!dm.isEditing()) dm.sendWarning(DungeonMaster.Sender.CREATOR, "You must be editing a dungeon to enable build mode");
-                        dm.setBuildMode(!dm.inBuildMode());
-                        if (!dm.inBuildMode()) {
-                            dm.getCurrentDungeon().save();
-                            dm.sendPass(DungeonMaster.Sender.CREATOR,  "Saved dungeon");
+                        else {
+                            dm.setBuildMode(!dm.inBuildMode());
+                            if (!dm.inBuildMode()) {
+                                dm.getCurrentDungeon().save();
+                                dm.sendPass(DungeonMaster.Sender.CREATOR, "Saved dungeon");
+                            }
+                            dm.sendInfo(DungeonMaster.Sender.CREATOR, "You are " + (dm.inBuildMode() ? "now" : "no longer") + " in build mode.");
                         }
-                        dm.sendInfo(DungeonMaster.Sender.CREATOR, "You are " + (dm.inBuildMode() ? "now" : "no longer") + " in build mode.");
                         return true;
                     }
                 },

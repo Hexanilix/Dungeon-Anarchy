@@ -48,7 +48,6 @@ public class SpawnParticle extends Action {
     @OODPExclude
     private final GeneralListener.LiveEditor editor = new GeneralListener.LiveEditor();
     {
-        editor.action(2, Material.GREEN_CONCRETE, "Position", null);
         editor.action(3, Material.FIREWORK_STAR, "Amount", a -> amount = Math.max(1, amount +((current_editor.isSneaking() ? 1 : 2) * (a.name().contains("LEFT") ? -1 : 1))));
         editor.action(4, Material.RED_CONCRETE, "Offset X", a -> offsetX = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
         editor.action(5, Material.GREEN_CONCRETE, "Offset Y", a -> offsetY = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
@@ -56,9 +55,7 @@ public class SpawnParticle extends Action {
         editor.action(7, Material.ARROW, "Inertia", a -> inertia = Math.max(0, offsetX+((current_editor.isSneaking() ? .1 : .2) * (a.name().contains("LEFT") ? -1 : 1))));
     }
 
-    public SpawnParticle() {
-        super(Type.SPAWN_PARTICLE);
-    }
+    public SpawnParticle() { super(Type.SPAWN_PARTICLE); }
     public SpawnParticle(Particle p) {
         super(Type.SPAWN_PARTICLE);
         this.particle = p;
@@ -140,6 +137,8 @@ public class SpawnParticle extends Action {
                         }
                     }, 0, 2);
 
+                    editor.action(2, Material.GREEN_CONCRETE, "Position", a -> GeneralListener.selectLocation(dm, (l)->center=l));
+
                     editor.edit(dm, () -> {
                         runnable.cancel();
                         current_editor.holdManagement(false);
@@ -165,7 +164,8 @@ public class SpawnParticle extends Action {
             }
             case "location" -> {
                 dm.holdManagement(true);
-                GeneralListener.selectLocation(dm, "Select a new location", l -> {
+                dm.sendInfo(DungeonMaster.Sender.CREATOR, "Select a new location for " + getName());
+                GeneralListener.selectLocation(dm, l -> {
                     center = l;
                     dm.spawnParticle(particle, center, amount, offsetX, offsetY, offsetZ, inertia);
                 } ,l -> dm.holdManagement(false));

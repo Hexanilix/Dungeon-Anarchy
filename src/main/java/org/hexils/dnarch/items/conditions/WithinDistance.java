@@ -131,7 +131,8 @@ public class WithinDistance extends Condition implements RunnableDA {
             case "change_center" -> {
                 dm.holdManagement(true);
                 runnable.cancel();
-                GeneralListener.selectLocation(dm, "Select a new location", l -> {
+                dm.sendInfo("Select a new location for " + getName());
+                GeneralListener.selectLocation(dm, l -> {
                     spawnParticlesInSphere(l, rad, (int) Math.pow(4, rad), Particle.COMPOSTER);
                 } ,l -> {
                     center = l;

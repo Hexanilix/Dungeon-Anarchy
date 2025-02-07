@@ -55,13 +55,13 @@ public class EntitySpawnAction extends BlockAction {
             Random r = new Random();
             for (int i = 0; i < (multiplier == null ? 1 : multiplier.multiplier()); i++) for (org.hexils.dnarch.items.EntitySpawn e : entities) {
                 Location l = this.affected_blocks.get(r.nextInt(this.affected_blocks.size())).getLocation().add(.5, .5, .5);
-                Entity ent = l.getWorld().spawnEntity(l, e.type);
+                Entity ent = l.getWorld().spawnEntity(l, e.getEntType());
                 spawnede.add(ent);
-                if (e.name != null) {
+                if (e.getEntName() != null) {
                     ent.setCustomNameVisible(true);
-                    ent.setCustomName(e.name);
+                    ent.setCustomName(e.getEntName());
                 } else
-                    log(Level.SEVERE, "An error occurred when spawning " + e.type.name() + " entity at " + org.hetils.mpdl.location.LocationUtil.toReadableFormat(l));
+                    log(Level.SEVERE, "An error occurred when spawning " + e.getEntType().name() + " entity at " + org.hetils.mpdl.location.LocationUtil.toReadableFormat(l));
             }
             this.spawned_entities = spawnede;
             this.triggered = true;
@@ -80,7 +80,7 @@ public class EntitySpawnAction extends BlockAction {
     private @NotNull List<String> entsToString() {
         List<String> l = new ArrayList<>();
         for (org.hexils.dnarch.items.EntitySpawn e : entities)
-            l.add(ChatColor.GRAY + e.type.name());
+            l.add(ChatColor.GRAY + e.getEntType().name());
         return l;
     }
 

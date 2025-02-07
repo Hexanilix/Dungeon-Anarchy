@@ -12,13 +12,14 @@ import static org.hetils.mpdl.item.ItemUtil.newItemStack;
 
 public class EntitySpawn extends DAItem {
 
-    public final EntityType type;
-    public final String name;
-    public final double health;
+    private EntityType type;
+    private final String name;
+    private final double health;
 
+    public EntitySpawn() { this(null, null, 0); }
     public EntitySpawn(EntityType type) { this(type, readableEnum(type), 20); }
     public EntitySpawn(EntityType type, String name) { this(type, name, 10); }
-    public EntitySpawn(@NotNull EntityType type, String name, double health) {
+    public EntitySpawn(EntityType type, String name, double health) {
         super(Type.ENTITY_SPAWN);
         this.type = type;
         this.name = name;
@@ -32,6 +33,10 @@ public class EntitySpawn extends DAItem {
 //        this.setItem(12, newItemStack(Material.REPEATER, "Spawn Amount"));
     }
 
+    public EntityType getEntType() { return type; }
+    public String getEntName() { return name; }
+    public double getEntHealth() { return health; }
+
     @Override
     protected void updateGUI() { this.setItem(11, newItemStack(Material.getMaterial(type.name()+"_SPAWN_EGG"), readableEnum(type))); }
 
@@ -39,5 +44,10 @@ public class EntitySpawn extends DAItem {
     protected ItemStack genItemStack() { return newItemStack(Material.getMaterial(type.name()+"_SPAWN_EGG"), getName()); }
 
     @Override
-    public DAItem create(DungeonMaster dm, String[] args) { return new EntitySpawn(EntityType.ZOMBIE); }
+    public DAItem create(DungeonMaster dm, String @NotNull [] args) {
+        if (args.length > 0)
+            type = EntityType.valueOf(args[0].toUpperCase());
+        if (type == null) type = EntityType.ZOMBIE;
+        return this;
+    }
 }
